@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { useGenres } from '../hooks/useGenres';
 import { useAllMovies } from '../hooks/useAllMovies';
-import { Film, Plus, Database, Search, X } from 'lucide-react';
+import { Film, Plus, Database, Search, X, Settings, Dice5 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { GenreManagerModal } from '../components/modals/GenreManagerModal';
 import { SettingsModal } from '../components/modals/SettingsModal';
-import { Settings } from 'lucide-react';
 import { MovieEditorModal } from '../components/modals/MovieEditorModal';
+import { RandomMoviePicker } from '../components/modals/RandomMoviePicker';
 import type { Movie } from '../types';
 
 export const HomePage: React.FC = () => {
@@ -14,6 +14,7 @@ export const HomePage: React.FC = () => {
     const { data: allMovies } = useAllMovies();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [isRandomOpen, setIsRandomOpen] = useState(false);
 
     // Search State
     const [search, setSearch] = useState('');
@@ -33,7 +34,7 @@ export const HomePage: React.FC = () => {
     };
 
     return (
-        <div className="flex flex-col gap-6 animate-in fade-in duration-500 relative">
+        <div className="flex flex-col gap-6 animate-in fade-in duration-500 relative min-h-screen">
 
             <GenreManagerModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
             <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
@@ -42,9 +43,16 @@ export const HomePage: React.FC = () => {
                 onClose={() => setIsEditOpen(false)}
                 movieToEdit={editMovie}
             />
+            {/* Random Picker */}
+            <RandomMoviePicker
+                isOpen={isRandomOpen}
+                onClose={() => setIsRandomOpen(false)}
+                movies={allMovies || []}
+            />
 
-            {/* Header with Search & Settings */}
+            {/* Header ... */}
             <div className="flex items-center gap-3">
+                {/* ... Search implementation unchanged ... */}
                 <div className="relative flex-1">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <Search className="text-neutral-500" size={18} />
@@ -104,15 +112,26 @@ export const HomePage: React.FC = () => {
                     )}
                 </div>
 
-                <button
-                    onClick={() => setIsSettingsOpen(true)}
-                    className="p-2.5 bg-neutral-800 text-neutral-400 hover:text-white hover:bg-neutral-700 rounded-full transition-colors flex-shrink-0"
-                >
-                    <Settings size={20} />
-                </button>
+                <div className="flex gap-2">
+                    {/* Random Button */}
+                    <button
+                        onClick={() => setIsRandomOpen(true)}
+                        className="p-2.5 bg-indigo-600/20 text-indigo-400 hover:text-white hover:bg-indigo-600 rounded-full transition-all flex-shrink-0"
+                        title="O que assistir?"
+                    >
+                        <Dice5 size={20} />
+                    </button>
+
+                    <button
+                        onClick={() => setIsSettingsOpen(true)}
+                        className="p-2.5 bg-neutral-800 text-neutral-400 hover:text-white hover:bg-neutral-700 rounded-full transition-colors flex-shrink-0"
+                    >
+                        <Settings size={20} />
+                    </button>
+                </div>
             </div>
 
-            {/* Stats Header */}
+            {/* Stats Header (Unchanged) */}
             <div className="grid grid-cols-2 gap-4">
                 <div className="glass-panel p-4 rounded-2xl flex flex-col justify-between h-32 relative overflow-hidden group">
                     <div className="absolute -right-4 -top-4 bg-indigo-500/10 w-24 h-24 rounded-full blur-2xl group-hover:bg-indigo-500/20 transition-all"></div>
@@ -133,7 +152,7 @@ export const HomePage: React.FC = () => {
                 </div>
             </div>
 
-            {/* Action Bar */}
+            {/* Action Bar (Unchanged) */}
             <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-white">Coleções</h3>
                 <button
@@ -145,7 +164,7 @@ export const HomePage: React.FC = () => {
                 </button>
             </div>
 
-            {/* Genres Grid */}
+            {/* Genres Grid (Unchanged) */}
             {isLoading ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {[1, 2, 3, 4].map(i => (

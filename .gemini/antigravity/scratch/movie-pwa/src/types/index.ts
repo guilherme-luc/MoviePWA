@@ -3,11 +3,12 @@ export interface Movie {
     title: string;
     year: string;
     genre: string;
-    imageType?: 'tmdb' | 'base64'; // New field
-    imageValue?: string;           // New field (poster_path or base64 data)
+    imageType?: 'tmdb' | 'base64';
+    imageValue?: string;
+    posterBase64?: string; // Standardized UI property for image data
     // Metadata for internal use
-    _rowIndex?: number;    // 1-based index in the sheet
-    _sheetTitle?: string; // The sheet this movie belongs to
+    _rowIndex?: number;
+    _sheetTitle?: string;
 }
 
 export interface SheetMetadata {

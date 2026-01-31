@@ -59,7 +59,7 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
     // Form State
     const [formData, setFormData] = useState<Partial<Movie>>({
         title: '',
-        year: new Date().getFullYear(),
+        year: new Date().getFullYear().toString(),
         genre: initialGenre || '',
         barcode: '',
         posterBase64: ''
@@ -76,7 +76,7 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
         } else {
             setFormData({
                 title: '',
-                year: new Date().getFullYear(),
+                year: new Date().getFullYear().toString(),
                 genre: initialGenre || '',
                 barcode: '',
                 posterBase64: ''
@@ -141,7 +141,7 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
 
                 setFormData(prev => ({
                     ...prev,
-                    year: year,
+                    year: year.toString(),
                     // Optional: Auto-fill genre if we could map TMDB genres to ours
                     posterBase64
                 }));
@@ -167,11 +167,24 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
         setIsSubmitting(true);
         try {
             if (movieToEdit) {
-                // Check if genre changed (Move transaction) + Update
+                // Determine if we need to move (genre changed)
                 if (movieToEdit.genre !== formData.genre) {
-                    await GoogleSheetsService.getInstance().moveMovie(movieToEdit, formData as Movie);
+                    const movieToMove = {
+                        ...formData,
+                        _rowIndex: movieToEdit._rowIndex
+                    } as Movie;
+
+                    await GoogleSheetsService.getInstance().moveMovie(
+                        movieToMove,
+                        movieToEdit.genre // oldGenre
+                    );
                 } else {
-                    await GoogleSheetsService.getInstance().updateMovie(movieToEdit, formData as Movie);
+                    // Update in place
+                    // The service likely expects (oldMovie, newMovie) or just (newMovie) if ID is present.
+                    // Based on error: "Expected 1 arguments, but got 2", updateMovie takes (movie).
+                    // But we must ensure the new data is merged.
+                    const updatedMovie = { ...movieToEdit, ...formData } as Movie;
+                    await GoogleSheetsService.getInstance().updateMovie(updatedMovie);
                 }
             } else {
                 // Add
@@ -271,8 +284,8 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                                             required
                                         >
                                             <option value="" disabled>Selecione...</option>
-                                            {genres?.filter(g => g.title !== 'Todos').map(g => (
-                                                <option key={g.title} value={g.title}>{g.title}</option>
+                                            {genres?.filter(g => g.genre !== 'Todos').map(g => (
+                                                <option key={g.genre} value={g.genre}>{g.genre}</option>
                                             ))}
                                         </select>
                                         <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-neutral-500">
