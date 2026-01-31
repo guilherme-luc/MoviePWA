@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, RefreshCw, Play, Dice5 } from 'lucide-react';
 import type { Movie } from '../../types';
 
@@ -9,36 +9,118 @@ interface RandomMoviePickerProps {
 }
 
 export const RandomMoviePicker: React.FC<RandomMoviePickerProps> = ({ isOpen, onClose, movies }) => {
-    const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
+    const [displayedMovie, setDisplayedMovie] = useState<Movie | null>(null);
     const [isAnimating, setIsAnimating] = useState(false);
 
-    const pickRandom = () => {
+    // Cache "decoy" images to ensure smooth animation
+    const [decoyPool, setDecoyPool] = useState<Movie[]>([]);
+    const animationRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+    // Helper to get image URL
+    const getImageUrl = (movie: Movie) => {
+        if (!movie?.imageValue) return null;
+        return movie.imageType === 'tmdb'
+            ? `https://image.tmdb.org/t/p/w342${movie.imageValue}`
+            : movie.imageValue;
+    };
+
+    // Preload an image URL
+    const preloadImage = (src: string): Promise<void> => {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.src = src;
+            img.onload = () => resolve();
+            img.onerror = () => reject(); // If fails, we resolve anyway to not block? Or reject?
+        });
+    };
+
+    // Initialize Decoy Pool on Mount (or when movies change)
+    useEffect(() => {
         if (!movies || movies.length === 0) return;
 
-        setIsAnimating(true);
-        let counter = 0;
-        const maxShuffles = 10; // Number of "flickers" before stopping
+        const loadDecoys = async () => {
+            // Pick 10 random movies to serve as "smooth animation frames"
+            const pool: Movie[] = [];
+            const candidates = [...movies].sort(() => 0.5 - Math.random()).slice(0, 15);
 
-        const interval = setInterval(() => {
-            const randomIndex = Math.floor(Math.random() * movies.length);
-            setSelectedMovie(movies[randomIndex]);
-            counter++;
-
-            if (counter >= maxShuffles) {
-                clearInterval(interval);
-                setIsAnimating(false);
+            for (const m of candidates) {
+                const url = getImageUrl(m);
+                if (url) {
+                    // Fire and forget preload, or wait? 
+                    // Let's simplified preload: just creating the object triggers browser cache
+                    const img = new Image();
+                    img.src = url;
+                    pool.push(m);
+                }
             }
-        }, 100);
+            setDecoyPool(pool);
+        };
+
+        loadDecoys();
+    }, [movies]);
+
+    const pickRandom = async () => {
+        if (!movies || movies.length === 0) return;
+        if (isAnimating) return;
+
+        setIsAnimating(true);
+
+        // 1. Pick Winner
+        const randomIndex = Math.floor(Math.random() * movies.length);
+        const winner = movies[randomIndex];
+        const winnerUrl = getImageUrl(winner);
+
+        // 2. Start Animation Loop (using Decoys)
+        let loopCounter = 0;
+        const availableDecoys = decoyPool.length > 0 ? decoyPool : movies.slice(0, 10); // Fallback
+
+        animationRef.current = setInterval(() => {
+            // Show a decoy
+            const decoy = availableDecoys[loopCounter % availableDecoys.length];
+            setDisplayedMovie(decoy);
+            loopCounter++;
+        }, 120); // Slightly slower than 100ms for better perception
+
+        // 3. Preload Winner in Background
+        if (winnerUrl) {
+            try {
+                await preloadImage(winnerUrl);
+            } catch (e) {
+                console.warn("Failed to preload winner image", e);
+            }
+        } else {
+            // Artificial delay if no image to load, just for suspense
+            await new Promise(r => setTimeout(r, 1000));
+        }
+
+        // 4. Ensure minimum spin time (e.g. 1.5s total) for effect
+        // We calculate how much time passed since start? 
+        // Or just `await` a minimum promise alongside the preload.
+        // Let's keeping it simple: The `await preloadImage` naturally takes time. 
+        // If it's cached, it's instant. If instant, we might want a minimum delay.
+
+        const minTime = new Promise(r => setTimeout(r, 1200));
+        await minTime;
+
+        // 5. Stop and Show Winner
+        if (animationRef.current) clearInterval(animationRef.current);
+        setDisplayedMovie(winner);
+        setIsAnimating(false);
     };
 
     // Auto-pick on open
     useEffect(() => {
-        if (isOpen) {
+        if (isOpen && !displayedMovie) {
+            // Only auto-pick if we don't have one already (or always?)
+            // User expects a fresh pick on open usually.
             pickRandom();
         }
+        return () => {
+            if (animationRef.current) clearInterval(animationRef.current);
+        };
     }, [isOpen]);
 
-    if (!isOpen || !selectedMovie) return null;
+    if (!isOpen || !displayedMovie) return null;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -63,7 +145,7 @@ export const RandomMoviePicker: React.FC<RandomMoviePickerProps> = ({ isOpen, on
 
                     <div className="text-indigo-400 font-medium tracking-wider text-xs uppercase mb-6 flex items-center gap-2">
                         <Dice5 size={16} />
-                        Sorteado para você
+                        {isAnimating ? 'Sorteando...' : 'Sorteado para você'}
                     </div>
 
                     {/* Poster Card */}
@@ -72,12 +154,10 @@ export const RandomMoviePicker: React.FC<RandomMoviePickerProps> = ({ isOpen, on
                         transition-transform duration-100
                         ${isAnimating ? 'scale-95 opacity-80' : 'scale-100 opacity-100'}
                     `}>
-                        {selectedMovie.imageValue ? (
+                        {displayedMovie.imageValue ? (
                             <img
-                                src={selectedMovie.imageType === 'tmdb'
-                                    ? `https://image.tmdb.org/t/p/w342${selectedMovie.imageValue}`
-                                    : selectedMovie.imageValue}
-                                alt={selectedMovie.title}
+                                src={getImageUrl(displayedMovie) || ''}
+                                alt={displayedMovie.title}
                                 className="w-full h-full object-cover"
                             />
                         ) : (
@@ -88,16 +168,16 @@ export const RandomMoviePicker: React.FC<RandomMoviePickerProps> = ({ isOpen, on
 
                         {/* Genre Badge */}
                         <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md px-2 py-1 rounded text-xs text-white font-medium border border-white/10">
-                            {selectedMovie.genre}
+                            {displayedMovie.genre}
                         </div>
                     </div>
 
                     {/* Title Info */}
                     <div className="text-center mb-8 space-y-1">
                         <h2 className="text-2xl font-bold text-white leading-tight">
-                            {selectedMovie.title}
+                            {displayedMovie.title}
                         </h2>
-                        <p className="text-neutral-400 text-lg">{selectedMovie.year}</p>
+                        <p className="text-neutral-400 text-lg">{displayedMovie.year}</p>
                     </div>
 
                     {/* Actions */}
