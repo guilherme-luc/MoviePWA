@@ -57,7 +57,7 @@ export const MoviesPage: React.FC = () => {
             return;
         }
 
-        const apiKey = localStorage.getItem('tmdb_api_key');
+        const apiKey = import.meta.env.VITE_TMDB_API_KEY || localStorage.getItem('tmdb_api_key');
         if (!apiKey) {
             alert("Configure sua API Key primeiro! (Engrenagem na Home)");
             return;

@@ -187,7 +187,7 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
     };
 
     const handleSearchCover = async () => {
-        const apiKey = localStorage.getItem('tmdb_api_key');
+        const apiKey = import.meta.env.VITE_TMDB_API_KEY || localStorage.getItem('tmdb_api_key');
         if (!apiKey) {
             setError("Configure sua API Key nas configurações (engrenagem na home).");
             return;

@@ -196,6 +196,9 @@ export class GoogleSheetsService {
             valueInputOption: 'USER_ENTERED',
             resource: { values }
         });
+
+        // Auto-sort strictly alphabetically
+        await this.sortSheet(movie.genre);
     }
 
 
@@ -466,5 +469,34 @@ export class GoogleSheetsService {
             spreadsheetId: this.SPREADSHEET_ID,
         });
         return response.result.sheets?.map(s => s.properties?.title || '').filter(Boolean) || [];
+    }
+
+    private async sortSheet(sheetTitle: string): Promise<void> {
+        if (!this.isInitialized) await this.initClient();
+
+        // Find sheetId
+        const sheets = await this.getSheetsMetadata();
+        const sheet = sheets.find(s => s.title === sheetTitle);
+        if (!sheet) return;
+
+        // Sort by Title (Column B, index 1)
+        await gapi.client.sheets.spreadsheets.batchUpdate({
+            spreadsheetId: this.SPREADSHEET_ID,
+            resource: {
+                requests: [{
+                    sortRange: {
+                        range: {
+                            sheetId: sheet.sheetId,
+                            startRowIndex: 1, // Skip Header
+                            // endRowIndex implied to be end of sheet
+                        },
+                        sortSpecs: [{
+                            dimensionIndex: 1, // Column B (Title)
+                            sortOrder: "ASCENDING"
+                        }]
+                    }
+                }]
+            }
+        });
     }
 }
