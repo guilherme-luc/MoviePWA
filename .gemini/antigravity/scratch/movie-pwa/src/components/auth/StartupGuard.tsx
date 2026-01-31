@@ -59,16 +59,17 @@ export const StartupGuard: React.FC<{ children: React.ReactNode }> = ({ children
 
 
     const handleUpgrade = async () => {
-        setStatus('validating');
-        const service = GoogleSheetsService.getInstance();
         try {
+            setStatus('validating');
+            const service = GoogleSheetsService.getInstance();
             await service.upgradeSheetStructure();
-            // Wait a bit for propagation
-            setTimeout(() => window.location.reload(), 2000);
-        } catch (e) {
-            console.error(e);
+            alert("Estrutura atualizada com sucesso! Recarregando...");
+            window.location.reload();
+        } catch (e: any) {
+            console.error("Upgrade failed:", e);
             setStatus('invalid_sheet');
-            setErrorMsg("Falha ao atualizar planilha. Tente novamente.");
+            setErrorMsg("Falha ao atualizar: " + (e.message || "Erro desconhecido"));
+            alert("Erro ao atualizar: " + (e.message || "Verifique o console"));
         }
     };
 
