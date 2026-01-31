@@ -138,7 +138,8 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
             }
 
             await queryClient.invalidateQueries({ queryKey: ['movies'] });
-            await queryClient.invalidateQueries({ queryKey: ['genres'] }); // Counts change
+            await queryClient.invalidateQueries({ queryKey: ['genres'] });
+            await queryClient.invalidateQueries({ queryKey: ['all_movies'] }); // Fix search cache
 
             onClose();
         } catch (e: any) {
