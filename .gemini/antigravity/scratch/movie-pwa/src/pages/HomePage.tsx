@@ -7,6 +7,7 @@ import { GenreManagerModal } from '../components/modals/GenreManagerModal';
 import { SettingsModal } from '../components/modals/SettingsModal';
 import { MovieEditorModal } from '../components/modals/MovieEditorModal';
 import { RandomMoviePicker } from '../components/modals/RandomMoviePicker';
+import { StatsModal } from '../components/modals/StatsModal';
 import type { Movie } from '../types';
 
 export const HomePage: React.FC = () => {
@@ -15,6 +16,7 @@ export const HomePage: React.FC = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isRandomOpen, setIsRandomOpen] = useState(false);
+    const [isStatsOpen, setIsStatsOpen] = useState(false); // Stats State
 
     // Search State
     const [search, setSearch] = useState('');
@@ -48,6 +50,14 @@ export const HomePage: React.FC = () => {
                 isOpen={isRandomOpen}
                 onClose={() => setIsRandomOpen(false)}
                 movies={allMovies || []}
+            />
+
+            {/* Stats Dashboard */}
+            <StatsModal
+                isOpen={isStatsOpen}
+                onClose={() => setIsStatsOpen(false)}
+                movies={allMovies || []}
+                genres_={genres || []}
             />
 
             {/* Header ... */}
@@ -131,18 +141,21 @@ export const HomePage: React.FC = () => {
                 </div>
             </div>
 
-            {/* Stats Header (Unchanged) */}
-            <div className="grid grid-cols-2 gap-4">
-                <div className="glass-panel p-4 rounded-2xl flex flex-col justify-between h-32 relative overflow-hidden group">
+            {/* Stats Header - Clickable to Open Dashboard */}
+            <div className="grid grid-cols-2 gap-4 cursor-pointer" onClick={() => setIsStatsOpen(true)}>
+                <div className="glass-panel p-4 rounded-2xl flex flex-col justify-between h-32 relative overflow-hidden group hover:bg-neutral-800/80 transition-all border border-transparent hover:border-indigo-500/30">
                     <div className="absolute -right-4 -top-4 bg-indigo-500/10 w-24 h-24 rounded-full blur-2xl group-hover:bg-indigo-500/20 transition-all"></div>
                     <div className="z-10">
                         <p className="text-neutral-400 text-sm font-medium">Filmes</p>
                         <h2 className="text-4xl font-bold mt-1 text-white">{totalMovies}</h2>
                     </div>
-                    <Film className="z-10 text-indigo-400 self-end" size={24} />
+                    <div className="z-10 flex justify-between items-end w-full">
+                        <span className="text-xs text-indigo-400 bg-indigo-500/10 px-2 py-1 rounded-full">Ver Estatísticas</span>
+                        <Film className="text-indigo-400" size={24} />
+                    </div>
                 </div>
 
-                <div className="glass-panel p-4 rounded-2xl flex flex-col justify-between h-32 relative overflow-hidden group">
+                <div className="glass-panel p-4 rounded-2xl flex flex-col justify-between h-32 relative overflow-hidden group hover:bg-neutral-800/80 transition-all border border-transparent hover:border-purple-500/30">
                     <div className="absolute -right-4 -top-4 bg-purple-500/10 w-24 h-24 rounded-full blur-2xl group-hover:bg-purple-500/20 transition-all"></div>
                     <div className="z-10">
                         <p className="text-neutral-400 text-sm font-medium">Gêneros</p>
