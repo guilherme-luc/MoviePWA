@@ -72,8 +72,14 @@ export const RandomMoviePicker: React.FC<RandomMoviePickerProps> = ({ isOpen, on
                         transition-transform duration-100
                         ${isAnimating ? 'scale-95 opacity-80' : 'scale-100 opacity-100'}
                     `}>
-                        {selectedMovie.posterBase64 ? (
-                            <img src={selectedMovie.posterBase64} alt={selectedMovie.title} className="w-full h-full object-cover" />
+                        {selectedMovie.imageValue ? (
+                            <img
+                                src={selectedMovie.imageType === 'tmdb'
+                                    ? `https://image.tmdb.org/t/p/w342${selectedMovie.imageValue}`
+                                    : selectedMovie.imageValue}
+                                alt={selectedMovie.title}
+                                className="w-full h-full object-cover"
+                            />
                         ) : (
                             <div className="w-full h-full flex items-center justify-center bg-neutral-800 text-neutral-600">
                                 <span className="text-4xl">🎬</span>
