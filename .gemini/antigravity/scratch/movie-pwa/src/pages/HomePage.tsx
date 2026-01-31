@@ -60,9 +60,8 @@ export const HomePage: React.FC = () => {
                 genres_={genres || []}
             />
 
-            {/* Header ... */}
+            {/* Header with Search & Settings */}
             <div className="flex items-center gap-3">
-                {/* ... Search implementation unchanged ... */}
                 <div className="relative flex-1">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <Search className="text-neutral-500" size={18} />
@@ -141,7 +140,7 @@ export const HomePage: React.FC = () => {
                 </div>
             </div>
 
-            {/* Stats Header - Clickable to Open Dashboard */}
+            {/* Stats Header */}
             <div className="grid grid-cols-2 gap-4 cursor-pointer" onClick={() => setIsStatsOpen(true)}>
                 <div className="glass-panel p-4 rounded-2xl flex flex-col justify-between h-32 relative overflow-hidden group hover:bg-neutral-800/80 transition-all border border-transparent hover:border-indigo-500/30">
                     <div className="absolute -right-4 -top-4 bg-indigo-500/10 w-24 h-24 rounded-full blur-2xl group-hover:bg-indigo-500/20 transition-all"></div>
@@ -165,7 +164,7 @@ export const HomePage: React.FC = () => {
                 </div>
             </div>
 
-            {/* Action Bar (Unchanged) */}
+            {/* Action Bar */}
             <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-white">Coleções</h3>
                 <button

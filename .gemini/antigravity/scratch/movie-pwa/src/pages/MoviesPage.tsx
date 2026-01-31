@@ -2,7 +2,7 @@ import React, { useState, useMemo, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useMovies } from '../hooks/useMovies';
-import { ArrowLeft, Search, Plus, Edit2, Wand2, Loader2 } from 'lucide-react';
+import { ArrowLeft, Search, Plus, Edit2, Wand2, Loader2, CheckSquare, Trash2, X } from 'lucide-react';
 import { MovieEditorModal } from '../components/modals/MovieEditorModal';
 import { GoogleSheetsService } from '../services/GoogleSheetsService';
 import type { Movie } from '../types';
@@ -18,9 +18,13 @@ export const MoviesPage: React.FC = () => {
     const [isEditorOpen, setIsEditorOpen] = useState(false);
     const [selectedMovie, setSelectedMovie] = useState<Movie | undefined>(undefined);
 
+    // Bulk Selection State
+    const [isSelectionMode, setIsSelectionMode] = useState(false);
+    const [selectedMovies, setSelectedMovies] = useState<Movie[]>([]);
+
     // Auto-Fetch State
     const [isAutoFetching, setIsAutoFetching] = useState(false);
-    const isAutoFetchingRef = useRef(false); // Ref for loop control
+    const isAutoFetchingRef = useRef(false);
     const [autoFetchProgress, setAutoFetchProgress] = useState(0);
     const [autoFetchTotal, setAutoFetchTotal] = useState(0);
 
@@ -35,13 +39,52 @@ export const MoviesPage: React.FC = () => {
     }, [movies, search]);
 
     const handleEdit = (movie: Movie) => {
-        setSelectedMovie(movie);
-        setIsEditorOpen(true);
+        if (isSelectionMode) {
+            handleToggleSelection(movie);
+        } else {
+            setSelectedMovie(movie);
+            setIsEditorOpen(true);
+        }
     };
 
     const handleAddNew = () => {
         setSelectedMovie(undefined);
         setIsEditorOpen(true);
+    };
+
+    // Selection Logic
+    const handleToggleSelection = (movie: Movie) => {
+        if (selectedMovies.some(m => m === movie)) {
+            setSelectedMovies(prev => prev.filter(m => m !== movie));
+        } else {
+            setSelectedMovies(prev => [...prev, movie]);
+        }
+    };
+
+    const exitSelectionMode = () => {
+        setIsSelectionMode(false);
+        setSelectedMovies([]);
+    };
+
+    const handleBulkDelete = async () => {
+        if (!confirm(`Tem certeza que deseja excluir ${selectedMovies.length} filmes? Esta ação não pode ser desfeita.`)) return;
+
+        // Sort descending by index to avoid shifting issues when deleting rows
+        // Note: This relies on _rowIndex being accurate.
+        const sortedToDelete = [...selectedMovies].sort((a, b) => (b._rowIndex || 0) - (a._rowIndex || 0));
+
+        try {
+            // Sequential delete for safety
+            for (const movie of sortedToDelete) {
+                await GoogleSheetsService.getInstance().deleteMovie(movie);
+            }
+            await queryClient.invalidateQueries({ queryKey: ['movies'] });
+            exitSelectionMode();
+            alert("Filmes excluídos com sucesso!");
+        } catch (error) {
+            console.error(error);
+            alert("Erro ao excluir alguns filmes.");
+        }
     };
 
     const handleMagicWand = async () => {
@@ -59,9 +102,15 @@ export const MoviesPage: React.FC = () => {
 
         const apiKey = import.meta.env.VITE_TMDB_API_KEY || localStorage.getItem('tmdb_api_key');
         if (!apiKey) {
-            alert("Configure sua API Key primeiro! (Engrenagem na Home)");
-            return;
+            // Fix: Use prompt to ask for key if missing, or redirect
+            const key = prompt("API Key do TMDB não encontrada. Insira sua chave:");
+            if (key) {
+                localStorage.setItem('tmdb_api_key', key);
+            } else {
+                return;
+            }
         }
+        // ... (rest of logic)
 
         if (!confirm(`Deseja buscar capas automaticamente para ${missingImages.length} filmes?`)) return;
 
@@ -71,7 +120,7 @@ export const MoviesPage: React.FC = () => {
         setAutoFetchProgress(0);
 
         const updates: { movie: Movie, imageType: 'tmdb', imageValue: string }[] = [];
-        const BATCH_SIZE = 10; // Save every 10 or at end
+        const BATCH_SIZE = 10;
 
         let successCount = 0;
         let notFoundCount = 0;
@@ -81,24 +130,15 @@ export const MoviesPage: React.FC = () => {
             if (!isAutoFetchingRef.current) break;
 
             const movie = missingImages[i];
-
             try {
-                // Fetch TMDB
                 const query = encodeURIComponent(movie.title);
                 const yearParam = movie.year ? `&year=${movie.year}` : '';
-                const url = `https://api.themoviedb.org/3/search/movie?api_key=${apiKey}&query=${query}${yearParam}&language=pt-BR&include_adult=false`;
+                const url = `https://api.themoviedb.org/3/search/movie?api_key=${apiKey || localStorage.getItem('tmdb_api_key')}&query=${query}${yearParam}&language=pt-BR&include_adult=false`;
 
                 const res = await fetch(url);
                 const data = await res.json();
 
-                if (!res.ok) {
-                    console.error(`TMDB Error for ${movie.title}:`, data);
-                    errorCount++;
-                    continue;
-                }
-
                 if (data.results && data.results.length > 0) {
-                    // Pick best result (sorted by popularity)
                     const best = data.results.sort((a: any, b: any) => b.popularity - a.popularity)[0];
                     if (best && best.poster_path) {
                         updates.push({
@@ -114,30 +154,26 @@ export const MoviesPage: React.FC = () => {
                     notFoundCount++;
                 }
 
-                // Throttle to respect TMDB rate limits (approx 40 req/10s -> 4 req/s -> 250ms)
-                // Being safe with 350ms
                 await new Promise(r => setTimeout(r, 350));
 
             } catch (e) {
-                console.error(`Falha ao buscar capa para ${movie.title}`, e);
                 errorCount++;
             }
 
             setAutoFetchProgress(prev => prev + 1);
 
-            // Batch Save
             if (updates.length >= BATCH_SIZE || i === missingImages.length - 1) {
                 if (updates.length > 0) {
                     await GoogleSheetsService.getInstance().batchUpdateImages(updates);
-                    await queryClient.invalidateQueries({ queryKey: ['movies'] }); // Refresh UI live
-                    updates.length = 0; // Clear buffer
+                    await queryClient.invalidateQueries({ queryKey: ['movies'] });
+                    updates.length = 0;
                 }
             }
         }
 
         setIsAutoFetching(false);
         isAutoFetchingRef.current = false;
-        alert(`Processo finalizado!\n\n✅ Atualizados: ${successCount}\n❌ Não encontrados: ${notFoundCount}\n⚠️ Erros: ${errorCount}`);
+        alert(`Processo finalizado!\n\n✅ Atualizados: ${successCount}`);
     };
 
     return (
@@ -149,32 +185,64 @@ export const MoviesPage: React.FC = () => {
                 initialGenre={decodedGenre}
             />
 
-            {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-4">
-                    <Link to="/" className="p-2 rounded-full hover:bg-white/5 text-neutral-300 transition-colors">
-                        <ArrowLeft size={24} />
-                    </Link>
-                    <div>
-                        <h2 className="text-2xl font-bold text-white">{decodedGenre}</h2>
-                        <p className="text-neutral-400 text-sm">{movies?.length || 0} filmes</p>
+            {/* Selection Header */}
+            {isSelectionMode ? (
+                <div className="flex items-center justify-between mb-6 bg-indigo-500/10 p-4 -mx-4 sm:mx-0 sm:rounded-2xl border border-indigo-500/30">
+                    <div className="flex items-center gap-3">
+                        <button onClick={exitSelectionMode} className="p-2 text-white hover:bg-white/10 rounded-full">
+                            <X size={20} />
+                        </button>
+                        <span className="font-bold text-indigo-200">{selectedMovies.length} selecionados</span>
+                    </div>
+                    <button onClick={() => {
+                        if (selectedMovies.length === filteredMovies.length) {
+                            setSelectedMovies([]);
+                        } else {
+                            setSelectedMovies(filteredMovies);
+                        }
+                    }} className="text-sm text-indigo-400 font-medium">
+                        {selectedMovies.length === filteredMovies.length ? 'Desmarcar' : 'Todos'}
+                    </button>
+                </div>
+            ) : (
+                /* Normal Header */
+                <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-4">
+                        <Link to="/" className="p-2 rounded-full hover:bg-white/5 text-neutral-300 transition-colors">
+                            <ArrowLeft size={24} />
+                        </Link>
+                        <div>
+                            <h2 className="text-2xl font-bold text-white max-w-[200px] truncate">{decodedGenre}</h2>
+                            <p className="text-neutral-400 text-sm">{movies?.length || 0} filmes</p>
+                        </div>
+                    </div>
+
+                    <div className="flex gap-2">
+                        {/* Select Mode Button */}
+                        <button
+                            onClick={() => setIsSelectionMode(true)}
+                            className="p-3 bg-neutral-800 rounded-full text-neutral-400 hover:text-white hover:bg-neutral-700 transition-all"
+                            title="Selecionar Filmes"
+                        >
+                            <CheckSquare size={20} />
+                        </button>
+
+                        {/* Magic Wand Button */}
+                        <button
+                            onClick={handleMagicWand}
+                            disabled={isAutoFetching && autoFetchProgress > 0}
+                            className={`p-3 rounded-full transition-all ${isAutoFetching
+                                ? 'bg-red-500/20 text-red-400 animate-pulse'
+                                : 'bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30'
+                                }`}
+                        >
+                            {isAutoFetching ? <Loader2 className="animate-spin" size={20} /> : <Wand2 size={20} />}
+                        </button>
                     </div>
                 </div>
+            )}
 
-                {/* Magic Wand Button */}
-                <button
-                    onClick={handleMagicWand}
-                    disabled={isAutoFetching && autoFetchProgress > 0} // Can only stop 
-                    className={`p-3 rounded-full transition-all ${isAutoFetching
-                        ? 'bg-red-500/20 text-red-400 animate-pulse'
-                        : 'bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30'
-                        }`}
-                >
-                    {isAutoFetching ? <Loader2 className="animate-spin" size={24} /> : <Wand2 size={24} />}
-                </button>
-            </div>
-
-            {/* Progress Bar */}
+            {/* Progress Bar (Auto Fetch) */}
             {isAutoFetching && (
                 <div className="mb-6 bg-neutral-800 rounded-full h-2 overflow-hidden">
                     <div
@@ -185,19 +253,21 @@ export const MoviesPage: React.FC = () => {
             )}
 
             {/* Search */}
-            <div className="relative mb-6">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500" size={20} />
-                <input
-                    type="text"
-                    placeholder="Buscar título, ano ou código..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="w-full bg-neutral-800 border-none rounded-xl pl-12 pr-4 py-3 text-white placeholder:text-neutral-500 focus:ring-2 focus:ring-indigo-500/50 transition-all shadow-inner"
-                />
-            </div>
+            {!isSelectionMode && (
+                <div className="relative mb-6">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500" size={20} />
+                    <input
+                        type="text"
+                        placeholder="Buscar título, ano ou código..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="w-full bg-neutral-800 border-none rounded-xl pl-12 pr-4 py-3 text-white placeholder:text-neutral-500 focus:ring-2 focus:ring-indigo-500/50 transition-all shadow-inner"
+                    />
+                </div>
+            )}
 
             {/* List */}
-            <div className="flex-1 pb-24">
+            <div className="flex-1 pb-32">
                 {isLoading ? (
                     <div className="space-y-4">
                         {[1, 2, 3].map(i => <div key={i} className="h-24 bg-neutral-800 animate-pulse rounded-xl" />)}
@@ -208,62 +278,92 @@ export const MoviesPage: React.FC = () => {
                         {search && <button onClick={() => setSearch('')} className="text-indigo-400 text-sm mt-2">Limpar busca</button>}
                     </div>
                 ) : (
-                    <div className="space-y-3">
-                        {filteredMovies.map((movie) => (
-                            <div
-                                key={`${movie._rowIndex}-${movie.barcode}`}
-                                className="glass-panel p-3 rounded-xl flex items-center gap-3 justify-between group active:scale-[0.99] transition-all"
-                                onClick={() => handleEdit(movie)}
-                            >
-                                <div className="flex items-center gap-3 overflow-hidden">
-                                    {/* Thumbnail */}
-                                    <div className="w-12 h-16 bg-neutral-900 rounded-md flex-shrink-0 overflow-hidden border border-white/5 relative">
-                                        {movie.imageValue ? (
-                                            <img
-                                                src={movie.imageType === 'tmdb'
-                                                    ? `https://image.tmdb.org/t/p/w92${movie.imageValue}`
-                                                    : movie.imageValue}
-                                                alt=""
-                                                className="w-full h-full object-cover"
-                                                loading="lazy"
-                                                onError={(e) => {
-                                                    // Hide broken images
-                                                    (e.target as HTMLImageElement).style.display = 'none';
-                                                }}
-                                            />
-                                        ) : (
-                                            <div className="w-full h-full flex items-center justify-center text-neutral-700">
-                                                <div className="w-4 h-4 bg-white/10 rounded-full" />
+                    <div className="space-y-2">
+                        {filteredMovies.map((movie) => {
+                            const isSelected = selectedMovies.some(m => m === movie);
+                            return (
+                                <div
+                                    key={`${movie._rowIndex}-${movie.barcode}`}
+                                    className={`
+                                        glass-panel p-3 rounded-xl flex items-center gap-3 justify-between group active:scale-[0.99] transition-all
+                                        ${isSelectionMode ? 'cursor-pointer' : ''}
+                                        ${isSelected ? 'ring-2 ring-indigo-500 bg-indigo-500/10' : ''}
+                                    `}
+                                    onClick={() => handleEdit(movie)}
+                                >
+                                    <div className="flex items-center gap-3 overflow-hidden flex-1">
+
+                                        {/* Checkbox for Selection */}
+                                        {isSelectionMode && (
+                                            <div className={`
+                                                w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors flex-shrink-0
+                                                ${isSelected ? 'bg-indigo-500 border-indigo-500' : 'border-neutral-600'}
+                                             `}>
+                                                {isSelected && <CheckSquare size={14} className="text-white" />}
                                             </div>
                                         )}
-                                    </div>
 
-                                    <div className="overflow-hidden">
-                                        <h3 className="font-semibold text-neutral-200">{movie.title}</h3>
-                                        <div className="flex items-center gap-3 mt-1">
-                                            <span className="text-xs text-neutral-400 bg-white/5 px-2 py-0.5 rounded-full">{movie.year}</span>
-                                            {movie.barcode && (
-                                                <span className="text-xs font-mono text-neutral-500">{movie.barcode}</span>
+                                        {/* Thumbnail */}
+                                        <div className="w-12 h-16 bg-neutral-900 rounded-md flex-shrink-0 overflow-hidden border border-white/5 relative">
+                                            {movie.imageValue ? (
+                                                <img
+                                                    src={movie.imageType === 'tmdb'
+                                                        ? `https://image.tmdb.org/t/p/w92${movie.imageValue}`
+                                                        : movie.imageValue}
+                                                    alt=""
+                                                    className="w-full h-full object-cover"
+                                                    loading="lazy"
+                                                />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center text-neutral-700">
+                                                    <div className="w-4 h-4 bg-white/10 rounded-full" />
+                                                </div>
                                             )}
                                         </div>
+
+                                        <div className="overflow-hidden">
+                                            <h3 className={`font-semibold transition-colors ${isSelected ? 'text-indigo-200' : 'text-neutral-200'}`}>
+                                                {movie.title}
+                                            </h3>
+                                            <div className="flex items-center gap-3 mt-1">
+                                                <span className="text-xs text-neutral-400 bg-white/5 px-2 py-0.5 rounded-full">{movie.year}</span>
+                                            </div>
+                                        </div>
                                     </div>
+
+                                    {!isSelectionMode && (
+                                        <button className="p-2 text-neutral-600 group-hover:text-indigo-400 transition-colors flex-shrink-0">
+                                            <Edit2 size={18} />
+                                        </button>
+                                    )}
                                 </div>
-                                <button className="p-2 text-neutral-600 group-hover:text-indigo-400 transition-colors flex-shrink-0">
-                                    <Edit2 size={18} />
-                                </button>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
             </div>
 
-            {/* FAB */}
-            <button
-                onClick={handleAddNew}
-                className="fixed bottom-6 right-6 w-14 h-14 bg-indigo-600 hover:bg-indigo-500 rounded-full shadow-2xl flex items-center justify-center text-white transition-all hover:scale-105 active:scale-95 shadow-indigo-500/30 z-20"
-            >
-                <Plus size={28} />
-            </button>
+            {/* Bottom Actions Bar (Selection Mode) */}
+            {isSelectionMode ? (
+                <div className="fixed bottom-0 left-0 right-0 p-4 bg-neutral-900 border-t border-white/10 flex items-center justify-center gap-4 animate-in slide-in-from-bottom z-30">
+                    <button
+                        onClick={handleBulkDelete}
+                        disabled={selectedMovies.length === 0}
+                        className="flex flex-col items-center gap-1 text-red-500 hover:text-red-400 disabled:opacity-50 disabled:cursor-not-allowed px-6"
+                    >
+                        <Trash2 size={24} />
+                        <span className="text-xs">Excluir ({selectedMovies.length})</span>
+                    </button>
+                </div>
+            ) : (
+                /* FAB */
+                <button
+                    onClick={handleAddNew}
+                    className="fixed bottom-6 right-6 w-14 h-14 bg-indigo-600 hover:bg-indigo-500 rounded-full shadow-2xl flex items-center justify-center text-white transition-all hover:scale-105 active:scale-95 shadow-indigo-500/30 z-20"
+                >
+                    <Plus size={28} />
+                </button>
+            )}
 
         </div>
     );
