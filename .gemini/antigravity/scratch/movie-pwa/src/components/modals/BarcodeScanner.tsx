@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
+import Quagga from '@ericblade/quagga2';
 import { X, Camera, RefreshCw } from 'lucide-react';
 
 interface BarcodeScannerProps {
@@ -8,92 +8,97 @@ interface BarcodeScannerProps {
 }
 
 export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose }) => {
-    const scannerRef = useRef<Html5Qrcode | null>(null);
+    const scannerRef = useRef<HTMLDivElement>(null);
     const [error, setError] = useState<string>('');
     const [initializing, setInitializing] = useState(true);
-    const [hasPermission, setHasPermission] = useState(false);
+    const foundCodeRef = useRef<string | null>(null);
 
     useEffect(() => {
-        let mounted = true;
+        if (!scannerRef.current) return;
 
-        const manualStart = async () => {
+        const initQuagga = async () => {
             try {
-                // 1. Explicitly ask for permission first using native API
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: "environment" }
-                });
-
-                stream.getTracks().forEach(track => track.stop());
-
-                if (!mounted) return;
-                setHasPermission(true);
-
-                // 2. Initialize Library with specific formats
-                const formatsToSupport = [
-                    Html5QrcodeSupportedFormats.EAN_13,
-                    Html5QrcodeSupportedFormats.EAN_8,
-                    Html5QrcodeSupportedFormats.UPC_A,
-                    Html5QrcodeSupportedFormats.UPC_E,
-                    Html5QrcodeSupportedFormats.CODE_128,
-                ];
-
-                const scanner = new Html5Qrcode("reader", {
-                    formatsToSupport,
-                    verbose: false
-                });
-                scannerRef.current = scanner;
-
-                // 3. Start Scanning with optimal config + native detector
-                await scanner.start(
-                    { facingMode: "environment" },
-                    {
-                        fps: 15,
-                        qrbox: { width: 250, height: 150 },
-                        aspectRatio: 1.0,
-                        // @ts-ignore - Enable native barcode detector (Android/Chrome)
-                        useBarCodeDetectorIfSupported: true
+                await Quagga.init({
+                    inputStream: {
+                        name: "Live",
+                        type: "LiveStream",
+                        target: scannerRef.current!, // Pass the element directly
+                        constraints: {
+                            facingMode: "environment",
+                            width: { min: 640 },
+                            height: { min: 480 },
+                            aspectRatio: { min: 1, max: 2 }
+                        },
                     },
-                    (decodedText) => {
-                        if (mounted) onScan(decodedText);
+                    locator: {
+                        patchSize: "medium",
+                        halfSample: true,
                     },
-                    () => { }
-                );
-
-                if (mounted) setInitializing(false);
-
-            } catch (err: any) {
-                if (mounted) {
-                    console.error("Camera Init Error:", err);
-                    setInitializing(false);
-                    if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-                        setError("Permissão da câmera negada. Por favor, permita o acesso nas configurações do site.");
-                    } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
-                        setError("Nenhuma câmera encontrada no dispositivo.");
-                    } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
-                        setError("A câmera está em uso por outro aplicativo ou bloqueada.");
-                    } else {
-                        setError("Erro ao iniciar a câmera: " + (err.message || "Desconhecido"));
+                    numOfWorkers: 2, // Use web workers
+                    frequency: 10,
+                    decoder: {
+                        readers: [
+                            "ean_reader", // Standard for Retail/Movies
+                            "ean_8_reader",
+                            "upc_reader",
+                            "upc_e_reader",
+                            "code_128_reader" // Common shipping/tracking
+                        ],
+                        debug: {
+                            drawBoundingBox: false,
+                            showFrequency: false,
+                            drawScanline: false,
+                            showPattern: false
+                        },
+                    },
+                    locate: true, // Important for finding barcodes in the frame
+                }, (err) => {
+                    if (err) {
+                        console.error("Quagga init failed:", err);
+                        setError("Erro ao iniciar câmera. Verifique permissões/HTTPS.");
+                        setInitializing(false);
+                        return;
                     }
-                }
+
+                    Quagga.start();
+                    setInitializing(false);
+                });
+
+                Quagga.onDetected((data) => {
+                    const code = data.codeResult.code;
+                    if (code && code !== foundCodeRef.current) {
+                        // Basic validation: often barcodes are > 3 chars
+                        if (code.length > 3) {
+                            foundCodeRef.current = code;
+                            // Visual feedback could go here
+                            Quagga.stop();
+                            onScan(code);
+                        }
+                    }
+                });
+
+            } catch (e: any) {
+                console.error("Setup error:", e);
+                setError(e.message || "Erro desconhecido");
+                setInitializing(false);
             }
         };
 
-        const timer = setTimeout(manualStart, 200);
+        // Small delay to ensure DOM mount
+        const timer = setTimeout(initQuagga, 100);
 
         return () => {
-            mounted = false;
             clearTimeout(timer);
-            if (scannerRef.current && scannerRef.current.isScanning) {
-                scannerRef.current.stop().then(() => {
-                    scannerRef.current?.clear();
-                }).catch(err => console.warn("Stop failed", err));
+            try {
+                Quagga.stop();
+                Quagga.offDetected();
+            } catch (e) {
+                console.warn("Stop error", e);
             }
         };
     }, []);
 
     const handleRetry = () => {
-        setError('');
-        setInitializing(true);
         window.location.reload();
     };
 
@@ -108,26 +113,33 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose 
                 </button>
             </div>
 
-            <h3 className="text-white font-medium mb-6">Escanear Código</h3>
+            <h3 className="text-white font-medium mb-4 z-10">Escanear Código</h3>
 
-            <div className="relative w-full max-w-sm aspect-square bg-neutral-900 rounded-2xl border-2 border-white/10 overflow-hidden flex flex-col items-center justify-center shadow-2xl">
-                <div id="reader" className="w-full h-full absolute inset-0 bg-black"></div>
+            <div className="relative w-full max-w-sm aspect-[3/4] bg-black rounded-2xl border-2 border-white/10 overflow-hidden flex flex-col items-center justify-center shadow-2xl">
+
+                {/* Visual Guide Overlay */}
+                <div className="absolute inset-0 z-20 pointer-events-none">
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-32 border-2 border-red-500/50 rounded-lg shadow-[0_0_0_9999px_rgba(0,0,0,0.5)]">
+                        <div className="absolute top-1/2 w-full h-0.5 bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]"></div>
+                    </div>
+                </div>
+
+                {/* Camera Container */}
+                <div ref={scannerRef} className="w-full h-full [&>video]:object-cover [&>video]:w-full [&>video]:h-full [&>canvas]:hidden"></div>
 
                 {initializing && !error && (
-                    <div className="z-10 text-white text-sm animate-pulse flex flex-col items-center gap-3">
+                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-black">
                         <Camera className="animate-bounce text-indigo-400" size={32} />
-                        <span>{hasPermission ? "Abrindo câmera..." : "Solicitando permissão..."}</span>
+                        <span className="text-white text-sm">Iniciando câmera...</span>
                     </div>
                 )}
 
                 {error && (
-                    <div className="z-10 px-6 text-center max-w-xs animate-in fade-in zoom-in">
-                        <div className="bg-red-500/10 p-4 rounded-xl border border-red-500/20 mb-4">
-                            <p className="text-red-400 text-sm font-medium leading-relaxed">{error}</p>
-                        </div>
+                    <div className="absolute inset-0 z-30 bg-black/90 flex flex-col items-center justify-center p-6 text-center">
+                        <p className="text-red-400 text-sm mb-4 font-medium">{error}</p>
                         <button
                             onClick={handleRetry}
-                            className="bg-white text-black px-6 py-2 rounded-lg text-sm font-semibold hover:bg-neutral-200 transition-colors flex items-center justify-center gap-2 w-full"
+                            className="bg-white text-black px-6 py-2 rounded-lg text-sm font-semibold flex items-center gap-2"
                         >
                             <RefreshCw size={16} />
                             Tentar Novamente
@@ -136,13 +148,9 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose 
                 )}
             </div>
 
-            {!error && !initializing && (
-                <div className="mt-8 flex flex-col items-center gap-2 animate-in fade-in slide-in-from-bottom-4">
-                    <p className="text-neutral-400 text-sm bg-black/50 px-4 py-2 rounded-full backdrop-blur-sm border border-white/5">
-                        Centralize o código de barras
-                    </p>
-                </div>
-            )}
+            <p className="text-neutral-400 mt-8 text-xs text-center max-w-xs z-10 bg-black/50 px-4 py-2 rounded-full">
+                Posicione o código de barras na linha vermelha
+            </p>
         </div>
     );
 };
