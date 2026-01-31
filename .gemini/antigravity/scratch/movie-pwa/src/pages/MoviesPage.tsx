@@ -2,7 +2,7 @@ import React, { useState, useMemo, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useMovies } from '../hooks/useMovies';
-import { ArrowLeft, Search, Plus, Edit2, Wand2, Loader2, CheckSquare, Trash2, X } from 'lucide-react';
+import { ArrowLeft, Search, Plus, Edit2, Wand2, Loader2, CheckSquare, Trash2, X, Star, Eye } from 'lucide-react';
 import { MovieEditorModal } from '../components/modals/MovieEditorModal';
 import { GoogleSheetsService } from '../services/GoogleSheetsService';
 import type { Movie } from '../types';
@@ -325,8 +325,22 @@ export const MoviesPage: React.FC = () => {
                                             <h3 className={`font-semibold transition-colors ${isSelected ? 'text-indigo-200' : 'text-neutral-200'}`}>
                                                 {movie.title}
                                             </h3>
-                                            <div className="flex items-center gap-3 mt-1">
+                                            <div className="flex flex-wrap items-center gap-2 mt-1">
                                                 <span className="text-xs text-neutral-400 bg-white/5 px-2 py-0.5 rounded-full">{movie.year}</span>
+
+                                                {/* User Rating Badge */}
+                                                {movie.userRating && (
+                                                    <span className="text-xs text-yellow-500 bg-yellow-500/10 px-2 py-0.5 rounded-full flex items-center gap-1 font-medium">
+                                                        <Star size={10} fill="currentColor" /> {movie.userRating}
+                                                    </span>
+                                                )}
+
+                                                {/* Watched Badge */}
+                                                {movie.watched && (
+                                                    <span className="text-xs text-green-500 bg-green-500/10 px-2 py-0.5 rounded-full flex items-center gap-1" title="Assistido">
+                                                        <Eye size={12} />
+                                                    </span>
+                                                )}
                                             </div>
                                         </div>
                                     </div>
@@ -368,3 +382,4 @@ export const MoviesPage: React.FC = () => {
         </div>
     );
 };
+

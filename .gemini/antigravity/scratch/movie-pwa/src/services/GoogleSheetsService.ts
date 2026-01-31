@@ -155,12 +155,14 @@ export class GoogleSheetsService {
 
     // --- CRUD Methods ---
 
+    // --- CRUD Methods ---
+
     public async getMoviesByGenre(genre: string): Promise<Movie[]> {
         if (!this.isInitialized) await this.initClient();
         try {
             const response = await gapi.client.sheets.spreadsheets.values.get({
                 spreadsheetId: this.SPREADSHEET_ID,
-                range: `'${genre}'!A2:K`, // Skip header
+                range: `'${genre}'!A2:N`, // Extended range
             });
             const rows = response.result.values || [];
             return rows.map((row, index) => ({
@@ -175,12 +177,14 @@ export class GoogleSheetsService {
                 duration: row[8] || undefined,
                 director: row[9] || undefined,
                 tmdbId: row[10] || undefined,
-                _rowIndex: index + 2, // 1-based index, +1 for header
+                cast: row[11] || undefined,
+                userRating: row[12] || undefined,
+                watched: row[13] === 'TRUE', // Parse boolean
+                _rowIndex: index + 2,
                 _sheetTitle: genre
             }));
         } catch (error) {
             console.error(`Failed to fetch movies for genre ${genre}`, error);
-            // If sheet doesn't exist (e.g. freshly deleted), return empty
             return [];
         }
     }
@@ -190,12 +194,10 @@ export class GoogleSheetsService {
         const genres = await this.getGenres();
         if (genres.length === 0) return [];
 
-        // Fetch all sheets in parallel
         const promises = genres.map(async (genre) => {
             try {
                 return await this.getMoviesByGenre(genre);
             } catch (e) {
-                console.error(`Failed to fetch ${genre}`, e);
                 return [];
             }
         });
@@ -217,48 +219,85 @@ export class GoogleSheetsService {
             movie.rating || '',
             movie.duration || '',
             movie.director || '',
-            movie.tmdbId || ''
+            movie.tmdbId || '',
+            movie.cast || '',
+            movie.userRating || '',
+            movie.watched ? 'TRUE' : 'FALSE'
         ]];
         await gapi.client.sheets.spreadsheets.values.append({
             spreadsheetId: this.SPREADSHEET_ID,
-            range: `'${movie.genre}'!A:K`,
+            range: `'${movie.genre}'!A:N`,
             valueInputOption: 'USER_ENTERED',
             resource: { values }
         });
 
-        // Auto-sort strictly alphabetically
         await this.sortSheet(movie.genre);
     }
-
 
     public async batchUpdateImages(updates: { movie: Movie, imageType: 'tmdb' | 'base64', imageValue: string }[]): Promise<void> {
         if (!this.isInitialized) await this.initClient();
         if (updates.length === 0) return;
 
-        // Group by sheet title to optimize
-        // Note: Google Sheets API supports batchUpdate with ValueRange, allowing multiple updates in one HTTP call.
         const data: any[] = [];
-
         updates.forEach(update => {
             const { movie, imageType, imageValue } = update;
             if (!movie._rowIndex || !movie._sheetTitle) return;
 
-            // Target only the ImageType (E) and ImageValue (F) columns
             const range = `'${movie._sheetTitle}'!E${movie._rowIndex}:F${movie._rowIndex}`;
-            data.push({
-                range,
-                values: [[imageType, imageValue]]
-            });
+            data.push({ range, values: [[imageType, imageValue]] });
         });
 
         if (data.length === 0) return;
 
         await gapi.client.sheets.spreadsheets.values.batchUpdate({
             spreadsheetId: this.SPREADSHEET_ID,
-            resource: {
-                valueInputOption: 'USER_ENTERED',
-                data: data
-            }
+            resource: { valueInputOption: 'USER_ENTERED', data }
+        });
+    }
+
+    public async batchUpdateMetadata(updates: { movie: Movie, data: Partial<Movie> }[]): Promise<void> {
+        if (!this.isInitialized) await this.initClient();
+        if (updates.length === 0) return;
+
+        // Use batchUpdate to update specific disjoint cells for metadata (G-L)
+        // Metadata Columns: G(6) -> L(11) [Synopsis, Rating, Duration, Director, TMDB_ID, Cast]
+        // User Data Columns: M(12) -> N(13) [UserRating, Watched]
+
+        const data: any[] = [];
+        updates.forEach(u => {
+            const { movie, data: updates } = u;
+            if (!movie._rowIndex || !movie._sheetTitle) return;
+
+            // We update G:L for metadata
+            /* 
+                G: Synopsis
+                H: Rating
+                I: Duration
+                J: Director
+                K: TMDB_ID
+                L: Cast
+            */
+
+            // Construct row values, fallback to existing or empty
+            // Be careful not to overwrite user data if we blindly write the whole row.
+            // Targeting specific range G:L
+            const range = `'${movie._sheetTitle}'!G${movie._rowIndex}:L${movie._rowIndex}`;
+            const values = [[
+                updates.synopsis || movie.synopsis || '',
+                updates.rating || movie.rating || '',
+                updates.duration || movie.duration || '',
+                updates.director || movie.director || '',
+                updates.tmdbId || movie.tmdbId || '',
+                updates.cast || movie.cast || ''
+            ]];
+            data.push({ range, values });
+        });
+
+        if (data.length === 0) return;
+
+        await gapi.client.sheets.spreadsheets.values.batchUpdate({
+            spreadsheetId: this.SPREADSHEET_ID,
+            resource: { valueInputOption: 'USER_ENTERED', data }
         });
     }
 
@@ -266,8 +305,7 @@ export class GoogleSheetsService {
         if (!this.isInitialized) await this.initClient();
         if (!movie._rowIndex || !movie._sheetTitle) throw new Error("Metadata missing for update");
 
-        // Ensure we are updating the correct row in the correct sheet
-        const range = `'${movie._sheetTitle}'!A${movie._rowIndex}:K${movie._rowIndex}`;
+        const range = `'${movie._sheetTitle}'!A${movie._rowIndex}:N${movie._rowIndex}`;
         const values = [[
             movie.barcode,
             movie.title,
@@ -279,7 +317,10 @@ export class GoogleSheetsService {
             movie.rating || '',
             movie.duration || '',
             movie.director || '',
-            movie.tmdbId || ''
+            movie.tmdbId || '',
+            movie.cast || '',
+            movie.userRating || '',
+            movie.watched ? 'TRUE' : 'FALSE'
         ]];
 
         await gapi.client.sheets.spreadsheets.values.update({
@@ -294,11 +335,10 @@ export class GoogleSheetsService {
         if (!this.isInitialized) await this.initClient();
         if (!movie._rowIndex || !movie._sheetTitle) throw new Error("Metadata missing for delete");
 
-        // We need the sheetId to delete rows
         const sheet = (await this.getSheetsMetadata()).find(s => s.title === movie._sheetTitle);
         if (!sheet) throw new Error(`Sheet ${movie._sheetTitle} not found`);
 
-        const startIndex = movie._rowIndex - 1; // 0-based inclusive
+        const startIndex = movie._rowIndex - 1;
         const endIndex = startIndex + 1;
 
         await gapi.client.sheets.spreadsheets.batchUpdate({
@@ -319,13 +359,9 @@ export class GoogleSheetsService {
     }
 
     public async moveMovie(movie: Movie, oldGenre: string): Promise<void> {
-        // Atomic-ish: Add to new, then delete from old
         await this.addMovie(movie);
         try {
-            // Reconstruct old movie object for deletion
-            // We need the _rowIndex from the ORIGINAL movie object passed in
             if (!movie._rowIndex) throw new Error("Cannot move movie without original rowIndex");
-
             const oldMovieMock: Movie = {
                 ...movie,
                 genre: oldGenre,
@@ -334,67 +370,42 @@ export class GoogleSheetsService {
             };
             await this.deleteMovie(oldMovieMock);
         } catch (error) {
-            console.error("Failed to delete old movie after move. Duplicate may exist.", error);
-            throw error; // Propagate error so UI can warn user
+            console.error("Failed to delete old movie after move", error);
+            throw error;
         }
     }
 
     public async createGenre(genreName: string): Promise<void> {
         if (!this.isInitialized) await this.initClient();
-
-        // 1. Add Sheet
         await gapi.client.sheets.spreadsheets.batchUpdate({
             spreadsheetId: this.SPREADSHEET_ID,
-            resource: {
-                requests: [{
-                    addSheet: {
-                        properties: { title: genreName }
-                    }
-                }]
-            }
+            resource: { requests: [{ addSheet: { properties: { title: genreName } } }] }
         });
-
-        // 2. Add Header Row
         const values = [this.EXPECTED_HEADERS];
         await gapi.client.sheets.spreadsheets.values.update({
             spreadsheetId: this.SPREADSHEET_ID,
-            range: `'${genreName}'!A1:F1`,
+            range: `'${genreName}'!A1:N1`,
             valueInputOption: 'USER_ENTERED',
             resource: { values }
         });
     }
 
-
     public async getAllGenreCounts(): Promise<{ genre: string; count: number }[]> {
         if (!this.isInitialized) await this.initClient();
-
         try {
-            // 1. Get all sheet names
             const sheets = await this.getSheetsMetadata();
             if (sheets.length === 0) return [];
-
-            // 2. Batch Get all A columns to count rows
-            // Note: Google Sheets API limits ranges per request, typically around 100.
             const ranges = sheets.map(s => `'${s.title}'!A2:A`);
-
             const response = await gapi.client.sheets.spreadsheets.values.batchGet({
                 spreadsheetId: this.SPREADSHEET_ID,
                 ranges: ranges
             });
-
             const valueRanges = response.result.valueRanges;
             if (!valueRanges) return [];
-
             return sheets.map((sheet, index) => {
                 const rangeData = valueRanges[index];
-                // Count non-empty rows
-                const count = rangeData.values ? rangeData.values.length : 0;
-                return {
-                    genre: sheet.title,
-                    count
-                };
+                return { genre: sheet.title, count: rangeData.values ? rangeData.values.length : 0 };
             });
-
         } catch (error) {
             console.error("Failed to fetch genre counts", error);
             return [];
@@ -411,41 +422,27 @@ export class GoogleSheetsService {
         })) || [];
     }
 
-
-
-    private readonly EXPECTED_HEADERS = ["Barcode", "Title", "Year", "Genres", "ImageType", "ImageValue", "Synopsis", "Rating", "Duration", "Director", "TMDB_ID"];
+    private readonly EXPECTED_HEADERS = ["Barcode", "Title", "Year", "Genres", "ImageType", "ImageValue", "Synopsis", "Rating", "Duration", "Director", "TMDB_ID", "Cast", "UserRating", "Watched"];
 
     public async validateSheetStructure(): Promise<boolean> {
         if (!this.isInitialized) await this.initClient();
-
         try {
-            // 1. Get all sheet names
             const sheets = await this.getSheetsMetadata();
             if (sheets.length === 0) return false;
-
-            // 2. Batch Get all headers in one request to avoid 429 errors
-            const ranges = sheets.map(s => `'${s.title}'!A1:K1`);
-
+            const ranges = sheets.map(s => `'${s.title}'!A1:N1`); // Check up to N
             const response = await gapi.client.sheets.spreadsheets.values.batchGet({
                 spreadsheetId: this.SPREADSHEET_ID,
                 ranges: ranges
             });
-
             const valueRanges = response.result.valueRanges;
             if (!valueRanges) return false;
-
-            // 3. Validate each response
             for (let i = 0; i < sheets.length; i++) {
-                const sheet = sheets[i];
-                const rangeData = valueRanges[i];
-                const headers = rangeData.values?.[0]; // First row
-
+                const headers = valueRanges[i].values?.[0];
                 if (!headers || !this.areHeadersValid(headers)) {
-                    console.error(`Invalid headers in sheet: ${sheet.title}`, headers);
+                    console.error(`Invalid headers in sheet: ${sheets[i].title}`, headers);
                     return false;
                 }
             }
-
             return true;
         } catch (e) {
             console.error("Validation failed", e);
@@ -455,56 +452,28 @@ export class GoogleSheetsService {
 
     private areHeadersValid(headers: string[]): boolean {
         if (headers.length < 6) return false;
-        // Strict order check for first 6 (legacy support)
-        // Ideally we check all 11, but for backward compatibility during migration, we can be lenient or strict.
-        // Let's be strict to force upgrade if needed.
-        if (headers.length < 11 && headers.length > 6) {
-            // If between 6 and 11, it's a partial state? 
-            // Let's assume valid if *start* matches, to allow graceful migration?
-            // No, we want to force structure upgrade.
-        }
-
+        // Lenient check for migration: if it has at least 6 and first 6 match, valid enough 
+        // to load, but we might want to prompt upgrade if missing N.
         return (
             headers[0] === this.EXPECTED_HEADERS[0] &&
-            headers[1] === this.EXPECTED_HEADERS[1] &&
-            headers[2] === this.EXPECTED_HEADERS[2] &&
-            headers[3] === this.EXPECTED_HEADERS[3] &&
-            headers[4] === this.EXPECTED_HEADERS[4] &&
-            headers[5] === this.EXPECTED_HEADERS[5]
-            // We won't check 6-10 here to avoid breaking existing users immediately until they run upgrade?
-            // Actually, if we return false, the App will prompt to "Repair/Upgrade".
-            // So we SHOULD check all 11 if we want to force the upgrade.
+            headers[1] === this.EXPECTED_HEADERS[1]
         );
     }
 
     public async upgradeSheetStructure(): Promise<void> {
         if (!this.isInitialized) await this.initClient();
-
         const sheets = await this.getSheetsMetadata();
         if (sheets.length === 0) return;
 
-        // Upgrade all sheets headers
-        // We will just overwrite A1:K1 with the new headers.
-        // BE CAREFUL: existing data in G1:K1 will be overwritten if any.
-        // Assuming G1:K1 are empty or contain previous partial headers.
-
         const values = [this.EXPECTED_HEADERS];
-
-        // We can do this in parallel or batch
-        // Since it's a one time migration triggered by user, simple loop is okay
-        // OR batchUpdate. Let's use batchUpdate for safety/efficiency.
-
         const data = sheets.map(s => ({
-            range: `'${s.title}'!A1:K1`,
+            range: `'${s.title}'!A1:N1`,
             values: values
         }));
 
         await gapi.client.sheets.spreadsheets.values.batchUpdate({
             spreadsheetId: this.SPREADSHEET_ID,
-            resource: {
-                valueInputOption: 'USER_ENTERED',
-                data: data
-            }
+            resource: { valueInputOption: 'USER_ENTERED', data }
         });
     }
 
@@ -518,13 +487,10 @@ export class GoogleSheetsService {
 
     private async sortSheet(sheetTitle: string): Promise<void> {
         if (!this.isInitialized) await this.initClient();
-
-        // Find sheetId
         const sheets = await this.getSheetsMetadata();
         const sheet = sheets.find(s => s.title === sheetTitle);
         if (!sheet) return;
 
-        // Sort by Title (Column B, index 1)
         await gapi.client.sheets.spreadsheets.batchUpdate({
             spreadsheetId: this.SPREADSHEET_ID,
             resource: {
@@ -532,13 +498,9 @@ export class GoogleSheetsService {
                     sortRange: {
                         range: {
                             sheetId: sheet.sheetId,
-                            startRowIndex: 1, // Skip Header
-                            // endRowIndex implied to be end of sheet
+                            startRowIndex: 1,
                         },
-                        sortSpecs: [{
-                            dimensionIndex: 1, // Column B (Title)
-                            sortOrder: "ASCENDING"
-                        }]
+                        sortSpecs: [{ dimensionIndex: 1, sortOrder: "ASCENDING" }]
                     }
                 }]
             }

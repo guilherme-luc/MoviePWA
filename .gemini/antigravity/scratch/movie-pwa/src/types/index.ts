@@ -9,10 +9,13 @@ export interface Movie {
 
     // NEW Phase 3 Extended Data
     synopsis?: string;
-    rating?: string;   // e.g. "8.5"
+    rating?: string; // Global Rating (TMDB)
     duration?: string; // e.g. "1h 50m"
     director?: string;
+    cast?: string; // [NEW] Top cast members
     tmdbId?: string;
+    userRating?: string; // [NEW] User's personal rating
+    watched?: boolean; // [NEW] Watched status
 
     // Metadata for internal use
     _rowIndex?: number;
