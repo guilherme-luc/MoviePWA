@@ -10,7 +10,7 @@ import { MovieEditorModal } from '../components/modals/MovieEditorModal';
 import type { Movie } from '../types';
 
 export const HomePage: React.FC = () => {
-    const { data: genres } = useGenres();
+    const { data: genres, isLoading } = useGenres();
     const { data: allMovies } = useAllMovies();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
