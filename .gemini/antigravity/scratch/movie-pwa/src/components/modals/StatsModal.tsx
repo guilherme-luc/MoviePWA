@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { X, PieChart, TrendingUp, Calendar, Film } from 'lucide-react';
+import { X, PieChart, TrendingUp, Calendar } from 'lucide-react';
 import type { Movie } from '../../types';
 
 interface StatsModalProps {
