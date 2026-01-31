@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Quagga from '@ericblade/quagga2';
-import { X, Camera, RefreshCw } from 'lucide-react';
+import { X, RefreshCw } from 'lucide-react';
 
 interface BarcodeScannerProps {
     onScan: (code: string) => void;
@@ -21,40 +21,35 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose 
                 await Quagga.init({
                     inputStream: {
                         type: "LiveStream",
-                        target: scannerRef.current!, // Pass the element directly
+                        target: scannerRef.current!,
                         constraints: {
                             facingMode: "environment",
-                            width: { min: 640 },
-                            height: { min: 480 },
-                            aspectRatio: { min: 1, max: 2 }
+                            width: { min: 1280 }, // HD Resolution
+                            height: { min: 720 },
+                            aspectRatio: { min: 1, max: 2 },
+                            advanced: [{ focusMode: "continuous" } as any] // Try to force focus
                         },
                     },
                     locator: {
                         patchSize: "medium",
-                        halfSample: true,
+                        halfSample: false, // CRITICAL: Process full resolution for accuracy
                     },
-                    numOfWorkers: 2, // Use web workers
+                    numOfWorkers: navigator.hardwareConcurrency || 2,
                     frequency: 10,
                     decoder: {
                         readers: [
-                            "ean_reader", // Standard for Retail/Movies
+                            "ean_reader",
                             "ean_8_reader",
+                            "code_128_reader",
                             "upc_reader",
-                            "upc_e_reader",
-                            "code_128_reader" // Common shipping/tracking
+                            "upc_e_reader"
                         ],
-                        debug: {
-                            drawBoundingBox: false,
-                            showFrequency: false,
-                            drawScanline: false,
-                            showPattern: false
-                        },
                     },
-                    locate: true, // Important for finding barcodes in the frame
+                    locate: true,
                 }, (err) => {
                     if (err) {
                         console.error("Quagga init failed:", err);
-                        setError("Erro ao iniciar câmera. Verifique permissões/HTTPS.");
+                        setError("Erro ao iniciar câmera. " + err.message);
                         setInitializing(false);
                         return;
                     }
@@ -65,14 +60,15 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose 
 
                 Quagga.onDetected((data) => {
                     const code = data.codeResult.code;
-                    if (code && code !== foundCodeRef.current) {
-                        // Basic validation: often barcodes are > 3 chars
-                        if (code.length > 3) {
-                            foundCodeRef.current = code;
-                            // Visual feedback could go here
-                            Quagga.stop();
-                            onScan(code);
-                        }
+                    // Strict validation: Check for mostly numbers and reasonable length
+                    if (code && code.length >= 8 && code !== foundCodeRef.current) {
+                        // Debounce slightly
+                        const confidence = (data.codeResult as any).confidence;
+                        if (confidence && confidence < 0.7) return;
+
+                        foundCodeRef.current = code;
+                        Quagga.stop();
+                        onScan(code);
                     }
                 });
 
@@ -83,8 +79,7 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose 
             }
         };
 
-        // Small delay to ensure DOM mount
-        const timer = setTimeout(initQuagga, 100);
+        const timer = setTimeout(initQuagga, 200);
 
         return () => {
             clearTimeout(timer);
@@ -114,22 +109,25 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose 
 
             <h3 className="text-white font-medium mb-4 z-10">Escanear Código</h3>
 
-            <div className="relative w-full max-w-sm aspect-[3/4] bg-black rounded-2xl border-2 border-white/10 overflow-hidden flex flex-col items-center justify-center shadow-2xl">
+            <div className="relative w-full max-w-md h-[60vh] bg-black rounded-xl overflow-hidden flex flex-col items-center justify-center border border-white/10">
 
-                {/* Visual Guide Overlay */}
-                <div className="absolute inset-0 z-20 pointer-events-none">
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-32 border-2 border-red-500/50 rounded-lg shadow-[0_0_0_9999px_rgba(0,0,0,0.5)]">
-                        <div className="absolute top-1/2 w-full h-0.5 bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]"></div>
+                {/* Visual Guide - Responsive Line */}
+                <div className="absolute inset-0 z-20 pointer-events-none flex items-center justify-center">
+                    <div className="w-[85%] h-32 border-2 border-red-500/50 rounded-lg shadow-[0_0_0_9999px_rgba(0,0,0,0.5)] relative">
+                        <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-red-500 animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]"></div>
+                        <p className="absolute -top-8 w-full text-center text-white/80 text-xs font-medium">
+                            Alinhe o código aqui
+                        </p>
                     </div>
                 </div>
 
-                {/* Camera Container */}
-                <div ref={scannerRef} className="w-full h-full [&>video]:object-cover [&>video]:w-full [&>video]:h-full [&>canvas]:hidden"></div>
+                {/* Camera Container - Object Contain to ensure WYSIWYG */}
+                <div ref={scannerRef} className="w-full h-full bg-black flex items-center justify-center [&>video]:max-w-full [&>video]:max-h-full [&>video]:object-contain [&>canvas]:hidden"></div>
 
                 {initializing && !error && (
                     <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-black">
-                        <Camera className="animate-bounce text-indigo-400" size={32} />
-                        <span className="text-white text-sm">Iniciando câmera...</span>
+                        <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                        <span className="text-white text-sm">Ajustando câmera...</span>
                     </div>
                 )}
 
@@ -147,8 +145,8 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose 
                 )}
             </div>
 
-            <p className="text-neutral-400 mt-8 text-xs text-center max-w-xs z-10 bg-black/50 px-4 py-2 rounded-full">
-                Posicione o código de barras na linha vermelha
+            <p className="text-neutral-500 mt-6 text-xs text-center max-w-xs">
+                Aproxime ou afaste a câmera até focar.
             </p>
         </div>
     );
