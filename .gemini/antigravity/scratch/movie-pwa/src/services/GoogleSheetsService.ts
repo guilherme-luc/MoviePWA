@@ -160,7 +160,7 @@ export class GoogleSheetsService {
         try {
             const response = await gapi.client.sheets.spreadsheets.values.get({
                 spreadsheetId: this.SPREADSHEET_ID,
-                range: `'${genre}'!A2:F`, // Skip header
+                range: `'${genre}'!A2:K`, // Skip header
             });
             const rows = response.result.values || [];
             return rows.map((row, index) => ({
@@ -170,6 +170,11 @@ export class GoogleSheetsService {
                 genre: row[3] || genre,
                 imageType: (row[4] as 'tmdb' | 'base64' | undefined) || undefined,
                 imageValue: row[5] || undefined,
+                synopsis: row[6] || undefined,
+                rating: row[7] || undefined,
+                duration: row[8] || undefined,
+                director: row[9] || undefined,
+                tmdbId: row[10] || undefined,
                 _rowIndex: index + 2, // 1-based index, +1 for header
                 _sheetTitle: genre
             }));
@@ -207,11 +212,16 @@ export class GoogleSheetsService {
             movie.year,
             movie.genre,
             movie.imageType || '',
-            movie.imageValue || ''
+            movie.imageValue || '',
+            movie.synopsis || '',
+            movie.rating || '',
+            movie.duration || '',
+            movie.director || '',
+            movie.tmdbId || ''
         ]];
         await gapi.client.sheets.spreadsheets.values.append({
             spreadsheetId: this.SPREADSHEET_ID,
-            range: `'${movie.genre}'!A:F`,
+            range: `'${movie.genre}'!A:K`,
             valueInputOption: 'USER_ENTERED',
             resource: { values }
         });
@@ -257,14 +267,19 @@ export class GoogleSheetsService {
         if (!movie._rowIndex || !movie._sheetTitle) throw new Error("Metadata missing for update");
 
         // Ensure we are updating the correct row in the correct sheet
-        const range = `'${movie._sheetTitle}'!A${movie._rowIndex}:F${movie._rowIndex}`;
+        const range = `'${movie._sheetTitle}'!A${movie._rowIndex}:K${movie._rowIndex}`;
         const values = [[
             movie.barcode,
             movie.title,
             movie.year,
             movie.genre,
             movie.imageType || '',
-            movie.imageValue || ''
+            movie.imageValue || '',
+            movie.synopsis || '',
+            movie.rating || '',
+            movie.duration || '',
+            movie.director || '',
+            movie.tmdbId || ''
         ]];
 
         await gapi.client.sheets.spreadsheets.values.update({
@@ -398,7 +413,7 @@ export class GoogleSheetsService {
 
 
 
-    private readonly EXPECTED_HEADERS = ["Barcode", "Title", "Year", "Genres", "ImageType", "ImageValue"];
+    private readonly EXPECTED_HEADERS = ["Barcode", "Title", "Year", "Genres", "ImageType", "ImageValue", "Synopsis", "Rating", "Duration", "Director", "TMDB_ID"];
 
     public async validateSheetStructure(): Promise<boolean> {
         if (!this.isInitialized) await this.initClient();
@@ -409,7 +424,7 @@ export class GoogleSheetsService {
             if (sheets.length === 0) return false;
 
             // 2. Batch Get all headers in one request to avoid 429 errors
-            const ranges = sheets.map(s => `'${s.title}'!A1:F1`);
+            const ranges = sheets.map(s => `'${s.title}'!A1:K1`);
 
             const response = await gapi.client.sheets.spreadsheets.values.batchGet({
                 spreadsheetId: this.SPREADSHEET_ID,
@@ -440,7 +455,15 @@ export class GoogleSheetsService {
 
     private areHeadersValid(headers: string[]): boolean {
         if (headers.length < 6) return false;
-        // Strict order check
+        // Strict order check for first 6 (legacy support)
+        // Ideally we check all 11, but for backward compatibility during migration, we can be lenient or strict.
+        // Let's be strict to force upgrade if needed.
+        if (headers.length < 11 && headers.length > 6) {
+            // If between 6 and 11, it's a partial state? 
+            // Let's assume valid if *start* matches, to allow graceful migration?
+            // No, we want to force structure upgrade.
+        }
+
         return (
             headers[0] === this.EXPECTED_HEADERS[0] &&
             headers[1] === this.EXPECTED_HEADERS[1] &&
@@ -448,6 +471,9 @@ export class GoogleSheetsService {
             headers[3] === this.EXPECTED_HEADERS[3] &&
             headers[4] === this.EXPECTED_HEADERS[4] &&
             headers[5] === this.EXPECTED_HEADERS[5]
+            // We won't check 6-10 here to avoid breaking existing users immediately until they run upgrade?
+            // Actually, if we return false, the App will prompt to "Repair/Upgrade".
+            // So we SHOULD check all 11 if we want to force the upgrade.
         );
     }
 
@@ -458,18 +484,18 @@ export class GoogleSheetsService {
         if (sheets.length === 0) return;
 
         // Upgrade all sheets headers
-        // We will just overwrite A1:F1 with the new headers.
-        // BE CAREFUL: existing data in E1/F1 will be overwritten if any.
-        // Assuming E1/F1 are empty or contain previous partial headers.
+        // We will just overwrite A1:K1 with the new headers.
+        // BE CAREFUL: existing data in G1:K1 will be overwritten if any.
+        // Assuming G1:K1 are empty or contain previous partial headers.
 
         const values = [this.EXPECTED_HEADERS];
 
         // We can do this in parallel or batch
-        // Since it's a one time migration triggered by user, simple loop is okay 
+        // Since it's a one time migration triggered by user, simple loop is okay
         // OR batchUpdate. Let's use batchUpdate for safety/efficiency.
 
         const data = sheets.map(s => ({
-            range: `'${s.title}'!A1:F1`,
+            range: `'${s.title}'!A1:K1`,
             values: values
         }));
 

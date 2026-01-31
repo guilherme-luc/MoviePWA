@@ -62,7 +62,12 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
         year: new Date().getFullYear().toString(),
         genre: initialGenre || '',
         barcode: '',
-        posterBase64: ''
+        posterBase64: '',
+        synopsis: '',
+        rating: '',
+        duration: '',
+        director: '',
+        tmdbId: ''
     });
 
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -79,7 +84,12 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                 year: new Date().getFullYear().toString(),
                 genre: initialGenre || '',
                 barcode: '',
-                posterBase64: ''
+                posterBase64: '',
+                synopsis: '',
+                rating: '',
+                duration: '',
+                director: '',
+                tmdbId: ''
             });
         }
     }, [movieToEdit, isOpen, initialGenre]);
@@ -119,13 +129,17 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
             if (searchData.results && searchData.results.length > 0) {
                 const movie = searchData.results[0];
 
+                // Get Detailed Info
+                const detailsRes = await fetch(`https://api.themoviedb.org/3/movie/${movie.id}?api_key=${API_KEY}&language=pt-BR&append_to_response=credits`);
+                const details = await detailsRes.json();
+
                 // Get Year
-                const year = movie.release_date ? parseInt(movie.release_date.split('-')[0]) : new Date().getFullYear();
+                const year = details.release_date ? details.release_date.split('-')[0] : new Date().getFullYear().toString();
 
                 // Get Poster
                 let posterBase64 = formData.posterBase64;
-                if (movie.poster_path) {
-                    const posterUrl = `https://image.tmdb.org/t/p/w200${movie.poster_path}`;
+                if (details.poster_path) {
+                    const posterUrl = `https://image.tmdb.org/t/p/w200${details.poster_path}`;
                     try {
                         const imgRes = await fetch(posterUrl);
                         const blob = await imgRes.blob();
@@ -139,11 +153,24 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                     }
                 }
 
+                // Format Duration: 110 -> 1h 50m
+                const hours = Math.floor(details.runtime / 60);
+                const minutes = details.runtime % 60;
+                const duration = details.runtime ? `${hours}h ${minutes}m` : '';
+
+                // Get Director
+                const director = details.credits?.crew?.find((c: any) => c.job === 'Director')?.name || '';
+
                 setFormData(prev => ({
                     ...prev,
-                    year: year.toString(),
+                    year: year,
                     // Optional: Auto-fill genre if we could map TMDB genres to ours
-                    posterBase64
+                    posterBase64,
+                    synopsis: details.overview || '',
+                    rating: details.vote_average ? details.vote_average.toFixed(1) : '',
+                    duration: duration,
+                    director: director,
+                    tmdbId: details.id?.toString()
                 }));
             } else {
                 alert("Filme não encontrado no TMDB.");
@@ -304,6 +331,50 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                                     />
                                 </div>
                             </div>
+
+                            {/* Rating & Duration */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-neutral-400">Nota (0-10)</label>
+                                    <input
+                                        type="number"
+                                        step="0.1"
+                                        name="rating"
+                                        value={formData.rating || ''}
+                                        onChange={handleChange}
+                                        className="w-full bg-neutral-800 border-none rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-indigo-500 placeholder:text-neutral-600"
+                                        placeholder="Ex: 8.5"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-neutral-400">Duração</label>
+                                    <input
+                                        type="text"
+                                        name="duration"
+                                        value={formData.duration || ''}
+                                        onChange={handleChange}
+                                        className="w-full bg-neutral-800 border-none rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-indigo-500 placeholder:text-neutral-600"
+                                        placeholder="Ex: 1h 50m"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Synopsis */}
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-neutral-400">Sinopse</label>
+                                <textarea
+                                    name="synopsis"
+                                    value={formData.synopsis || ''}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, synopsis: e.target.value }))}
+                                    rows={3}
+                                    className="w-full bg-neutral-800 border-none rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-indigo-500 placeholder:text-neutral-600 resize-none"
+                                    placeholder="Resumo do filme..."
+                                />
+                            </div>
+
+                            {/* Director (Hidden / Advanced? Or just input?) */}
+                            <input type="hidden" name="director" value={formData.director || ''} />
+                            <input type="hidden" name="tmdbId" value={formData.tmdbId || ''} />
 
                             {/* Barcode (Manual Only) */}
                             <div className="space-y-2">
