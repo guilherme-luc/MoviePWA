@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Html5Qrcode } from 'html5-qrcode';
+import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import { X, Camera, RefreshCw } from 'lucide-react';
 
 interface BarcodeScannerProps {
@@ -19,33 +19,44 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose 
         const manualStart = async () => {
             try {
                 // 1. Explicitly ask for permission first using native API
-                // This wakes up the permissions prompt more reliably than the library
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: { facingMode: "environment" }
                 });
 
-                // Stop the stream immediately, strict initialization for library comes next
                 stream.getTracks().forEach(track => track.stop());
 
                 if (!mounted) return;
                 setHasPermission(true);
 
-                // 2. Initialize Library
-                const scanner = new Html5Qrcode("reader");
+                // 2. Initialize Library with specific formats
+                const formatsToSupport = [
+                    Html5QrcodeSupportedFormats.EAN_13,
+                    Html5QrcodeSupportedFormats.EAN_8,
+                    Html5QrcodeSupportedFormats.UPC_A,
+                    Html5QrcodeSupportedFormats.UPC_E,
+                    Html5QrcodeSupportedFormats.CODE_128,
+                ];
+
+                const scanner = new Html5Qrcode("reader", {
+                    formatsToSupport,
+                    verbose: false
+                });
                 scannerRef.current = scanner;
 
-                // 3. Start Scanning with minimal config
+                // 3. Start Scanning with optimal config + native detector
                 await scanner.start(
                     { facingMode: "environment" },
                     {
-                        fps: 10,
+                        fps: 15,
                         qrbox: { width: 250, height: 150 },
                         aspectRatio: 1.0,
+                        // @ts-ignore - Enable native barcode detector (Android/Chrome)
+                        useBarCodeDetectorIfSupported: true
                     },
                     (decodedText) => {
                         if (mounted) onScan(decodedText);
                     },
-                    () => { } // Ignore frame errors
+                    () => { }
                 );
 
                 if (mounted) setInitializing(false);
@@ -54,7 +65,6 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose 
                 if (mounted) {
                     console.error("Camera Init Error:", err);
                     setInitializing(false);
-                    // Differentiate common errors
                     if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
                         setError("Permissão da câmera negada. Por favor, permita o acesso nas configurações do site.");
                     } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
@@ -68,7 +78,6 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose 
             }
         };
 
-        // Small delay to ensure DOM is active
         const timer = setTimeout(manualStart, 200);
 
         return () => {
@@ -85,7 +94,7 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose 
     const handleRetry = () => {
         setError('');
         setInitializing(true);
-        window.location.reload(); // Hard refresh to clear camera locks if needed
+        window.location.reload();
     };
 
     return (
@@ -128,9 +137,11 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose 
             </div>
 
             {!error && !initializing && (
-                <p className="text-neutral-400 mt-8 text-sm animate-in fade-in slide-in-from-bottom-4 bg-black/50 px-4 py-2 rounded-full backdrop-blur-sm border border-white/5">
-                    Centralize o código de barras
-                </p>
+                <div className="mt-8 flex flex-col items-center gap-2 animate-in fade-in slide-in-from-bottom-4">
+                    <p className="text-neutral-400 text-sm bg-black/50 px-4 py-2 rounded-full backdrop-blur-sm border border-white/5">
+                        Centralize o código de barras
+                    </p>
+                </div>
             )}
         </div>
     );
