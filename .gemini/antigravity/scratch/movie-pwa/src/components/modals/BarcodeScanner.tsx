@@ -20,7 +20,6 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose 
             try {
                 await Quagga.init({
                     inputStream: {
-                        name: "Live",
                         type: "LiveStream",
                         target: scannerRef.current!, // Pass the element directly
                         constraints: {
