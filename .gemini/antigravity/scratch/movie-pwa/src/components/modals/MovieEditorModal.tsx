@@ -22,24 +22,41 @@ const compressImage = (file: File): Promise<string> => {
             img.src = event.target?.result as string;
             img.onload = () => {
                 const canvas = document.createElement('canvas');
-                const MAX_WIDTH = 300;
-                const scaleSize = MAX_WIDTH / img.width;
-                canvas.width = MAX_WIDTH;
-                canvas.height = img.height * scaleSize;
-
                 const ctx = canvas.getContext('2d');
-                if (ctx) {
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    // 0.7 quality to keep it small
-                    const compressedDataUrl = canvas.toDataURL('image/webp', 0.7);
-                    if (compressedDataUrl.length > 45000) {
-                        reject(new Error("Imagem muito pesada mesmo comprimida."));
-                    } else {
-                        resolve(compressedDataUrl);
-                    }
-                } else {
+                if (!ctx) {
                     reject(new Error("Canvas context init failed"));
+                    return;
                 }
+
+                let width = 300;
+                let quality = 0.7;
+                let attempts = 0;
+
+                const tryCompress = () => {
+                    attempts++;
+                    const scaleSize = width / img.width;
+                    canvas.width = width;
+                    canvas.height = img.height * scaleSize;
+
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                    // Try JPEG for consistent compression
+                    const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+
+                    if (compressedDataUrl.length < 48000) {
+                        resolve(compressedDataUrl);
+                    } else if (attempts < 4) {
+                        // Reduce and retry
+                        width = Math.floor(width * 0.8); // 20% smaller
+                        quality = Math.max(0.3, quality - 0.15); // Lower quality
+                        tryCompress();
+                    } else {
+                        reject(new Error("Imagem muito pesada. Tente uma com menos detalhes ou corte antes."));
+                    }
+                };
+
+                tryCompress();
             };
         };
         reader.onerror = (error) => reject(error);
