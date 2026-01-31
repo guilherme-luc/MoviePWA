@@ -1,0 +1,65 @@
+# Movie Collection PWA - Implementation Plan
+
+## Goal Description
+Create a premium, mobile-first Progressive Web App (PWA) to manage a personal movie catalog backed by Google Sheets. 
+**Key Constraints:**
+- **Offline Strategy**: Read-Only when offline. CRUD operations are BLOCKED.
+- **Data Integrity**: Strict validation of Sheet structure on startup. No automatic creation of sheets on typos.
+- **Architecture**: Centralized `GoogleSheetsService` with semantic API. React Query for state/caching.
+
+## User Review Required
+> [!IMPORTANT]
+> **Google Cloud Setup**: Connect to Google Sheets via `gapi`. Requires Client ID and API Key.
+> **Sheet Structure**: The app enforces strict column order: `[BarCode, Title, Year, Genre]`.
+> **Offline Mode**: You can view cached data offline, but cannot add/edit/delete.
+
+## Proposed Changes
+
+### Core Infrastructure
+#### [NEW] [project-scaffold]
+- Initialize Vite + React + TypeScript.
+- **State Management**: Install `@tanstack/react-query` for caching and state.
+- **PWA**: Configure `vite-plugin-pwa` for "Network first, falling back to cache" strategy for reads, but block writes.
+- **UI**: TailwindCSS for styling.
+
+### Architecture & Service Layer
+#### [NEW] [GoogleSheetsService.ts]
+- **Singleton Service**: Centralizes ALL `gapi` interactions.
+- **Methods**: `getGenres()`, `getMoviesByGenre(genre)`, `addMovie(movie)`, `updateMovie(movie)`, `deleteMovie(movie)`, `createGenre(name)`.
+- **Validation**: `validateSheetStructure()` method called on startup to check column names and order.
+- **Atomic Operations**: `moveMovieFullTransaction(movie, oldGenre, newGenre)` to handle genre changes safely.
+- **Auth**: Robust handling (silent refresh, explicit error states).
+
+### Components
+#### [NEW] [Layout & Feedback]
+- `AppShell`: Handles global error boundaries and **Startup Validation**.
+- `OfflineIndicator`: Visual banner/icon showing current connection state.
+- `StatusGuard`: Wrapper component to block CRUD buttons when Offline or Invalid Sheet.
+
+#### [NEW] [Feature: Genre Management]
+- **Home Screen**: Lists existing genres with counts (derived from cache).
+- **Genre Manager**: specific UI to "Add New Genre" (creates new Sheet). No auto-creation during movie entry.
+
+#### [NEW] [Feature: Movie List]
+- Filterable list with search.
+- **Data Source**: React Query hooks (`useMovies(genre)`) with `staleTime` and `cacheTime` configuration.
+
+#### [NEW] [Feature: Movie Editor]
+- **Form**: Title, Year, Barcode, Genre.
+- **Genre Input**: STRICT DROPDOWN from existing genres.
+- **Validation**: Block submit if offline.
+
+## Verification Plan
+
+### Automated Tests
+- **Unit Tests**:
+    - `GoogleSheetsService`: Mock `gapi` to test `validateSheetStructure` (valid/invalid cases).
+    - `GoogleSheetsService`: Test `moveMovie` logic (calls add then delete).
+- **Build**: `npm run build` verification.
+
+### Manual Verification
+- **Startup**: Open app -> Verifies columns -> Success/Error screen.
+- **Offline**: Load data -> Disconnect Wifi -> Try to Edit -> Should see error/blocked button.
+- **Auth**: Reload page -> Silent re-auth works.
+- **Genre Change**: Edit movie genre -> Check it moves to correct tab in Sheets.
+- **Invalid Sheet**: Reorder columns in Sheets -> Reload App -> App blocks access with instructions.
