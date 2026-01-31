@@ -180,6 +180,25 @@ export class GoogleSheetsService {
         }
     }
 
+    public async getAllMovies(): Promise<Movie[]> {
+        if (!this.isInitialized) await this.initClient();
+        const genres = await this.getGenres();
+        if (genres.length === 0) return [];
+
+        // Fetch all sheets in parallel
+        const promises = genres.map(async (genre) => {
+            try {
+                return await this.getMoviesByGenre(genre);
+            } catch (e) {
+                console.error(`Failed to fetch ${genre}`, e);
+                return [];
+            }
+        });
+
+        const results = await Promise.all(promises);
+        return results.flat().sort((a, b) => a.title.localeCompare(b.title));
+    }
+
     public async addMovie(movie: Movie): Promise<void> {
         if (!this.isInitialized) await this.initClient();
         const values = [[

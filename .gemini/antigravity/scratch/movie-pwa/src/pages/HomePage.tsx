@@ -1,29 +1,112 @@
 import React, { useState } from 'react';
 import { useGenres } from '../hooks/useGenres';
-import { Film, Plus, Database } from 'lucide-react';
+import { useAllMovies } from '../hooks/useAllMovies';
+import { Film, Plus, Database, Search, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { GenreManagerModal } from '../components/modals/GenreManagerModal';
 import { SettingsModal } from '../components/modals/SettingsModal';
 import { Settings } from 'lucide-react';
+import { MovieEditorModal } from '../components/modals/MovieEditorModal';
+import type { Movie } from '../types';
 
 export const HomePage: React.FC = () => {
-    const { data: genres, isLoading } = useGenres();
+    const { data: genres } = useGenres();
+    const { data: allMovies } = useAllMovies();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
+    // Search State
+    const [search, setSearch] = useState('');
+    const [editMovie, setEditMovie] = useState<Movie | undefined>(undefined);
+    const [isEditOpen, setIsEditOpen] = useState(false);
+
     const totalMovies = genres?.reduce((acc, curr) => acc + curr.count, 0) || 0;
 
+    const filteredMovies = allMovies?.filter(m =>
+        m.title.toLowerCase().includes(search.toLowerCase())
+    ).slice(0, 5) || []; // Limit to 5 results for preview
+
+    const handleSelectMovie = (movie: Movie) => {
+        setEditMovie(movie);
+        setIsEditOpen(true);
+        setSearch(''); // Clear search on select? Optional.
+    };
+
     return (
-        <div className="flex flex-col gap-6 animate-in fade-in duration-500">
+        <div className="flex flex-col gap-6 animate-in fade-in duration-500 relative">
 
             <GenreManagerModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
             <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+            <MovieEditorModal
+                isOpen={isEditOpen}
+                onClose={() => setIsEditOpen(false)}
+                movieToEdit={editMovie}
+            />
 
-            {/* Header with Settings */}
-            <div className="flex justify-end">
+            {/* Header with Search & Settings */}
+            <div className="flex items-center gap-3">
+                <div className="relative flex-1">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Search className="text-neutral-500" size={18} />
+                    </div>
+                    <input
+                        type="text"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Pesquisar filme..."
+                        className="w-full bg-neutral-800 border-none text-white text-sm rounded-full py-2.5 pl-10 pr-4 focus:ring-2 focus:ring-indigo-500 placeholder:text-neutral-500"
+                    />
+                    {search && (
+                        <button
+                            onClick={() => setSearch('')}
+                            className="absolute inset-y-0 right-0 pr-3 flex items-center text-neutral-500 hover:text-white"
+                        >
+                            <X size={16} />
+                        </button>
+                    )}
+
+                    {/* Search Dropdown */}
+                    {search.length > 0 && (
+                        <div className="absolute top-full left-0 right-0 mt-2 bg-neutral-800 rounded-xl shadow-2xl border border-white/10 z-50 overflow-hidden">
+                            {filteredMovies.length === 0 ? (
+                                <div className="p-4 text-center text-neutral-500 text-sm">Nenhum filme encontrado</div>
+                            ) : (
+                                <ul>
+                                    {filteredMovies.map((movie, idx) => (
+                                        <li key={idx}>
+                                            <button
+                                                onClick={() => handleSelectMovie(movie)}
+                                                className="w-full flex items-center gap-3 p-3 hover:bg-white/5 transition-colors text-left"
+                                            >
+                                                {movie.imageValue ? (
+                                                    <img
+                                                        src={movie.imageType === 'tmdb' ? `https://image.tmdb.org/t/p/w92${movie.imageValue}` : movie.imageValue}
+                                                        className="w-10 h-14 object-cover rounded bg-neutral-900"
+                                                        alt=""
+                                                    />
+                                                ) : (
+                                                    <div className="w-10 h-14 bg-neutral-700 rounded flex items-center justify-center">
+                                                        <Film size={16} className="text-neutral-500" />
+                                                    </div>
+                                                )}
+                                                <div>
+                                                    <h4 className="text-white font-medium text-sm line-clamp-1">{movie.title}</h4>
+                                                    <span className="text-xs text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-full inline-block mt-1">
+                                                        {movie.genre}
+                                                    </span>
+                                                </div>
+                                            </button>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </div>
+                    )}
+                </div>
+
                 <button
                     onClick={() => setIsSettingsOpen(true)}
-                    className="p-2 text-neutral-400 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+                    className="p-2.5 bg-neutral-800 text-neutral-400 hover:text-white hover:bg-neutral-700 rounded-full transition-colors flex-shrink-0"
                 >
                     <Settings size={20} />
                 </button>
