@@ -614,7 +614,7 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                 </div>
 
                 {/* Footer Actions */}
-                <div className="p-6 border-t border-white/10 bg-neutral-900 rounded-b-2xl flex flex-col-reverse sm:flex-row justify-between gap-3">
+                <div className="p-6 border-t border-white/10 bg-neutral-900 rounded-b-2xl flex items-center justify-between gap-3">
                     {movieToEdit ? (
                         <button
                             type="button"
@@ -634,18 +634,18 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                                         });
                                 }
                             }}
-                            className="px-4 py-3 rounded-xl text-red-500 hover:bg-red-500/10 transition-colors font-medium flex items-center gap-2"
+                            className="px-3 py-3 rounded-xl text-red-500 hover:bg-red-500/10 transition-colors font-medium flex items-center gap-2"
                         >
                             <Trash2 size={20} />
-                            <span className="hidden sm:inline">Excluir</span>
+                            <span className="hidden sm:inline whitespace-nowrap">Excluir</span>
                         </button>
                     ) : <div />} {/* Spacer if no delete button */}
 
-                    <div className="flex gap-3">
+                    <div className="flex gap-2">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="px-6 py-3 rounded-xl text-neutral-400 hover:text-white hover:bg-white/5 transition-colors font-medium"
+                            className="px-4 py-3 rounded-xl text-neutral-400 hover:text-white hover:bg-white/5 transition-colors font-medium text-sm whitespace-nowrap"
                         >
                             Cancelar
                         </button>
@@ -653,17 +653,17 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                             form="movie-form"
                             type="submit"
                             disabled={isLoading}
-                            className="px-8 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold shadow-lg shadow-indigo-500/25 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                            className="px-4 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold shadow-lg shadow-indigo-500/25 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm whitespace-nowrap"
                         >
                             {isLoading ? (
                                 <>
-                                    <Loader2 className="animate-spin" size={20} />
+                                    <Loader2 className="animate-spin" size={18} />
                                     Salvando...
                                 </>
                             ) : (
                                 <>
-                                    <Save size={20} />
-                                    Salvar Filme
+                                    <Save size={18} />
+                                    Salvar
                                 </>
                             )}
                         </button>
