@@ -356,17 +356,36 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                                         />
                                     </label>
 
-                                    <div className="absolute top-2 right-2 p-1 bg-black/50 rounded-full cursor-pointer hover:bg-black/70"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            const url = prompt("Cole a URL da imagem TMDB:");
-                                            if (url) {
-                                                setImageValue(url);
-                                                setImageType('tmdb');
-                                            }
-                                        }}
-                                    >
-                                        <Wand2 size={12} className="text-white" />
+                                    <div className="absolute top-2 right-2 flex gap-1">
+                                        {/* Remove Photo */}
+                                        {imageValue && (
+                                            <div className="p-1 bg-black/50 rounded-full cursor-pointer hover:bg-red-500/80 transition-colors"
+                                                title="Remover Capa"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    if (confirm("Remover a capa atual?")) {
+                                                        setImageValue('');
+                                                        setImageType('tmdb');
+                                                    }
+                                                }}
+                                            >
+                                                <Trash2 size={12} className="text-white" />
+                                            </div>
+                                        )}
+                                        {/* Magic Wand */}
+                                        <div className="p-1 bg-black/50 rounded-full cursor-pointer hover:bg-indigo-500/80 transition-colors"
+                                            title="Buscar imagem via URL ou TMDB"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                const url = prompt("Cole a URL da imagem TMDB:");
+                                                if (url) {
+                                                    setImageValue(url);
+                                                    setImageType('tmdb');
+                                                }
+                                            }}
+                                        >
+                                            <Wand2 size={12} className="text-white" />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -595,7 +614,7 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                 </div>
 
                 {/* Footer Actions */}
-                <div className="p-6 border-t border-white/10 bg-neutral-900 rounded-b-2xl flex justify-between gap-3">
+                <div className="p-6 border-t border-white/10 bg-neutral-900 rounded-b-2xl flex flex-col-reverse sm:flex-row justify-between gap-3">
                     {movieToEdit ? (
                         <button
                             type="button"

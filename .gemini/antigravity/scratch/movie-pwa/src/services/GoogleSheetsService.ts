@@ -185,10 +185,10 @@ export class GoogleSheetsService {
                     _sheetTitle: genre
                 }));
 
-                // Robust Sort: Ignore accents, case, and leading spaces
+                // Robust Sort: Ignore accents, case, and ALL spaces
                 return movies.sort((a, b) => {
-                    const normA = a.title.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-                    const normB = b.title.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+                    const normA = a.title.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "");
+                    const normB = b.title.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "");
                     return normA.localeCompare(normB);
                 });
             }
@@ -214,8 +214,8 @@ export class GoogleSheetsService {
 
         const results = await Promise.all(promises);
         return results.flat().sort((a, b) => {
-            const normA = a.title.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-            const normB = b.title.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+            const normA = a.title.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "");
+            const normB = b.title.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "");
             return normA.localeCompare(normB);
         });
     }
