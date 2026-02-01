@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, Search, ScanLine, Wand2, Star, Lock, Unlock, Upload, ImageIcon, Loader2 } from 'lucide-react';
+import { X, Save, Search, ScanLine, Wand2, Star, Lock, Unlock, Upload, ImageIcon, Loader2, Trash2 } from 'lucide-react';
 import type { Movie } from '../../types';
 import { GoogleSheetsService } from '../../services/GoogleSheetsService';
 import { BarcodeScanner } from './BarcodeScanner';
@@ -24,8 +24,8 @@ const compressImage = (file: File): Promise<string> => {
                 const canvas = document.createElement('canvas');
                 let width = img.width;
                 let height = img.height;
-                const MAX_WIDTH = 800;
-                const MAX_HEIGHT = 800;
+                const MAX_WIDTH = 400;
+                const MAX_HEIGHT = 400;
 
                 if (width > height) {
                     if (width > MAX_WIDTH) {
@@ -43,7 +43,8 @@ const compressImage = (file: File): Promise<string> => {
                 canvas.height = height;
                 const ctx = canvas.getContext('2d');
                 ctx?.drawImage(img, 0, 0, width, height);
-                resolve(canvas.toDataURL('image/jpeg', 0.6));
+                // Aggressive compression for Google Sheets (Target < 50k chars)
+                resolve(canvas.toDataURL('image/jpeg', 0.5));
             };
             img.onerror = (err) => reject(err);
         };
@@ -140,13 +141,16 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
         setIsMetadataLocked(false);
     };
 
+    // TMDB Search Results
+    const [tmdbResults, setTmdbResults] = useState<any[]>([]);
+
     const fetchTmdbData = async (queryTitle: string, queryYear?: string) => {
         if (!queryTitle) return;
         setIsSearching(true);
+        setTmdbResults([]); // Clear previous
         try {
             const apiKey = import.meta.env.VITE_TMDB_API_KEY || localStorage.getItem('tmdb_api_key');
             if (!apiKey) {
-                // Silently fail or minimal warn if no key (user might manually enter)
                 console.warn("API Key do TMDB não configurada.");
                 return;
             }
@@ -159,49 +163,59 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
             const data = await res.json();
 
             if (data.results && data.results.length > 0) {
-                const best = data.results[0]; // Take best match
-
-                // Update Basic Info if missing or matching
-                if (!title || title.toLowerCase() === queryTitle.toLowerCase()) {
-                    setTitle(best.title);
-                    setYear(best.release_date ? best.release_date.substring(0, 4) : '');
-                }
-
-                // Update Metadata
-                setTmdbId(best.id.toString());
-                setSynopsis(best.overview);
-                setRating(best.vote_average ? best.vote_average.toFixed(1) : '');
-
-                if (best.poster_path && !imageValue) { // Only set if empty
-                    setImageType('tmdb');
-                    setImageValue(best.poster_path);
-                }
-
-                // Fetch Details (Credits, Runtime)
-                const detailsUrl = `https://api.themoviedb.org/3/movie/${best.id}?api_key=${apiKey}&language=pt-BR&append_to_response=credits`;
-                const detailsRes = await fetch(detailsUrl);
-                const details = await detailsRes.json();
-
-                if (details.runtime) {
-                    const h = Math.floor(details.runtime / 60);
-                    const m = details.runtime % 60;
-                    setDuration(`${h}h ${m}m`);
-                }
-
-                if (details.credits) {
-                    const director = details.credits.crew?.find((c: any) => c.job === 'Director')?.name;
-                    if (director) setDirector(director);
-
-                    const topCast = details.credits.cast?.slice(0, 4).map((c: any) => c.name).join(', ');
-                    if (topCast) setCast(topCast);
-                }
-
-                setIsMetadataLocked(true); // Lock after fetch
+                // Store results for user selection instead of auto-picking
+                setTmdbResults(data.results.slice(0, 5)); // Show top 5
+            } else {
+                alert("Nenhum filme encontrado no TMDB.");
             }
         } catch (error) {
             console.error("TMDB Fetch Error", error);
         } finally {
             setIsSearching(false);
+        }
+    };
+
+    const selectTmdbMovie = async (movie: any) => {
+        setTmdbResults([]); // Clear list
+        try {
+            const apiKey = import.meta.env.VITE_TMDB_API_KEY || localStorage.getItem('tmdb_api_key');
+
+            // Update Basic Info
+            setTitle(movie.title);
+            setYear(movie.release_date ? movie.release_date.substring(0, 4) : '');
+
+            // Update Metadata
+            setTmdbId(movie.id.toString());
+            setSynopsis(movie.overview);
+            setRating(movie.vote_average ? movie.vote_average.toFixed(1) : '');
+
+            if (movie.poster_path) {
+                setImageType('tmdb');
+                setImageValue(movie.poster_path);
+            }
+
+            // Fetch Details
+            const detailsUrl = `https://api.themoviedb.org/3/movie/${movie.id}?api_key=${apiKey}&language=pt-BR&append_to_response=credits`;
+            const detailsRes = await fetch(detailsUrl);
+            const details = await detailsRes.json();
+
+            if (details.runtime) {
+                const h = Math.floor(details.runtime / 60);
+                const m = details.runtime % 60;
+                setDuration(`${h}h ${m}m`);
+            }
+
+            if (details.credits) {
+                const director = details.credits.crew?.find((c: any) => c.job === 'Director')?.name;
+                if (director) setDirector(director);
+
+                const topCast = details.credits.cast?.slice(0, 4).map((c: any) => c.name).join(', ');
+                if (topCast) setCast(topCast);
+            }
+
+            setIsMetadataLocked(true);
+        } catch (error) {
+            console.error("Error fetching details", error);
         }
     };
 
@@ -360,14 +374,17 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                             {/* Main Inputs */}
                             <div className="flex-1 space-y-4">
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div className="space-y-1 sm:col-span-2">
+                                    <div className="space-y-1 sm:col-span-2 relative">
                                         <label className="text-xs font-medium text-neutral-400">Título</label>
                                         <div className="flex gap-2">
                                             <input
                                                 type="text"
                                                 value={title}
                                                 onChange={(e) => setTitle(e.target.value)}
-                                                onBlur={() => !movieToEdit && fetchTmdbData(title, year)}
+                                                onBlur={() => {
+                                                    // Don't auto-fetch on blur anymore to avoid annoying behavior
+                                                    // let user click search manually
+                                                }}
                                                 className="w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-indigo-500"
                                                 placeholder="Nome do Filme"
                                                 required
@@ -381,6 +398,40 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                                                 {isSearching ? <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" /> : <Search size={20} />}
                                             </button>
                                         </div>
+
+                                        {/* Result Picker */}
+                                        {tmdbResults.length > 0 && (
+                                            <div className="absolute top-full left-0 right-0 mt-2 bg-neutral-800 border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
+                                                <div className="p-2 text-xs font-bold text-neutral-400 border-b border-white/5 bg-black/20">Selecione o filme correto:</div>
+                                                <div className="max-h-60 overflow-y-auto">
+                                                    {tmdbResults.map((m) => (
+                                                        <button
+                                                            key={m.id}
+                                                            type="button"
+                                                            onClick={() => selectTmdbMovie(m)}
+                                                            className="w-full flex items-center gap-3 p-3 hover:bg-white/5 transition-colors text-left border-b border-white/5 last:border-0"
+                                                        >
+                                                            <div className="w-8 h-12 bg-black/40 rounded flex-shrink-0">
+                                                                {m.poster_path && (
+                                                                    <img src={`https://image.tmdb.org/t/p/w92${m.poster_path}`} alt="" className="w-full h-full object-cover rounded" />
+                                                                )}
+                                                            </div>
+                                                            <div>
+                                                                <div className="font-bold text-white text-sm">{m.title}</div>
+                                                                <div className="text-xs text-neutral-400">{m.release_date?.substring(0, 4)} • ⭐ {m.vote_average?.toFixed(1)}</div>
+                                                            </div>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setTmdbResults([])}
+                                                    className="w-full p-2 text-xs text-center text-neutral-500 hover:text-neutral-300 hover:bg-white/5 transition-colors"
+                                                >
+                                                    Fechar / Nenhum destes
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
 
                                     <div className="space-y-1">
@@ -544,32 +595,60 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                 </div>
 
                 {/* Footer Actions */}
-                <div className="p-6 border-t border-white/10 bg-neutral-900 rounded-b-2xl flex justify-end gap-3">
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="px-6 py-3 rounded-xl text-neutral-400 hover:text-white hover:bg-white/5 transition-colors font-medium"
-                    >
-                        Cancelar
-                    </button>
-                    <button
-                        form="movie-form"
-                        type="submit"
-                        disabled={isLoading}
-                        className="px-8 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold shadow-lg shadow-indigo-500/25 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                    >
-                        {isLoading ? (
-                            <>
-                                <Loader2 className="animate-spin" size={20} />
-                                Salvando...
-                            </>
-                        ) : (
-                            <>
-                                <Save size={20} />
-                                Salvar Filme
-                            </>
-                        )}
-                    </button>
+                <div className="p-6 border-t border-white/10 bg-neutral-900 rounded-b-2xl flex justify-between gap-3">
+                    {movieToEdit ? (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                if (confirm("Tem certeza que deseja excluir este filme permanentemente?")) {
+                                    setIsLoading(true);
+                                    GoogleSheetsService.getInstance().deleteMovie(movieToEdit)
+                                        .then(() => {
+                                            queryClient.invalidateQueries({ queryKey: ['movies'] });
+                                            queryClient.invalidateQueries({ queryKey: ['all_movies'] });
+                                            onClose();
+                                        })
+                                        .catch((err) => {
+                                            console.error(err);
+                                            alert("Erro ao excluir.");
+                                            setIsLoading(false);
+                                        });
+                                }
+                            }}
+                            className="px-4 py-3 rounded-xl text-red-500 hover:bg-red-500/10 transition-colors font-medium flex items-center gap-2"
+                        >
+                            <Trash2 size={20} />
+                            <span className="hidden sm:inline">Excluir</span>
+                        </button>
+                    ) : <div />} {/* Spacer if no delete button */}
+
+                    <div className="flex gap-3">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="px-6 py-3 rounded-xl text-neutral-400 hover:text-white hover:bg-white/5 transition-colors font-medium"
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            form="movie-form"
+                            type="submit"
+                            disabled={isLoading}
+                            className="px-8 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold shadow-lg shadow-indigo-500/25 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                        >
+                            {isLoading ? (
+                                <>
+                                    <Loader2 className="animate-spin" size={20} />
+                                    Salvando...
+                                </>
+                            ) : (
+                                <>
+                                    <Save size={20} />
+                                    Salvar Filme
+                                </>
+                            )}
+                        </button>
+                    </div>
                 </div>
 
             </div>

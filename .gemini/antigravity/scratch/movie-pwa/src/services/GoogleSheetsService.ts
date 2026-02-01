@@ -164,25 +164,35 @@ export class GoogleSheetsService {
                 spreadsheetId: this.SPREADSHEET_ID,
                 range: `'${genre}'!A2:N`, // Extended range
             });
-            const rows = response.result.values || [];
-            return rows.map((row, index) => ({
-                barcode: row[0] || '',
-                title: row[1] || '',
-                year: row[2] || '',
-                genre: row[3] || genre,
-                imageType: (row[4] as 'tmdb' | 'base64' | undefined) || undefined,
-                imageValue: row[5] || undefined,
-                synopsis: row[6] || undefined,
-                rating: row[7] || undefined,
-                duration: row[8] || undefined,
-                director: row[9] || undefined,
-                tmdbId: row[10] || undefined,
-                cast: row[11] || undefined,
-                userRating: row[12] || undefined,
-                watched: row[13] === 'TRUE', // Parse boolean
-                _rowIndex: index + 2,
-                _sheetTitle: genre
-            }));
+            if (response.result.values) {
+                const rows = response.result.values;
+                const movies = rows.map((row, index) => ({
+                    barcode: row[0] || '',
+                    title: row[1] || '',
+                    year: row[2] || '',
+                    genre: row[3] || genre,
+                    imageType: (row[4] as 'tmdb' | 'base64' | undefined) || undefined,
+                    imageValue: row[5] || undefined,
+                    synopsis: row[6] || undefined,
+                    rating: row[7] || undefined,
+                    duration: row[8] || undefined,
+                    director: row[9] || undefined,
+                    tmdbId: row[10] || undefined,
+                    cast: row[11] || undefined,
+                    userRating: row[12] || undefined,
+                    watched: row[13] === 'TRUE', // Parse boolean
+                    _rowIndex: index + 2,
+                    _sheetTitle: genre
+                }));
+
+                // Robust Sort: Ignore accents, case, and leading spaces
+                return movies.sort((a, b) => {
+                    const normA = a.title.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+                    const normB = b.title.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+                    return normA.localeCompare(normB);
+                });
+            }
+            return [];
         } catch (error) {
             console.error(`Failed to fetch movies for genre ${genre}`, error);
             return [];
@@ -203,7 +213,11 @@ export class GoogleSheetsService {
         });
 
         const results = await Promise.all(promises);
-        return results.flat().sort((a, b) => a.title.localeCompare(b.title));
+        return results.flat().sort((a, b) => {
+            const normA = a.title.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+            const normB = b.title.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+            return normA.localeCompare(normB);
+        });
     }
 
     public async addMovie(movie: Movie): Promise<void> {

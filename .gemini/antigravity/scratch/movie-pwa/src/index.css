@@ -27,6 +27,13 @@
   body {
     @apply bg-neutral-900 text-neutral-100;
   }
+
+  /* Prevent Zoom on Mobile Inputs */
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
 }
 
 @layer components {
