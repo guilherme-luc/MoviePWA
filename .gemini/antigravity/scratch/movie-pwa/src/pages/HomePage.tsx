@@ -9,6 +9,7 @@ import { MovieEditorModal } from '../components/modals/MovieEditorModal';
 import { RandomMoviePicker } from '../components/modals/RandomMoviePicker';
 import { StatsModal } from '../components/modals/StatsModal';
 import type { Movie } from '../types';
+import { Skeleton } from '../components/ui/Skeleton';
 
 export const HomePage: React.FC = () => {
     const { data: genres, isLoading } = useGenres();
@@ -180,7 +181,7 @@ export const HomePage: React.FC = () => {
             {isLoading ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {[1, 2, 3, 4].map(i => (
-                        <div key={i} className="h-20 bg-neutral-800 animate-pulse rounded-xl"></div>
+                        <Skeleton key={i} className="h-20 w-full rounded-xl" />
                     ))}
                 </div>
             ) : (

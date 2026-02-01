@@ -6,6 +6,7 @@ import { ArrowLeft, Search, Plus, Edit2, Wand2, Loader2, CheckSquare, Trash2, X,
 import { MovieEditorModal } from '../components/modals/MovieEditorModal';
 import { GoogleSheetsService } from '../services/GoogleSheetsService';
 import type { Movie } from '../types';
+import { MovieCardSkeleton } from '../components/movies/MovieCardSkeleton';
 
 export const MoviesPage: React.FC = () => {
     const { genre } = useParams<{ genre: string }>();
@@ -28,15 +29,28 @@ export const MoviesPage: React.FC = () => {
     const [autoFetchProgress, setAutoFetchProgress] = useState(0);
     const [autoFetchTotal, setAutoFetchTotal] = useState(0);
 
+    // Filter State
+    const [viewMode, setViewMode] = useState<'all' | 'watched' | 'watchlist'>('all');
+
     const filteredMovies = useMemo(() => {
         if (!movies) return [];
         const q = search.toLowerCase();
-        return movies.filter(m =>
+
+        let result = movies.filter(m =>
             m.title.toLowerCase().includes(q) ||
             m.barcode.toLowerCase().includes(q) ||
             m.year.includes(q)
         );
-    }, [movies, search]);
+
+        // Apply View Mode Filter
+        if (viewMode === 'watched') {
+            result = result.filter(m => m.watched);
+        } else if (viewMode === 'watchlist') {
+            result = result.filter(m => !m.watched);
+        }
+
+        return result;
+    }, [movies, search, viewMode]);
 
     const handleEdit = (movie: Movie) => {
         if (isSelectionMode) {
@@ -206,37 +220,63 @@ export const MoviesPage: React.FC = () => {
                 </div>
             ) : (
                 /* Normal Header */
-                <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-4">
-                        <Link to="/" className="p-2 rounded-full hover:bg-white/5 text-neutral-300 transition-colors">
-                            <ArrowLeft size={24} />
-                        </Link>
-                        <div>
-                            <h2 className="text-2xl font-bold text-white max-w-[200px] truncate">{decodedGenre}</h2>
-                            <p className="text-neutral-400 text-sm">{movies?.length || 0} filmes</p>
+                <div className="flex flex-col gap-4 mb-6">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <Link to="/" className="p-2 rounded-full hover:bg-white/5 text-neutral-300 transition-colors">
+                                <ArrowLeft size={24} />
+                            </Link>
+                            <div>
+                                <h2 className="text-2xl font-bold text-white max-w-[200px] truncate">{decodedGenre}</h2>
+                                <p className="text-neutral-400 text-sm">{movies?.length || 0} filmes</p>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-2">
+                            {/* Select Mode Button */}
+                            <button
+                                onClick={() => setIsSelectionMode(true)}
+                                className="p-3 bg-neutral-800 rounded-full text-neutral-400 hover:text-white hover:bg-neutral-700 transition-all"
+                                title="Selecionar Filmes"
+                            >
+                                <CheckSquare size={20} />
+                            </button>
+
+                            {/* Magic Wand Button */}
+                            <button
+                                onClick={handleMagicWand}
+                                disabled={isAutoFetching && autoFetchProgress > 0}
+                                className={`p-3 rounded-full transition-all ${isAutoFetching
+                                    ? 'bg-red-500/20 text-red-400 animate-pulse'
+                                    : 'bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30'
+                                    }`}
+                            >
+                                {isAutoFetching ? <Loader2 className="animate-spin" size={20} /> : <Wand2 size={20} />}
+                            </button>
                         </div>
                     </div>
 
-                    <div className="flex gap-2">
-                        {/* Select Mode Button */}
+                    {/* View Mode Toggle */}
+                    <div className="flex p-1 bg-neutral-900 rounded-xl">
                         <button
-                            onClick={() => setIsSelectionMode(true)}
-                            className="p-3 bg-neutral-800 rounded-full text-neutral-400 hover:text-white hover:bg-neutral-700 transition-all"
-                            title="Selecionar Filmes"
+                            onClick={() => setViewMode('all')}
+                            className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all ${viewMode === 'all' ? 'bg-indigo-600 text-white shadow-lg' : 'text-neutral-500 hover:text-neutral-300'}`}
                         >
-                            <CheckSquare size={20} />
+                            Todos
                         </button>
-
-                        {/* Magic Wand Button */}
                         <button
-                            onClick={handleMagicWand}
-                            disabled={isAutoFetching && autoFetchProgress > 0}
-                            className={`p-3 rounded-full transition-all ${isAutoFetching
-                                ? 'bg-red-500/20 text-red-400 animate-pulse'
-                                : 'bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30'
-                                }`}
+                            onClick={() => setViewMode('watched')}
+                            className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all flex items-center justify-center gap-1 ${viewMode === 'watched' ? 'bg-indigo-600 text-white shadow-lg' : 'text-neutral-500 hover:text-neutral-300'}`}
                         >
-                            {isAutoFetching ? <Loader2 className="animate-spin" size={20} /> : <Wand2 size={20} />}
+                            <Eye size={12} />
+                            Vistos
+                        </button>
+                        <button
+                            onClick={() => setViewMode('watchlist')}
+                            className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all flex items-center justify-center gap-1 ${viewMode === 'watchlist' ? 'bg-indigo-600 text-white shadow-lg' : 'text-neutral-500 hover:text-neutral-300'}`}
+                        >
+                            <Star size={12} />
+                            Watchlist
                         </button>
                     </div>
                 </div>
@@ -270,7 +310,7 @@ export const MoviesPage: React.FC = () => {
             <div className="flex-1 pb-32">
                 {isLoading ? (
                     <div className="space-y-4">
-                        {[1, 2, 3].map(i => <div key={i} className="h-24 bg-neutral-800 animate-pulse rounded-xl" />)}
+                        {[1, 2, 3, 4, 5].map(i => <MovieCardSkeleton key={i} />)}
                     </div>
                 ) : filteredMovies.length === 0 ? (
                     <div className="text-center py-12 text-neutral-500">

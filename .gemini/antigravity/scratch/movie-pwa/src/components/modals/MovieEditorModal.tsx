@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, Search, ScanLine, Wand2, Star, Lock, Unlock, Upload, ImageIcon, Loader2, Trash2 } from 'lucide-react';
+import { X, Save, Search, ScanLine, Wand2, Star, Lock, Unlock, Upload, ImageIcon, Loader2, Trash2, Play } from 'lucide-react';
 import type { Movie } from '../../types';
 import { GoogleSheetsService } from '../../services/GoogleSheetsService';
 import { BarcodeScanner } from './BarcodeScanner';
+import { TrailerModal } from './TrailerModal';
 import { useQueryClient } from '@tanstack/react-query';
 
 interface MovieEditorModalProps {
@@ -56,6 +57,11 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
     const queryClient = useQueryClient();
     const [isLoading, setIsLoading] = useState(false);
     const [genres, setGenres] = useState<string[]>([]);
+
+    // Trailer State
+    const [trailerId, setTrailerId] = useState<string | null>(null);
+    const [isTrailerOpen, setIsTrailerOpen] = useState(false);
+    const [isLoadingTrailer, setIsLoadingTrailer] = useState(false);
 
     // Form State
     const [barcode, setBarcode] = useState('');
@@ -216,6 +222,42 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
             setIsMetadataLocked(true);
         } catch (error) {
             console.error("Error fetching details", error);
+        }
+    };
+
+    const handlePlayTrailer = async () => {
+        if (!tmdbId) {
+            alert("Este filme não tem vínculo com o TMDB para buscar o trailer. Tente buscar a capa novamente.");
+            return;
+        }
+
+        setIsLoadingTrailer(true);
+        try {
+            const apiKey = import.meta.env.VITE_TMDB_API_KEY || localStorage.getItem('tmdb_api_key');
+            const res = await fetch(`https://api.themoviedb.org/3/movie/${tmdbId}/videos?api_key=${apiKey}&language=pt-BR`);
+            const data = await res.json();
+
+            // Try Portuguese first, then English
+            let trailer = data.results?.find((v: any) => v.site === 'YouTube' && v.type === 'Trailer');
+
+            if (!trailer) {
+                const resEn = await fetch(`https://api.themoviedb.org/3/movie/${tmdbId}/videos?api_key=${apiKey}&language=en-US`);
+                const dataEn = await resEn.json();
+                trailer = dataEn.results?.find((v: any) => v.site === 'YouTube' && v.type === 'Trailer');
+            }
+
+            if (trailer) {
+                setTrailerId(trailer.key);
+                setIsTrailerOpen(true);
+            } else {
+                alert("Nenhum trailer encontrado para este filme.");
+            }
+
+        } catch (error) {
+            console.error("Error fetching trailer", error);
+            alert("Erro ao buscar trailer.");
+        } finally {
+            setIsLoadingTrailer(false);
         }
     };
 
@@ -390,106 +432,121 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                                 </div>
                             </div>
 
-                            {/* Main Inputs */}
-                            <div className="flex-1 space-y-4">
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div className="space-y-1 sm:col-span-2 relative">
+                        </div>
+
+                        {/* Main Inputs */}
+                        <div className="flex-1 space-y-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="space-y-1 sm:col-span-2 relative">
+                                    <div className="flex justify-between items-end mb-1">
                                         <label className="text-xs font-medium text-neutral-400">Título</label>
-                                        <div className="flex gap-2">
-                                            <input
-                                                type="text"
-                                                value={title}
-                                                onChange={(e) => setTitle(e.target.value)}
-                                                onBlur={() => {
-                                                    // Don't auto-fetch on blur anymore to avoid annoying behavior
-                                                    // let user click search manually
-                                                }}
-                                                className="w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-indigo-500"
-                                                placeholder="Nome do Filme"
-                                                required
-                                            />
+                                        {/* Trailer Button */}
+                                        {tmdbId && (
                                             <button
                                                 type="button"
-                                                onClick={() => fetchTmdbData(title, year)}
-                                                disabled={isSearching}
-                                                className="p-2 bg-indigo-600/20 text-indigo-400 rounded-lg hover:bg-indigo-600/30 transition-colors"
+                                                onClick={handlePlayTrailer}
+                                                disabled={isLoadingTrailer}
+                                                className="flex items-center gap-1 text-xs font-bold text-red-500 hover:text-red-400 transition-colors uppercase tracking-wider"
                                             >
-                                                {isSearching ? <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" /> : <Search size={20} />}
+                                                {isLoadingTrailer ? <Loader2 size={12} className="animate-spin" /> : <Play size={12} fill="currentColor" />}
+                                                Ver Trailer
                                             </button>
-                                        </div>
-
-                                        {/* Result Picker */}
-                                        {tmdbResults.length > 0 && (
-                                            <div className="absolute top-full left-0 right-0 mt-2 bg-neutral-800 border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
-                                                <div className="p-2 text-xs font-bold text-neutral-400 border-b border-white/5 bg-black/20">Selecione o filme correto:</div>
-                                                <div className="max-h-60 overflow-y-auto">
-                                                    {tmdbResults.map((m) => (
-                                                        <button
-                                                            key={m.id}
-                                                            type="button"
-                                                            onClick={() => selectTmdbMovie(m)}
-                                                            className="w-full flex items-center gap-3 p-3 hover:bg-white/5 transition-colors text-left border-b border-white/5 last:border-0"
-                                                        >
-                                                            <div className="w-8 h-12 bg-black/40 rounded flex-shrink-0">
-                                                                {m.poster_path && (
-                                                                    <img src={`https://image.tmdb.org/t/p/w92${m.poster_path}`} alt="" className="w-full h-full object-cover rounded" />
-                                                                )}
-                                                            </div>
-                                                            <div>
-                                                                <div className="font-bold text-white text-sm">{m.title}</div>
-                                                                <div className="text-xs text-neutral-400">{m.release_date?.substring(0, 4)} • ⭐ {m.vote_average?.toFixed(1)}</div>
-                                                            </div>
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setTmdbResults([])}
-                                                    className="w-full p-2 text-xs text-center text-neutral-500 hover:text-neutral-300 hover:bg-white/5 transition-colors"
-                                                >
-                                                    Fechar / Nenhum destes
-                                                </button>
-                                            </div>
                                         )}
                                     </div>
-
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-medium text-neutral-400">Ano</label>
+                                    <div className="flex gap-2">
                                         <input
                                             type="text"
-                                            value={year}
-                                            onChange={(e) => setYear(e.target.value)}
+                                            value={title}
+                                            onChange={(e) => setTitle(e.target.value)}
+                                            onBlur={() => {
+                                                // Don't auto-fetch on blur anymore to avoid annoying behavior
+                                                // let user click search manually
+                                            }}
                                             className="w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-indigo-500"
-                                            placeholder="Ex: 2024"
-                                            maxLength={4}
-                                        />
-                                    </div>
-
-                                    <div className="space-y-1">
-                                        <label className="text-xs font-medium text-neutral-400">Gênero</label>
-                                        <select
-                                            value={genre}
-                                            onChange={(e) => setGenre(e.target.value)}
-                                            className="w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-indigo-500"
+                                            placeholder="Nome do Filme"
                                             required
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => fetchTmdbData(title, year)}
+                                            disabled={isSearching}
+                                            className="p-2 bg-indigo-600/20 text-indigo-400 rounded-lg hover:bg-indigo-600/30 transition-colors"
                                         >
-                                            <option value="" disabled>Selecione...</option>
-                                            {genres.map(g => (
-                                                <option key={g} value={g}>{g}</option>
-                                            ))}
-                                        </select>
+                                            {isSearching ? <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" /> : <Search size={20} />}
+                                        </button>
                                     </div>
 
-                                    <div className="space-y-1 sm:col-span-2">
-                                        <label className="text-xs font-medium text-neutral-400">Código de Barras</label>
-                                        <input
-                                            type="text"
-                                            value={barcode}
-                                            onChange={(e) => setBarcode(e.target.value)}
-                                            className="w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-neutral-300 font-mono text-sm focus:ring-2 focus:ring-indigo-500"
-                                            placeholder="Escanear ou digitar..."
-                                        />
-                                    </div>
+                                    {/* Result Picker */}
+                                    {tmdbResults.length > 0 && (
+                                        <div className="absolute top-full left-0 right-0 mt-2 bg-neutral-800 border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
+                                            <div className="p-2 text-xs font-bold text-neutral-400 border-b border-white/5 bg-black/20">Selecione o filme correto:</div>
+                                            <div className="max-h-60 overflow-y-auto">
+                                                {tmdbResults.map((m) => (
+                                                    <button
+                                                        key={m.id}
+                                                        type="button"
+                                                        onClick={() => selectTmdbMovie(m)}
+                                                        className="w-full flex items-center gap-3 p-3 hover:bg-white/5 transition-colors text-left border-b border-white/5 last:border-0"
+                                                    >
+                                                        <div className="w-8 h-12 bg-black/40 rounded flex-shrink-0">
+                                                            {m.poster_path && (
+                                                                <img src={`https://image.tmdb.org/t/p/w92${m.poster_path}`} alt="" className="w-full h-full object-cover rounded" />
+                                                            )}
+                                                        </div>
+                                                        <div>
+                                                            <div className="font-bold text-white text-sm">{m.title}</div>
+                                                            <div className="text-xs text-neutral-400">{m.release_date?.substring(0, 4)} • ⭐ {m.vote_average?.toFixed(1)}</div>
+                                                        </div>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => setTmdbResults([])}
+                                                className="w-full p-2 text-xs text-center text-neutral-500 hover:text-neutral-300 hover:bg-white/5 transition-colors"
+                                            >
+                                                Fechar / Nenhum destes
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="space-y-1">
+                                    <label className="text-xs font-medium text-neutral-400">Ano</label>
+                                    <input
+                                        type="text"
+                                        value={year}
+                                        onChange={(e) => setYear(e.target.value)}
+                                        className="w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-indigo-500"
+                                        placeholder="Ex: 2024"
+                                        maxLength={4}
+                                    />
+                                </div>
+
+                                <div className="space-y-1">
+                                    <label className="text-xs font-medium text-neutral-400">Gênero</label>
+                                    <select
+                                        value={genre}
+                                        onChange={(e) => setGenre(e.target.value)}
+                                        className="w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-indigo-500"
+                                        required
+                                    >
+                                        <option value="" disabled>Selecione...</option>
+                                        {genres.map(g => (
+                                            <option key={g} value={g}>{g}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div className="space-y-1 sm:col-span-2">
+                                    <label className="text-xs font-medium text-neutral-400">Código de Barras</label>
+                                    <input
+                                        type="text"
+                                        value={barcode}
+                                        onChange={(e) => setBarcode(e.target.value)}
+                                        className="w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-neutral-300 font-mono text-sm focus:ring-2 focus:ring-indigo-500"
+                                        placeholder="Escanear ou digitar..."
+                                    />
                                 </div>
                             </div>
                         </div>
@@ -680,6 +737,13 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                     setBarcode(code);
                     setIsScannerOpen(false);
                 }}
+            />
+
+            {/* Trailer Overlay */}
+            <TrailerModal
+                isOpen={isTrailerOpen}
+                onClose={() => setIsTrailerOpen(false)}
+                videoId={trailerId}
             />
         </div>
     );
