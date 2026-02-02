@@ -30,7 +30,7 @@ export function useAutoEnrichment() {
         if (!allMovies || allMovies.length === 0 || isProcessingRef.current) return;
 
         // Load processed cache
-        const processedIds = new Set(JSON.parse(localStorage.getItem('auto_enrich_processed') || '[]'));
+        const processedIds = new Set(JSON.parse(localStorage.getItem('auto_enrich_processed_v2') || '[]'));
 
         // Identify candidates
         // Candidate = Missing Backdrop OR Missing TMDB Metadata (Synopsis, etc)
@@ -42,11 +42,9 @@ export function useAutoEnrichment() {
             const uid = m.barcode ? m.barcode.trim() : `${m.title.trim()}-${m.year}`;
             if (processedIds.has(uid)) return false;
 
-            // Missing visual?
-            if (!m.backdropValue) return true;
-            // Missing metadata?
-            if (!m.synopsis || !m.tmdbId) return true;
-            return false;
+            // V2: We process everyone who hasn't been processed in V2 yet.
+            // This forces a re-run for OMDB data.
+            return true;
         });
 
         if (candidates.length === 0) return;
@@ -77,7 +75,7 @@ export function useAutoEnrichment() {
         let imageUpdates: { movie: Movie, imageType: 'tmdb', imageValue: string, backdropType: 'tmdb', backdropValue: string }[] = [];
 
         // Load cache to append
-        const processedCache = new Set(JSON.parse(localStorage.getItem('auto_enrich_processed') || '[]'));
+        const processedCache = new Set(JSON.parse(localStorage.getItem('auto_enrich_processed_v2') || '[]'));
 
         for (let i = 0; i < queue.length; i++) {
             const movie = queue[i];
@@ -85,7 +83,7 @@ export function useAutoEnrichment() {
 
             // Mark as processed immediately to avoid restart loops if user refreshes during fetch
             processedCache.add(uid);
-            localStorage.setItem('auto_enrich_processed', JSON.stringify(Array.from(processedCache)));
+            localStorage.setItem('auto_enrich_processed_v2', JSON.stringify(Array.from(processedCache)));
 
             setState(prev => ({ ...prev, currentMovie: movie.title }));
 
@@ -101,34 +99,55 @@ export function useAutoEnrichment() {
                 if (searchData.results && searchData.results.length > 0) {
                     const best = searchData.results[0]; // Best match logic
 
-                    // 1. Prepare Metadata Update (if missing)
-                    if (!movie.synopsis || !movie.tmdbId) {
-                        const detailsUrl = `https://api.themoviedb.org/3/movie/${best.id}?api_key=${apiKey}&language=pt-BR&append_to_response=credits`;
-                        const detailsRes = await fetch(detailsUrl);
-                        const details = await detailsRes.json();
+                    // 1. Prepare Metadata Update (if missing or forcing update)
+                    // We check specific fields, but for v2 we basically trust the fetch if we are here
 
-                        const director = details.credits?.crew?.find((c: any) => c.job === 'Director')?.name;
-                        const cast = details.credits?.cast?.slice(0, 4).map((c: any) => c.name).join(', ');
+                    const detailsUrl = `https://api.themoviedb.org/3/movie/${best.id}?api_key=${apiKey}&language=pt-BR&append_to_response=credits`;
+                    const detailsRes = await fetch(detailsUrl);
+                    const details = await detailsRes.json();
 
-                        let durationFormatted = '';
-                        if (details.runtime) {
-                            const h = Math.floor(details.runtime / 60);
-                            const m = details.runtime % 60;
-                            durationFormatted = `${h}h ${m}m`;
-                        }
+                    const director = details.credits?.crew?.find((c: any) => c.job === 'Director')?.name;
+                    const cast = details.credits?.cast?.slice(0, 4).map((c: any) => c.name).join(', ');
 
-                        pendingUpdates.push({
-                            movie,
-                            data: {
-                                tmdbId: String(best.id),
-                                synopsis: best.overview || '',
-                                rating: best.vote_average ? best.vote_average.toFixed(1) : '',
-                                director: director || '',
-                                cast: cast || '',
-                                duration: durationFormatted || ''
-                            }
-                        });
+                    let durationFormatted = '';
+                    if (details.runtime) {
+                        const h = Math.floor(details.runtime / 60);
+                        const m = details.runtime % 60;
+                        durationFormatted = `${h}h ${m}m`;
                     }
+
+                    let rt = '';
+                    let mc = '';
+
+                    // OMDB Fetch
+                    if (details.imdb_id) {
+                        const omdbKey = import.meta.env.VITE_OMDB_API_KEY || localStorage.getItem('omdb_api_key');
+                        if (omdbKey) {
+                            try {
+                                const omdbUrl = `https://www.omdbapi.com/?apikey=${omdbKey}&i=${details.imdb_id}`;
+                                const omdbRes = await fetch(omdbUrl);
+                                const omdbData = await omdbRes.json();
+                                if (omdbData.Ratings) {
+                                    rt = omdbData.Ratings.find((r: any) => r.Source === 'Rotten Tomatoes')?.Value || '';
+                                    mc = omdbData.Ratings.find((r: any) => r.Source === 'Metacritic')?.Value || '';
+                                }
+                            } catch (e) { console.error("OMDB Auto-Enrich Error", e); }
+                        }
+                    }
+
+                    pendingUpdates.push({
+                        movie,
+                        data: {
+                            tmdbId: String(best.id),
+                            synopsis: best.overview || '',
+                            rating: best.vote_average ? best.vote_average.toFixed(1) : '',
+                            director: director || '',
+                            cast: cast || '',
+                            duration: durationFormatted || '',
+                            rottenTomatoesRating: rt,
+                            metacriticRating: mc
+                        }
+                    });
 
                     // 2. Prepare Image Update (if missing backdrop or poster)
                     if (!movie.backdropValue || !movie.imageValue) {
