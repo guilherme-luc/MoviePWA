@@ -10,6 +10,7 @@ export const isGeminiAvailable = () => {
 
 interface UserPreferences {
     mood: string;
+    subMood?: string; // e.g., 'slapstick', 'romance_cliche'
     duration: string; // 'short', 'medium', 'long', 'any'
     status: string; // 'new', 'rewatch', 'any'
 }
@@ -42,7 +43,8 @@ export class GeminiService {
         ${movieList}
 
         Minhas preferências para hoje:
-        - Vibe/Humor: ${preferences.mood === 'any' ? 'Surpreenda-me' : preferences.mood}
+        - Vibe Principal: ${preferences.mood === 'any' ? 'Surpreenda-me' : preferences.mood}
+        ${preferences.subMood && preferences.subMood !== 'any' ? `- Estilo Específico (Foco total nisso): ${preferences.subMood}` : ''}
         - Duração desejada: ${preferences.duration}
         - Estado: ${preferences.status === 'new' ? 'Quero algo que nunca vi' : preferences.status === 'rewatch' ? 'Quero rever um favorito' : 'Tanto faz'}
 

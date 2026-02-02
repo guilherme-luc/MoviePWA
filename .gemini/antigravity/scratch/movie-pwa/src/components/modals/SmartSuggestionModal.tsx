@@ -9,15 +9,45 @@ interface SmartSuggestionModalProps {
     movies: Movie[]; // All movies to filter from
 }
 
-type Step = 'intro' | 'mood' | 'time' | 'status' | 'analysis' | 'result';
+type Step = 'intro' | 'mood' | 'submood' | 'time' | 'status' | 'analysis' | 'result';
 type Mood = 'laugh' | 'tension' | 'adrenaline' | 'emotion' | 'any';
+type SubMood = string;
 type Duration = 'short' | 'medium' | 'long' | 'any';
 type Status = 'new' | 'rewatch' | 'any';
+
+const SUB_MOODS: Record<Mood, { label: string, desc: string, value: string }[]> = {
+    'laugh': [
+        { label: 'Pastelão / Bobo', desc: 'Para desligar o cérebro', value: 'slapstick' },
+        { label: 'Sátira / Inteligente', desc: 'Humor ácido e críticas', value: 'satire' },
+        { label: 'Romântica', desc: 'Leve e apaixonante', value: 'romcom' },
+        { label: 'Animação / Família', desc: 'Para todas as idades', value: 'family' }
+    ],
+    'tension': [
+        { label: 'Susto (Jump Scares)', desc: 'Terror clássico', value: 'jump_scare' },
+        { label: 'Psicológico', desc: 'Mexe com a mente', value: 'psychological' },
+        { label: 'Mistério / Crime', desc: 'Quem matou?', value: 'mystery' },
+        { label: 'Sangrento (Slasher)', desc: 'Violência gráfica', value: 'slasher' }
+    ],
+    'adrenaline': [
+        { label: 'Policial / Crime', desc: 'Tiros e perseguições', value: 'police' },
+        { label: 'Super-Heróis', desc: 'Poderes e efeitos', value: 'scifi_action' },
+        { label: 'Guerra / Histórico', desc: 'Batalhas épicas', value: 'war' },
+        { label: 'Espionagem / Thriller', desc: 'Tensão e agentes secretos', value: 'spy' }
+    ],
+    'emotion': [
+        { label: 'Romance Clichê', desc: 'Final feliz garantido', value: 'romance_cliche' },
+        { label: 'Drama Pesado', desc: 'Para chorar no banho', value: 'heavy_drama' },
+        { label: 'Inspirador', desc: 'Histórias de superação', value: 'inspiring' },
+        { label: 'Íntimo / Indie', desc: 'Diálogos profundos', value: 'indie' }
+    ],
+    'any': []
+};
 
 export const SmartSuggestionModal: React.FC<SmartSuggestionModalProps> = ({ isOpen, onClose, movies }) => {
     const [step, setStep] = useState<Step>('intro');
     const [preferences, setPreferences] = useState({
         mood: 'any' as Mood,
+        subMood: 'any' as SubMood,
         duration: 'any' as Duration,
         status: 'any' as Status
     });
@@ -32,7 +62,7 @@ export const SmartSuggestionModal: React.FC<SmartSuggestionModalProps> = ({ isOp
             setStep('intro');
             setResult(null);
             setReasoning(null);
-            setPreferences({ mood: 'any', duration: 'any', status: 'any' });
+            setPreferences({ mood: 'any', subMood: 'any', duration: 'any', status: 'any' });
             setIsAiActive(isGeminiAvailable());
         }
     }, [isOpen]);
@@ -216,33 +246,33 @@ export const SmartSuggestionModal: React.FC<SmartSuggestionModalProps> = ({ isOp
                                     icon={<Smile size={24} />}
                                     label="Dar Risada"
                                     desc="Comédia, Animação"
-                                    onClick={() => { setPreferences({ ...preferences, mood: 'laugh' }); handleNext('time'); }}
+                                    onClick={() => { setPreferences({ ...preferences, mood: 'laugh' }); handleNext('submood'); }}
                                     color={isAiActive ? 'blue' : 'purple'}
                                 />
                                 <OptionCard
-                                    icon={<Clock size={24} />} // Using Clock as generic 'Tension' icon placeholder or maybe Zap
+                                    icon={<Clock size={24} />}
                                     label="Tensão"
                                     desc="Suspense, Terror"
-                                    onClick={() => { setPreferences({ ...preferences, mood: 'tension' }); handleNext('time'); }}
+                                    onClick={() => { setPreferences({ ...preferences, mood: 'tension' }); handleNext('submood'); }}
                                     color={isAiActive ? 'blue' : 'purple'}
                                 />
                                 <OptionCard
                                     icon={<Play size={24} />}
                                     label="Adrenalina"
                                     desc="Ação, Aventura"
-                                    onClick={() => { setPreferences({ ...preferences, mood: 'adrenaline' }); handleNext('time'); }}
+                                    onClick={() => { setPreferences({ ...preferences, mood: 'adrenaline' }); handleNext('submood'); }}
                                     color={isAiActive ? 'blue' : 'purple'}
                                 />
                                 <OptionCard
                                     icon={<Film size={24} />}
                                     label="Emoção / Drama"
                                     desc="Drama, Romance"
-                                    onClick={() => { setPreferences({ ...preferences, mood: 'emotion' }); handleNext('time'); }}
+                                    onClick={() => { setPreferences({ ...preferences, mood: 'emotion' }); handleNext('submood'); }}
                                     color={isAiActive ? 'blue' : 'purple'}
                                 />
                             </div>
                             <button
-                                onClick={() => { setPreferences({ ...preferences, mood: 'any' }); handleNext('time'); }}
+                                onClick={() => { setPreferences({ ...preferences, mood: 'any', subMood: 'any' }); handleNext('time'); }}
                                 className="w-full mt-4 py-3 text-neutral-400 hover:text-white hover:bg-white/5 rounded-xl text-sm transition-colors border border-white/5"
                             >
                                 Surpreenda-me (Qualquer gênero)
@@ -251,9 +281,30 @@ export const SmartSuggestionModal: React.FC<SmartSuggestionModalProps> = ({ isOp
                     </div>
                 )}
 
+                {step === 'submood' && preferences.mood !== 'any' && (
+                    <div className="flex-1 flex flex-col p-8 animate-in fade-in slide-in-from-right-8">
+                        <div className="flex-1">
+                            <StepHeader step={2} title="Especifique o estilo..." color={isAiActive ? 'blue' : 'purple'} />
+
+                            <div className="grid grid-cols-1 gap-3 mt-6">
+                                {SUB_MOODS[preferences.mood].map((sub) => (
+                                    <OptionCard
+                                        key={sub.value}
+                                        icon={<Sparkles size={18} />}
+                                        label={sub.label}
+                                        desc={sub.desc}
+                                        onClick={() => { setPreferences({ ...preferences, subMood: sub.value }); handleNext('time'); }}
+                                        color={isAiActive ? 'blue' : 'purple'}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {step === 'time' && (
                     <div className="flex-1 flex flex-col p-8 animate-in fade-in slide-in-from-right-8">
-                        <StepHeader step={2} title="Quanto tempo você tem?" color={isAiActive ? 'blue' : 'purple'} />
+                        <StepHeader step={3} title="Quanto tempo você tem?" color={isAiActive ? 'blue' : 'purple'} />
                         <div className="grid grid-cols-1 gap-3 mt-6">
                             <OptionCard
                                 icon={<Clock size={20} />}
@@ -288,7 +339,7 @@ export const SmartSuggestionModal: React.FC<SmartSuggestionModalProps> = ({ isOp
 
                 {step === 'status' && (
                     <div className="flex-1 flex flex-col p-8 animate-in fade-in slide-in-from-right-8">
-                        <StepHeader step={3} title="O que vamos ver?" color={isAiActive ? 'blue' : 'purple'} />
+                        <StepHeader step={4} title="O que vamos ver?" color={isAiActive ? 'blue' : 'purple'} />
                         <div className="grid grid-cols-1 gap-3 mt-6">
                             <OptionCard
                                 icon={<Sparkles size={20} />}
