@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, Key, Paintbrush, Share2 } from 'lucide-react';
+import { X, Save, Key, Paintbrush, Share2, LogIn } from 'lucide-react';
 import { useTheme } from '../../providers/ThemeProvider';
 import { useShowcase } from '../../providers/ShowcaseProvider';
 
@@ -10,7 +10,7 @@ interface SettingsModalProps {
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
     const { theme, setTheme } = useTheme();
-    const { isShowcaseMode } = useShowcase();
+    const { isShowcaseMode, toggleShowcaseMode } = useShowcase();
     const [previewTheme, setPreviewTheme] = useState(theme);
 
     // Sync preview with actual theme when opening
@@ -109,6 +109,27 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                     )}
 
                 </div>
+
+                {/* Show Login/Exit button ONLY if in Showcase Mode (Guest) */}
+                {isShowcaseMode && (
+                    <div className="mt-8 pt-6 border-t border-white/10 text-center">
+                        <p className="text-neutral-400 text-sm mb-4">
+                            Você está em modo visitante (somente leitura).
+                        </p>
+                        <button
+                            onClick={() => {
+                                toggleShowcaseMode();
+                                onClose();
+                                window.location.reload(); // Reload to ensure clean state
+                            }}
+                            className="w-full py-3 bg-neutral-800 hover:bg-neutral-700 text-white rounded-xl font-bold transition-all flex items-center justify-center gap-2 border border-white/10"
+                        >
+                            <LogIn size={18} />
+                            Sair do Modo Visitante (Login)
+                        </button>
+                    </div>
+                )}
+
 
                 {!isShowcaseMode && (
                     <div className="mt-8 flex justify-end gap-3">

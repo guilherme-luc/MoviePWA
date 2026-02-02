@@ -15,7 +15,12 @@ export function ShowcaseProvider({ children }: { children: React.ReactNode }) {
     });
 
     useEffect(() => {
-        localStorage.setItem('showcase_mode', String(isShowcaseMode));
+        const params = new URLSearchParams(window.location.search);
+        // Only persist settings if we are NOT in a forced URL guest session
+        // This prevents "infecting" the user's permanent state just because they tested a link
+        if (!params.has('guest')) {
+            localStorage.setItem('showcase_mode', String(isShowcaseMode));
+        }
     }, [isShowcaseMode]);
 
     const toggleShowcaseMode = () => {
