@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Save, Search, ScanLine, Wand2, Star, Lock, Unlock, Upload, ImageIcon, Loader2, Trash2, Play, Music, Share2 } from 'lucide-react';
 import type { Movie } from '../../types';
 import { GoogleSheetsService } from '../../services/GoogleSheetsService';
-import { BarcodeScanner } from './BarcodeScanner';
+
 import { ShareModal } from './ShareModal';
 
 import { TrailerModal } from './TrailerModal';
@@ -107,7 +107,7 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
     const [metacriticRating, setMetacriticRating] = useState(''); // [NEW] Phase 7
 
 
-    const [isScannerOpen, setIsScannerOpen] = useState(false);
+
     const [isSearching, setIsSearching] = useState(false);
 
     // Manual Override for Metadata
@@ -439,16 +439,7 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                                 <Share2 size={20} />
                             </button>
 
-                            {!isShowcaseMode && (
-                                <button
-                                    type="button"
-                                    onClick={() => setIsScannerOpen(true)}
-                                    className="p-2 text-primary-400 hover:bg-primary-500/10 rounded-full transition-colors bg-black/20 backdrop-blur-md"
-                                    title="Escanear Código de Barras"
-                                >
-                                    <ScanLine size={20} />
-                                </button>
-                            )}
+
                             <button onClick={onClose} className="p-2 text-neutral-400 hover:text-white rounded-full hover:bg-white/10 transition-colors bg-black/20 backdrop-blur-md">
                                 <X size={20} />
                             </button>
@@ -988,15 +979,7 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
 
             </div>
 
-            {/* Barcode Scanner Overlay */}
-            <BarcodeScanner
-                isOpen={isScannerOpen}
-                onClose={() => setIsScannerOpen(false)}
-                onDetected={(code) => {
-                    setBarcode(code);
-                    setIsScannerOpen(false);
-                }}
-            />
+
 
             {isTrailerOpen && trailerId && (
                 <TrailerModal
