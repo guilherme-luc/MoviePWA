@@ -22,10 +22,10 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
                         My Movies
                     </h1>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 sm:gap-3">
                         {/* Sync Indicator */}
                         {isSyncing && (
-                            <div className="flex items-center gap-2 text-xs text-neutral-400 bg-black/20 px-3 py-1 rounded-full border border-white/5 animate-in fade-in slide-in-from-top-2">
+                            <div className="flex items-center gap-2 text-xs text-neutral-400 bg-black/20 px-3 py-1 rounded-full border border-white/5">
                                 <RefreshCw size={12} className="animate-spin text-primary-400" />
                                 <span className="hidden sm:inline">
                                     {processedCount}/{totalToProcess}
@@ -36,7 +36,8 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
                         {/* Settings Button */}
                         <button
                             onClick={() => setIsSettingsOpen(true)}
-                            className="p-2 text-neutral-400 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+                            className="p-2.5 bg-white/5 text-neutral-300 hover:text-white hover:bg-white/10 rounded-full transition-colors flex-shrink-0 border border-white/5"
+                            aria-label="Configurações"
                         >
                             <Settings size={20} />
                         </button>

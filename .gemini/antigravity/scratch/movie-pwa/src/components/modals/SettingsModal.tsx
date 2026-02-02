@@ -28,8 +28,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-neutral-900 border border-white/10 w-full max-w-md rounded-2xl p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-neutral-900 border border-white/10 w-full max-w-md rounded-2xl p-6 shadow-2xl animate-in zoom-in-95 duration-200 relative">
 
                 <div className="flex items-center justify-between mb-6">
                     <h2 className="text-xl font-bold text-white flex items-center gap-2">
@@ -44,20 +44,20 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                 <div className="space-y-6">
 
                     {/* Showcase Mode Toggle (Top Priority to Exit) */}
-                    <div className="bg-neutral-800/50 p-4 rounded-xl border border-white/5 flex items-center justify-between">
+                    <div className="bg-neutral-800 p-4 rounded-xl border border-white/10 flex items-center justify-between shadow-sm">
                         <div>
                             <h3 className="text-white font-bold flex items-center gap-2">
                                 {isShowcaseMode ? <Eye size={18} className="text-green-400" /> : <EyeOff size={18} className="text-neutral-400" />}
                                 Modo Showcase
                             </h3>
                             <p className="text-xs text-neutral-400 mt-1">
-                                {isShowcaseMode ? 'Ocultando botões de edição.' : 'Permite edição total.'}
+                                {isShowcaseMode ? 'Proteção ativa. Edição bloqueada.' : 'Edição liberada.'}
                             </p>
                         </div>
                         <button
                             onClick={toggleShowcaseMode}
                             className={`
-                                relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-neutral-900
+                                relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-neutral-900
                                 ${isShowcaseMode ? 'bg-green-600' : 'bg-neutral-600'}
                             `}
                         >
