@@ -202,7 +202,7 @@ export class GoogleSheetsService {
             return [];
         } catch (error) {
             console.error(`Failed to fetch movies for genre ${genre}`, error);
-            return [];
+            throw error;
         }
     }
 

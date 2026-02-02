@@ -2,7 +2,7 @@ import React, { useState, useMemo, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useMovies } from '../hooks/useMovies';
-import { ArrowLeft, Search, Plus, Edit2, Wand2, Loader2, CheckSquare, Trash2, X, Star, Eye } from 'lucide-react';
+import { ArrowLeft, Search, Plus, Edit2, Wand2, Loader2, CheckSquare, Trash2, X, Star, Eye, AlertTriangle } from 'lucide-react';
 import { MovieEditorModal } from '../components/modals/MovieEditorModal';
 import { GoogleSheetsService } from '../services/GoogleSheetsService';
 import type { Movie } from '../types';
@@ -13,7 +13,7 @@ export const MoviesPage: React.FC = () => {
     const decodedGenre = decodeURIComponent(genre || '');
     const queryClient = useQueryClient();
 
-    const { data: movies, isLoading } = useMovies(decodedGenre);
+    const { data: movies, isLoading, isError } = useMovies(decodedGenre);
     const [search, setSearch] = useState('');
 
     const [isEditorOpen, setIsEditorOpen] = useState(false);
@@ -429,6 +429,18 @@ export const MoviesPage: React.FC = () => {
                 {isLoading ? (
                     <div className="space-y-4">
                         {[1, 2, 3, 4, 5].map(i => <MovieCardSkeleton key={i} />)}
+                    </div>
+                ) : isError ? (
+                    <div className="flex flex-col items-center justify-center py-20 text-neutral-500 animate-in fade-in">
+                        <AlertTriangle size={48} className="text-red-500 mb-4 opacity-50" />
+                        <p className="text-lg font-medium text-neutral-300">Erro ao carregar filmes</p>
+                        <p className="text-sm mb-6">Verifique sua conexão e tente novamente.</p>
+                        <button
+                            onClick={() => queryClient.invalidateQueries({ queryKey: ['movies', decodedGenre] })}
+                            className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2 rounded-full font-medium transition-colors"
+                        >
+                            Tentar Novamente
+                        </button>
                     </div>
                 ) : filteredMovies.length === 0 ? (
                     <div className="text-center py-12 text-neutral-500">
