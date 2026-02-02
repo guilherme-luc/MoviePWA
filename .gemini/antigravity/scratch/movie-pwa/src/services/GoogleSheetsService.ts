@@ -208,23 +208,61 @@ export class GoogleSheetsService {
 
     public async getAllMovies(): Promise<Movie[]> {
         if (!this.isInitialized) await this.initClient();
-        const genres = await this.getGenres();
-        if (genres.length === 0) return [];
+        try {
+            const genres = await this.getGenres();
+            if (genres.length === 0) return [];
 
-        const promises = genres.map(async (genre) => {
-            try {
-                return await this.getMoviesByGenre(genre);
-            } catch (e) {
-                return [];
-            }
-        });
+            const ranges = genres.map(genre => `'${genre}'!A2:U`);
+            const response = await gapi.client.sheets.spreadsheets.values.batchGet({
+                spreadsheetId: this.SPREADSHEET_ID,
+                ranges: ranges
+            });
 
-        const results = await Promise.all(promises);
-        return results.flat().sort((a, b) => {
-            const normA = a.title.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "");
-            const normB = b.title.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "");
-            return normA.localeCompare(normB);
-        });
+            const valueRanges = response.result.valueRanges;
+            if (!valueRanges) return [];
+
+            const allMovies: Movie[] = [];
+            valueRanges.forEach((range, index) => {
+                const genre = genres[index];
+                if (range.values) {
+                    const movies = range.values.map((row, idx) => ({
+                        barcode: row[0] || '',
+                        title: row[1] || '',
+                        year: row[2] || '',
+                        genre: row[3] || genre,
+                        imageType: (row[4] as 'tmdb' | 'base64' | undefined) || undefined,
+                        imageValue: row[5] || undefined,
+                        synopsis: row[6] || undefined,
+                        rating: row[7] || undefined,
+                        duration: row[8] || undefined,
+                        director: row[9] || undefined,
+                        tmdbId: row[10] || undefined,
+                        cast: row[11] || undefined,
+                        userRating: row[12] || undefined,
+                        watched: row[13] === 'TRUE',
+                        backdropType: (row[14] as 'tmdb' | 'base64' | undefined) || undefined,
+                        backdropValue: row[15] || undefined,
+                        tags: row[16] ? row[16].split(',').map((t: string) => t.trim()).filter(Boolean) : [],
+                        franchise: row[17] || undefined,
+                        soundtrackUrl: row[18] || undefined,
+                        rottenTomatoesRating: row[19] || undefined,
+                        metacriticRating: row[20] || undefined,
+                        _rowIndex: idx + 2,
+                        _sheetTitle: genre
+                    }));
+                    allMovies.push(...movies);
+                }
+            });
+
+            return allMovies.sort((a, b) => {
+                const normA = a.title.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "");
+                const normB = b.title.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "");
+                return normA.localeCompare(normB);
+            });
+        } catch (error) {
+            console.error("Failed to fetch all movies", error);
+            throw error;
+        }
     }
 
     private movieToRow(movie: Movie): string[] {
