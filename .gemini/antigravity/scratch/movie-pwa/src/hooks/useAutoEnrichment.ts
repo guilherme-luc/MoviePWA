@@ -29,10 +29,19 @@ export function useAutoEnrichment() {
     useEffect(() => {
         if (!allMovies || allMovies.length === 0 || isProcessingRef.current) return;
 
+        // Load processed cache
+        const processedIds = new Set(JSON.parse(localStorage.getItem('auto_enrich_processed') || '[]'));
+
         // Identify candidates
         // Candidate = Missing Backdrop OR Missing TMDB Metadata (Synopsis, etc)
+        // AND not processed recently
         const candidates = allMovies.filter(m => {
             if (!m.title) return false;
+
+            // Unique ID for cache (Barcode or Title+Year)
+            const uid = m.barcode || `${m.title}-${m.year}`;
+            if (processedIds.has(uid)) return false;
+
             // Missing visual?
             if (!m.backdropValue) return true;
             // Missing metadata?
@@ -67,8 +76,13 @@ export function useAutoEnrichment() {
         let pendingUpdates: { movie: Movie, data: Partial<Movie> }[] = [];
         let imageUpdates: { movie: Movie, imageType: 'tmdb', imageValue: string, backdropType: 'tmdb', backdropValue: string }[] = [];
 
+        // Load cache to append
+        const processedCache = new Set(JSON.parse(localStorage.getItem('auto_enrich_processed') || '[]'));
+
         for (let i = 0; i < queue.length; i++) {
             const movie = queue[i];
+            const uid = movie.barcode || `${movie.title}-${movie.year}`;
+
             setState(prev => ({ ...prev, currentMovie: movie.title }));
 
             try {
@@ -85,14 +99,6 @@ export function useAutoEnrichment() {
 
                     // 1. Prepare Metadata Update (if missing)
                     if (!movie.synopsis || !movie.tmdbId) {
-                        // Need details for specialized props like Director/Cast if we want to go deep,
-                        // but search result gives synopsis, id, backdrop, poster, rating.
-                        // Let's stick to search result for "Lite" enrichment to avoid 2 calls per movie.
-
-                        // Note: Director/Cast requires /movie/{id} details call. 
-                        // Let's decide: Only synopsis/rating/backdrop for now to keep it fast?
-                        // USER ASKED FOR EVERYTHING. Let's do the detail call if needed.
-
                         const detailsUrl = `https://api.themoviedb.org/3/movie/${best.id}?api_key=${apiKey}&language=pt-BR&append_to_response=credits`;
                         const detailsRes = await fetch(detailsUrl);
                         const details = await detailsRes.json();
@@ -131,6 +137,10 @@ export function useAutoEnrichment() {
                         });
                     }
                 }
+
+                // Mark as processed regardless of result to avoid infinite loops on unfindable movies
+                processedCache.add(uid);
+                localStorage.setItem('auto_enrich_processed', JSON.stringify(Array.from(processedCache)));
 
             } catch (error) {
                 console.error(`Auto-Enrich failed for ${movie.title}`, error);

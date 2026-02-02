@@ -432,7 +432,7 @@ export class GoogleSheetsService {
             });
         } catch (error) {
             console.error("Failed to fetch genre counts", error);
-            return [];
+            throw error;
         }
     }
 
