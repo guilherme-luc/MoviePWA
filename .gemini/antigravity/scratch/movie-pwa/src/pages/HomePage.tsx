@@ -12,7 +12,7 @@ import type { Movie } from '../types';
 import { Skeleton } from '../components/ui/Skeleton';
 
 export const HomePage: React.FC = () => {
-    const { data: genres, isLoading } = useGenres();
+    const { data: genres, isLoading, isError } = useGenres();
     const { data: allMovies } = useAllMovies();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -177,8 +177,29 @@ export const HomePage: React.FC = () => {
                 </button>
             </div>
 
-            {/* Genres Grid (Unchanged) */}
-            {isLoading ? (
+            {/* Genres Grid */}
+            {isError ? (
+                <div className="glass-panel p-8 rounded-2xl text-center">
+                    <div className="flex flex-col items-center gap-4">
+                        <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center">
+                            <Database className="text-red-400" size={32} />
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-semibold text-neutral-200 mb-2">Limite de Requisições Atingido</h3>
+                            <p className="text-sm text-neutral-400 max-w-md mx-auto mb-4">
+                                A Google Sheets API tem um limite de requisições por minuto.
+                                Aguarde alguns segundos e tente novamente.
+                            </p>
+                        </div>
+                        <button
+                            onClick={() => window.location.reload()}
+                            className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2 rounded-full font-medium transition-colors"
+                        >
+                            Recarregar Página
+                        </button>
+                    </div>
+                </div>
+            ) : isLoading ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {[1, 2, 3, 4].map(i => (
                         <Skeleton key={i} className="h-20 w-full rounded-xl" />
