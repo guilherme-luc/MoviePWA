@@ -25,6 +25,30 @@ export const StartupGuard: React.FC<{ children: React.ReactNode }> = ({ children
 
         const init = async () => {
             try {
+                // [NEW] Check for Guest Mode in URL
+                const params = new URLSearchParams(window.location.search);
+                const isGuest = params.get('guest') === 'true';
+
+                if (isGuest) {
+                    console.log("Entering Guest Mode...");
+                    service.enableGuestMode();
+                    await service.initClient();
+                    // In Guest Mode, we try to validate immediately (public read)
+                    try {
+                        await validate();
+                    } catch (err: any) {
+                        // If validation fails in guest mode, it's likely permissions
+                        console.error("Guest Mode Validation Error", err);
+                        setStatus('invalid_sheet');
+                        if (err.result?.error?.code === 403) {
+                            setErrorMsg("🔒 Esta coleção é Privada. O dono precisa deixá-la 'Pública para Leitura' no Google Drive para que o link funcione.");
+                        } else {
+                            setErrorMsg("Erro ao acessar coleção pública: " + (err.result?.error?.message || err.message));
+                        }
+                    }
+                    return;
+                }
+
                 await service.initClient();
 
                 // Now safe to attach listener

@@ -9,6 +9,8 @@ const ShowcaseContext = createContext<ShowcaseContextType | undefined>(undefined
 
 export function ShowcaseProvider({ children }: { children: React.ReactNode }) {
     const [isShowcaseMode, setIsShowcaseMode] = useState<boolean>(() => {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('guest') === 'true') return true;
         return localStorage.getItem('showcase_mode') === 'true';
     });
 
@@ -16,7 +18,14 @@ export function ShowcaseProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem('showcase_mode', String(isShowcaseMode));
     }, [isShowcaseMode]);
 
-    const toggleShowcaseMode = () => setIsShowcaseMode(prev => !prev);
+    const toggleShowcaseMode = () => {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('guest') === 'true') {
+            alert("Modo Visitante: Edição desabilitada permanentemente.");
+            return;
+        }
+        setIsShowcaseMode(prev => !prev);
+    };
 
     return (
         <ShowcaseContext.Provider value={{ isShowcaseMode, toggleShowcaseMode }}>

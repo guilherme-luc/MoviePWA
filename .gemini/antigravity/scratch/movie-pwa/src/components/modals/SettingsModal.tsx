@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, Key, Paintbrush, Eye, EyeOff } from 'lucide-react';
+import { X, Save, Key, Paintbrush, Eye, EyeOff, Share2 } from 'lucide-react';
 import { useTheme } from '../../providers/ThemeProvider';
 import { useShowcase } from '../../providers/ShowcaseProvider';
 
@@ -64,6 +64,30 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                             <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isShowcaseMode ? 'translate-x-6' : 'translate-x-1'}`} />
                         </button>
                     </div>
+
+                    {!isShowcaseMode && (
+                        <div className="bg-primary-500/10 p-4 rounded-xl border border-primary-500/20">
+                            <h3 className="text-white font-bold text-sm mb-2 flex items-center gap-2">
+                                <Share2 size={16} className="text-primary-400" />
+                                Compartilhar Coleção (Link Público)
+                            </h3>
+                            <p className="text-xs text-neutral-400 mb-3 leading-relaxed">
+                                Gere um link para amigos visualizarem sua coleção sem poder editar.
+                                <br />
+                                <strong className="text-primary-300">Atenção:</strong> Você precisará deixar sua planilha do Google como <u>"Qualquer pessoa com o link pode Ler"</u>.
+                            </p>
+                            <button
+                                onClick={() => {
+                                    const link = `${window.location.origin}/?guest=true`;
+                                    navigator.clipboard.writeText(link);
+                                    alert("🔗 Link copiado!\n\nAgora vá no seu Google Sheets > Compartilhar > Acesso Geral > 'Qualquer pessoa com o link' (Leitor).\n\nEnvie o link copiado para seus amigos!");
+                                }}
+                                className="w-full py-2 bg-primary-600 hover:bg-primary-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-primary-500/20 transition-all active:scale-95"
+                            >
+                                Copiar Link de Visitante
+                            </button>
+                        </div>
+                    )}
 
                     {!isShowcaseMode && (
                         <>

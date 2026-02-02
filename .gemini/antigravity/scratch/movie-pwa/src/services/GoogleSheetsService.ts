@@ -4,6 +4,7 @@ import type { Movie } from '../types';
 export class GoogleSheetsService {
     private static instance: GoogleSheetsService;
     private isInitialized = false;
+    public isGuest = false; // [NEW] Guest Mode flag
 
     // These should be configured via environment variables
     private readonly CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
@@ -27,20 +28,41 @@ export class GoogleSheetsService {
         return GoogleSheetsService.instance;
     }
 
+    public enableGuestMode() {
+        this.isGuest = true;
+        this.isInitialized = true; // Skip normal init flow partially
+        // Still need GAPI loaded though
+    }
+
     /**
      * Initialize the Google API Client & GIS Token Client.
      */
     public async initClient(): Promise<void> {
-        if (this.isInitialized) return;
+        // If already initialized and NOT guest (or guest and gapi loaded), return
+        if (this.isInitialized && (typeof gapi !== 'undefined' && gapi.client)) return;
 
         return new Promise((resolve, reject) => {
             // 1. Load GAPI (for Sheets API)
+            // @ts-ignore
+            if (typeof gapi === 'undefined') {
+                console.error("GAPI not loaded");
+                reject("GAPI script missing");
+                return;
+            }
+
             gapi.load('client', async () => {
                 try {
                     await gapi.client.init({
                         apiKey: this.API_KEY,
                         discoveryDocs: this.DISCOVERY_DOCS,
                     });
+
+                    // If Guest, we stop here (no Auth needed)
+                    if (this.isGuest) {
+                        this.isInitialized = true;
+                        resolve();
+                        return;
+                    }
 
                     // 2. Initialize GIS Token Client (for Auth)
                     // @ts-ignore
