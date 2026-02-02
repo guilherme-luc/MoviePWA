@@ -21,17 +21,17 @@ interface GeminiRecommendation {
 
 export class GeminiService {
     private genAI: GoogleGenerativeAI | undefined;
-    private model: any;
+    // List of models to try in order of preference
+    private readonly models = ["gemini-1.5-flash", "gemini-1.5-flash-001", "gemini-1.0-pro", "gemini-pro"];
 
     constructor() {
         if (API_KEY) {
             this.genAI = new GoogleGenerativeAI(API_KEY);
-            this.model = this.genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
         }
     }
 
     async getRecommendation(candidates: Movie[], preferences: UserPreferences): Promise<GeminiRecommendation | null> {
-        if (!this.model || candidates.length === 0) return null;
+        if (!this.genAI || candidates.length === 0) return null;
 
         // Simplify movie list to save tokens/complexity
         const movieList = candidates.map(m => `- ${m.title} (${m.year}, ${m.genre}, ${m.duration || '?'})`).join('\n');
@@ -57,22 +57,37 @@ export class GeminiService {
         }
         `;
 
-        try {
-            const result = await this.model.generateContent(prompt);
-            const response = await result.response;
-            const text = response.text();
+        let lastError: any;
 
-            // Extract JSON from potential markdown
-            const jsonMatch = text.match(/\{[\s\S]*\}/);
-            const jsonStr = jsonMatch ? jsonMatch[0] : text;
+        // Try models sequentially until one works
+        for (const modelName of this.models) {
+            try {
+                const model = this.genAI.getGenerativeModel({ model: modelName });
+                const result = await model.generateContent(prompt);
+                const response = await result.response;
+                const text = response.text();
 
-            const data = JSON.parse(jsonStr) as GeminiRecommendation;
-            return data;
-        } catch (error: any) {
-            console.error("Gemini AI Error:", error);
-            // Throw so UI can show the message
-            throw new Error(error.message || "Erro desconhecido na API");
+                // Extract JSON from potential markdown
+                const jsonMatch = text.match(/\{[\s\S]*\}/);
+                const jsonStr = jsonMatch ? jsonMatch[0] : text;
+
+                const data = JSON.parse(jsonStr) as GeminiRecommendation;
+                return data; // Success!
+
+            } catch (error: any) {
+                console.warn(`Gemini Model '${modelName}' failed:`, error.message);
+                lastError = error;
+                // If error is NOT 404 or 400 (Client errors), maybe wait? 
+                // But for 404 (Model not found), we definitely want to try the next one.
+                if (!error.message?.includes('404') && !error.message?.includes('not found')) {
+                    // If it's a critical auth error or rate limit, might not help to switch models, but let's try anyway.
+                }
+            }
         }
+
+        // If all failed
+        console.error("All Gemini models failed. Last error:", lastError);
+        throw new Error(lastError?.message || "Falha em todos os modelos de IA disponíveis.");
     }
 }
 
