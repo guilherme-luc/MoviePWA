@@ -20,47 +20,21 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
             setPreviewTheme(theme);
             const stored = localStorage.getItem('tmdb_api_key');
             if (stored) setApiKey(stored);
-        } else {
-            // Revert if closed without saving (safety net, though we handle onClose)
-            // Actually, we should rely on "Save" to commit.
-            // But for "Preview" effect, we might want to apply it temporarily?
-            // User request: "cancel pulls the one I selected" -> It implies it APPLIES immediately.
-            // Correct behavior: Local state select -> Global apply only on Save.
-            // OR: Global apply on select -> Global revert on Cancel.
-            // Let's go with: Global apply on select (for preview) -> Revert on Cancel.
         }
     }, [isOpen, theme]);
-
-    const handleThemeSelect = (newTheme: any) => {
-        setPreviewTheme(newTheme);
-        setTheme(newTheme); // Live Preview
-    };
-
-    const handleClose = () => {
-        // Revert to original if cancelled
-        if (previewTheme !== theme) {
-            // Wait, 'theme' is now the new one because we did live preview.
-            // We need to store the *original* theme on mount.
-        }
-        onClose();
-    };
-
-    // Better approach matching user request:
-    // "Deveria aplicar somente se eu salvar" (Should only apply if I save).
-    // So NO live preview on global state. Just local selection.
 
     const handleSave = () => {
         setTheme(previewTheme); // Commit changes
         onClose();
     };
 
-    if (!isOpen) return null;
-
     const handleClose = () => {
         // Reset preview to current applied theme (just in case)
         setPreviewTheme(theme);
         onClose();
     };
+
+    if (!isOpen) return null;
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
