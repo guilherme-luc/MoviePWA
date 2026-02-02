@@ -1,11 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { X, Sparkles, Clock, Smile, Film, BrainCircuit, RefreshCw, Play } from 'lucide-react';
 import { geminiService, isGeminiAvailable } from '../../services/GeminiService';
+import type { Movie } from '../../types';
 
-// ... (previous imports)
+interface SmartSuggestionModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    movies: Movie[]; // All movies to filter from
+}
+
+type Step = 'intro' | 'mood' | 'time' | 'status' | 'analysis' | 'result';
+type Mood = 'laugh' | 'tension' | 'adrenaline' | 'emotion' | 'any';
+type Duration = 'short' | 'medium' | 'long' | 'any';
+type Status = 'new' | 'rewatch' | 'any';
 
 export const SmartSuggestionModal: React.FC<SmartSuggestionModalProps> = ({ isOpen, onClose, movies }) => {
-    // ... (previous state)
+    const [step, setStep] = useState<Step>('intro');
+    const [preferences, setPreferences] = useState({
+        mood: 'any' as Mood,
+        duration: 'any' as Duration,
+        status: 'any' as Status
+    });
+    const [result, setResult] = useState<Movie | null>(null);
+    const [analysisText, setAnalysisText] = useState('Analisando sua coleção...');
     const [reasoning, setReasoning] = useState<string | null>(null);
     const [isAiActive, setIsAiActive] = useState(false);
 
@@ -20,7 +37,9 @@ export const SmartSuggestionModal: React.FC<SmartSuggestionModalProps> = ({ isOp
         }
     }, [isOpen]);
 
-    // ... (handleNext)
+    const handleNext = (nextStep: Step) => {
+        setStep(nextStep);
+    };
 
     const runAnalysis = async () => {
         setStep('analysis');
@@ -66,8 +85,6 @@ export const SmartSuggestionModal: React.FC<SmartSuggestionModalProps> = ({ isOp
         }
 
         // 3. Filter by Mood (Strict filter for Local, "Hint" for AI)
-        // If AI is active, we can be looser with local filtering and let AI pick better, 
-        // OR we filter strictly first to save tokens. Let's filter strictly to ensure accuracy.
         if (preferences.mood !== 'any') {
             pool = pool.filter(m => {
                 const g = m.genre.toLowerCase();
@@ -127,22 +144,165 @@ export const SmartSuggestionModal: React.FC<SmartSuggestionModalProps> = ({ isOp
         setStep('result');
     };
 
-    // ... (getImageUrl)
+    const getImageUrl = (movie: Movie) => {
+        if (!movie?.imageValue) return null;
+        return movie.imageType === 'tmdb'
+            ? `https://image.tmdb.org/t/p/w342${movie.imageValue}` // Medium quality is enough
+            : movie.imageValue;
+    };
 
     if (!isOpen) return null;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            {/* ... (Backdrop/Modal wrapper) */}
+            {/* Backdrop */}
+            <div className="absolute inset-0 bg-black/90 backdrop-blur-md" onClick={onClose} />
+
+            {/* Modal Container */}
             <div className="relative z-10 w-full max-w-md bg-neutral-900 border border-purple-500/30 rounded-3xl shadow-[0_0_50px_rgba(168,85,247,0.15)] overflow-hidden flex flex-col min-h-[400px] animate-in zoom-in-95 duration-300">
 
                 {/* Header Gradient */}
                 <div className={`absolute top-0 w-full h-32 pointer-events-none bg-gradient-to-b ${isAiActive ? 'from-blue-600/30' : 'from-purple-600/20'} to-transparent`} />
 
-                {/* ... (Close Button) */}
+                {/* Close Button */}
+                <button
+                    onClick={onClose}
+                    className="absolute top-4 right-4 p-2 text-neutral-400 hover:text-white hover:bg-white/10 rounded-full transition-colors z-20"
+                >
+                    <X size={20} />
+                </button>
 
-                {/* ... (Steps Intro/Mood/Time/Status - keeping mostly same) */}
-                {/* NOTE: You might need to verify if lines match exactly or use larger chunk replacement if structure changes significantly */}
+                {/* --- STEPS --- */}
+
+                {step === 'intro' && (
+                    <div className="flex-1 flex flex-col items-center justify-center p-8 text-center animate-in fade-in slide-in-from-bottom-4">
+                        <div className={`w-20 h-20 ${isAiActive ? 'bg-blue-500/20' : 'bg-purple-500/20'} rounded-full flex items-center justify-center mb-6 animate-pulse`}>
+                            {isAiActive ? <BrainCircuit className="text-blue-400" size={40} /> : <Sparkles className="text-purple-400" size={40} />}
+                        </div>
+                        <h2 className="text-2xl font-bold text-white mb-3">
+                            {isAiActive ? 'Consultor Gemini AI' : 'Sugestão Inteligente'}
+                        </h2>
+                        <p className="text-neutral-400 mb-8 max-w-xs">
+                            {isAiActive
+                                ? 'O Gemini analisará cada filme da sua coleção para encontrar a escolha perfeita para seu momento.'
+                                : 'Não sabe o que assistir? Responda 3 perguntas rápidas e eu encontro o filme perfeito na sua coleção.'}
+                        </p>
+                        <button
+                            onClick={() => handleNext('mood')}
+                            className={`w-full ${isAiActive ? 'bg-blue-600 hover:bg-blue-500 shadow-blue-500/25' : 'bg-purple-600 hover:bg-purple-500 shadow-purple-500/25'} text-white py-4 rounded-xl font-bold transition-all hover:scale-105 active:scale-95 shadow-lg`}
+                        >
+                            Começar
+                        </button>
+                    </div>
+                )}
+
+                {step === 'mood' && (
+                    <div className="flex-1 flex flex-col p-8 animate-in fade-in slide-in-from-right-8">
+                        <div className="flex-1">
+                            <StepHeader step={1} title="Qual a vibe de hoje?" color={isAiActive ? 'blue' : 'purple'} />
+
+                            <div className="grid grid-cols-2 gap-3 mt-6">
+                                <OptionCard
+                                    icon={<Smile size={24} />}
+                                    label="Dar Risada"
+                                    desc="Comédia, Animação"
+                                    onClick={() => { setPreferences({ ...preferences, mood: 'laugh' }); handleNext('time'); }}
+                                    color={isAiActive ? 'blue' : 'purple'}
+                                />
+                                <OptionCard
+                                    icon={<Clock size={24} />} // Using Clock as generic 'Tension' icon placeholder or maybe Zap
+                                    label="Tensão"
+                                    desc="Suspense, Terror"
+                                    onClick={() => { setPreferences({ ...preferences, mood: 'tension' }); handleNext('time'); }}
+                                    color={isAiActive ? 'blue' : 'purple'}
+                                />
+                                <OptionCard
+                                    icon={<Play size={24} />}
+                                    label="Adrenalina"
+                                    desc="Ação, Aventura"
+                                    onClick={() => { setPreferences({ ...preferences, mood: 'adrenaline' }); handleNext('time'); }}
+                                    color={isAiActive ? 'blue' : 'purple'}
+                                />
+                                <OptionCard
+                                    icon={<Film size={24} />}
+                                    label="Emoção / Drama"
+                                    desc="Drama, Romance"
+                                    onClick={() => { setPreferences({ ...preferences, mood: 'emotion' }); handleNext('time'); }}
+                                    color={isAiActive ? 'blue' : 'purple'}
+                                />
+                            </div>
+                            <button
+                                onClick={() => { setPreferences({ ...preferences, mood: 'any' }); handleNext('time'); }}
+                                className="w-full mt-4 py-3 text-neutral-400 hover:text-white hover:bg-white/5 rounded-xl text-sm transition-colors border border-white/5"
+                            >
+                                Surpreenda-me (Qualquer gênero)
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {step === 'time' && (
+                    <div className="flex-1 flex flex-col p-8 animate-in fade-in slide-in-from-right-8">
+                        <StepHeader step={2} title="Quanto tempo você tem?" color={isAiActive ? 'blue' : 'purple'} />
+                        <div className="grid grid-cols-1 gap-3 mt-6">
+                            <OptionCard
+                                icon={<Clock size={20} />}
+                                label="Rapidinho (< 1h 40min)"
+                                desc="Ideal para dias corridos"
+                                onClick={() => { setPreferences({ ...preferences, duration: 'short' }); handleNext('status'); }}
+                                color={isAiActive ? 'blue' : 'purple'}
+                            />
+                            <OptionCard
+                                icon={<Clock size={20} />}
+                                label="Sessão Pipoca (~ 2h)"
+                                desc="Duração padrão de filme"
+                                onClick={() => { setPreferences({ ...preferences, duration: 'medium' }); handleNext('status'); }}
+                                color={isAiActive ? 'blue' : 'purple'}
+                            />
+                            <OptionCard
+                                icon={<Clock size={20} />}
+                                label="Épico (> 2h 20min)"
+                                desc="Tenho a noite toda"
+                                onClick={() => { setPreferences({ ...preferences, duration: 'long' }); handleNext('status'); }}
+                                color={isAiActive ? 'blue' : 'purple'}
+                            />
+                            <button
+                                onClick={() => { setPreferences({ ...preferences, duration: 'any' }); handleNext('status'); }}
+                                className="w-full mt-2 py-3 text-neutral-400 hover:text-white hover:bg-white/5 rounded-xl text-sm transition-colors border border-white/5"
+                            >
+                                Tanto faz
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {step === 'status' && (
+                    <div className="flex-1 flex flex-col p-8 animate-in fade-in slide-in-from-right-8">
+                        <StepHeader step={3} title="O que vamos ver?" color={isAiActive ? 'blue' : 'purple'} />
+                        <div className="grid grid-cols-1 gap-3 mt-6">
+                            <OptionCard
+                                icon={<Sparkles size={20} />}
+                                label="Algo NOVO"
+                                desc="Que eu nunca assisti"
+                                onClick={() => { setPreferences({ ...preferences, status: 'new' }); runAnalysis(); }}
+                                color={isAiActive ? 'blue' : 'purple'}
+                            />
+                            <OptionCard
+                                icon={<RefreshCw size={20} />}
+                                label="Rever um Favorito"
+                                desc="Algo que já vi"
+                                onClick={() => { setPreferences({ ...preferences, status: 'rewatch' }); runAnalysis(); }}
+                                color={isAiActive ? 'blue' : 'purple'}
+                            />
+                            <button
+                                onClick={() => { setPreferences({ ...preferences, status: 'any' }); runAnalysis(); }}
+                                className="w-full mt-2 py-3 text-neutral-400 hover:text-white hover:bg-white/5 rounded-xl text-sm transition-colors border border-white/5"
+                            >
+                                Tanto faz
+                            </button>
+                        </div>
+                    </div>
+                )}
 
                 {step === 'analysis' && (
                     <div className="flex-1 flex flex-col items-center justify-center p-8 text-center animate-in fade-in">
@@ -220,22 +380,28 @@ export const SmartSuggestionModal: React.FC<SmartSuggestionModalProps> = ({ isOp
 };
 
 // UI Helpers
-const StepHeader = ({ step, title }: { step: number, title: string }) => (
-    <div className="text-center">
-        <span className="inline-block px-3 py-1 bg-purple-500/10 text-purple-400 text-xs font-bold rounded-full mb-3 border border-purple-500/20">
-            Passo {step} de 3
-        </span>
-        <h2 className="text-2xl font-bold text-white">{title}</h2>
-    </div>
-);
+const StepHeader = ({ step, title, color = 'purple' }: { step: number, title: string, color?: string }) => {
+    const colorClass = color === 'blue' ? 'text-blue-400 bg-blue-500/10 border-blue-500/20' : 'text-purple-400 bg-purple-500/10 border-purple-500/20';
+    return (
+        <div className="text-center">
+            <span className={`inline-block px-3 py-1 text-xs font-bold rounded-full mb-3 border ${colorClass}`}>
+                Passo {step} de 3
+            </span>
+            <h2 className="text-2xl font-bold text-white">{title}</h2>
+        </div>
+    );
+};
 
-const OptionCard = ({ icon, label, desc, onClick }: { icon: React.ReactNode, label: string, desc: string, onClick: () => void }) => (
-    <button
-        onClick={onClick}
-        className="flex flex-col items-start p-4 bg-neutral-800/50 hover:bg-purple-600/20 hover:border-purple-500/50 border border-white/5 rounded-xl transition-all text-left w-full group active:scale-[0.98]"
-    >
-        <div className="mb-2 text-neutral-400 group-hover:text-purple-400 transition-colors">{icon}</div>
-        <span className="text-white font-bold text-sm block">{label}</span>
-        <span className="text-neutral-500 text-xs">{desc}</span>
-    </button>
-);
+const OptionCard = ({ icon, label, desc, onClick, color = 'purple' }: { icon: React.ReactNode, label: string, desc: string, onClick: () => void, color?: string }) => {
+    const hoverClass = color === 'blue' ? 'hover:bg-blue-600/20 hover:border-blue-500/50 group-hover:text-blue-400' : 'hover:bg-purple-600/20 hover:border-purple-500/50 group-hover:text-purple-400';
+    return (
+        <button
+            onClick={onClick}
+            className={`flex flex-col items-start p-4 bg-neutral-800/50 border border-white/5 rounded-xl transition-all text-left w-full group active:scale-[0.98] ${hoverClass}`}
+        >
+            <div className={`mb-2 text-neutral-400 transition-colors ${color === 'blue' ? 'group-hover:text-blue-400' : 'group-hover:text-purple-400'}`}>{icon}</div>
+            <span className="text-white font-bold text-sm block">{label}</span>
+            <span className="text-neutral-500 text-xs">{desc}</span>
+        </button>
+    );
+};
