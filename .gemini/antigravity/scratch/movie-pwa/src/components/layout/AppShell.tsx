@@ -9,7 +9,7 @@ interface AppShellProps {
 }
 
 export const AppShell: React.FC<AppShellProps> = ({ children }) => {
-    const { isSyncing, processedCount, totalToProcess, currentMovie } = useAutoEnrichment();
+    const { isSyncing, processedCount, totalToProcess } = useAutoEnrichment();
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
     return (
