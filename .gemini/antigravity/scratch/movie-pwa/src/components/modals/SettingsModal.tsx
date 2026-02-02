@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from 'react';
 import { X, Save, Key, Paintbrush, Share2 } from 'lucide-react';
 import { useTheme } from '../../providers/ThemeProvider';
 import { useShowcase } from '../../providers/ShowcaseProvider';
