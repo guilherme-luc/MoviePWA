@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { useGenres } from '../hooks/useGenres';
 import { useAllMovies } from '../hooks/useAllMovies';
-import { Film, Plus, Database, Search, X, Dice5 } from 'lucide-react';
+import { Film, Plus, Database, Search, X, Dice5, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { GenreManagerModal } from '../components/modals/GenreManagerModal';
 import { MovieEditorModal } from '../components/modals/MovieEditorModal';
 import { RandomMoviePicker } from '../components/modals/RandomMoviePicker';
+import { SmartSuggestionModal } from '../components/modals/SmartSuggestionModal';
 import { StatsModal } from '../components/modals/StatsModal';
 import type { Movie } from '../types';
 import { Skeleton } from '../components/ui/Skeleton';
@@ -18,6 +19,7 @@ export const HomePage: React.FC = () => {
     const { data: allMovies } = useAllMovies();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isRandomOpen, setIsRandomOpen] = useState(false);
+    const [isSmartOpen, setIsSmartOpen] = useState(false);
     const [isStatsOpen, setIsStatsOpen] = useState(false); // Stats State
 
     // Search State
@@ -45,6 +47,12 @@ export const HomePage: React.FC = () => {
                 isOpen={isEditOpen}
                 onClose={() => setIsEditOpen(false)}
                 movieToEdit={editMovie}
+            />
+            {/* Smart Suggestions */}
+            <SmartSuggestionModal
+                isOpen={isSmartOpen}
+                onClose={() => setIsSmartOpen(false)}
+                movies={allMovies || []}
             />
             {/* Random Picker */}
             <RandomMoviePicker
@@ -123,11 +131,20 @@ export const HomePage: React.FC = () => {
                 </div>
 
                 <div className="flex gap-2">
+                    {/* Smart Suggestion Button */}
+                    <button
+                        onClick={() => setIsSmartOpen(true)}
+                        className="p-2.5 bg-purple-600/20 text-purple-400 hover:text-white hover:bg-purple-600 rounded-full transition-all flex-shrink-0 border border-purple-500/30"
+                        title="Sugestão Inteligente"
+                    >
+                        <Sparkles size={20} />
+                    </button>
+
                     {/* Random Button */}
                     <button
                         onClick={() => setIsRandomOpen(true)}
                         className="p-2.5 bg-primary-600/20 text-primary-400 hover:text-white hover:bg-primary-600 rounded-full transition-all flex-shrink-0"
-                        title="O que assistir?"
+                        title="Sorteio Aleatório"
                     >
                         <Dice5 size={20} />
                     </button>
