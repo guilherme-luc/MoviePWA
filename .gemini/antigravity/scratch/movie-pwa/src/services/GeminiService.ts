@@ -21,8 +21,8 @@ interface GeminiRecommendation {
 
 export class GeminiService {
     private genAI: GoogleGenerativeAI | undefined;
-    // List of models to try in order of preference
-    private readonly models = ["gemini-1.5-flash", "gemini-1.5-flash-001", "gemini-1.0-pro", "gemini-pro"];
+    // List of models to try in order of preference (Updated based on API availability)
+    private readonly models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash-latest"];
 
     constructor() {
         if (API_KEY) {
