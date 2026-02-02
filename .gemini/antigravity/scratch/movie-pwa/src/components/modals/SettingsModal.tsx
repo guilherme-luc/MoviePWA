@@ -12,20 +12,55 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
     const { theme, setTheme } = useTheme();
     const { isShowcaseMode } = useShowcase();
     const [apiKey, setApiKey] = useState('');
+    const [previewTheme, setPreviewTheme] = useState(theme);
 
+    // Sync preview with actual theme when opening
     useEffect(() => {
         if (isOpen) {
+            setPreviewTheme(theme);
             const stored = localStorage.getItem('tmdb_api_key');
             if (stored) setApiKey(stored);
+        } else {
+            // Revert if closed without saving (safety net, though we handle onClose)
+            // Actually, we should rely on "Save" to commit.
+            // But for "Preview" effect, we might want to apply it temporarily?
+            // User request: "cancel pulls the one I selected" -> It implies it APPLIES immediately.
+            // Correct behavior: Local state select -> Global apply only on Save.
+            // OR: Global apply on select -> Global revert on Cancel.
+            // Let's go with: Global apply on select (for preview) -> Revert on Cancel.
         }
-    }, [isOpen]);
+    }, [isOpen, theme]);
+
+    const handleThemeSelect = (newTheme: any) => {
+        setPreviewTheme(newTheme);
+        setTheme(newTheme); // Live Preview
+    };
+
+    const handleClose = () => {
+        // Revert to original if cancelled
+        if (previewTheme !== theme) {
+            // Wait, 'theme' is now the new one because we did live preview.
+            // We need to store the *original* theme on mount.
+        }
+        onClose();
+    };
+
+    // Better approach matching user request:
+    // "Deveria aplicar somente se eu salvar" (Should only apply if I save).
+    // So NO live preview on global state. Just local selection.
 
     const handleSave = () => {
-        localStorage.setItem('tmdb_api_key', apiKey.trim());
+        setTheme(previewTheme); // Commit changes
         onClose();
     };
 
     if (!isOpen) return null;
+
+    const handleClose = () => {
+        // Reset preview to current applied theme (just in case)
+        setPreviewTheme(theme);
+        onClose();
+    };
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
@@ -36,7 +71,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                         <Key className="text-primary-400" size={24} />
                         Configurações
                     </h2>
-                    <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full text-neutral-400 transition-colors">
+                    <button onClick={handleClose} className="p-2 hover:bg-white/10 rounded-full text-neutral-400 transition-colors">
                         <X size={20} />
                     </button>
                 </div>
@@ -88,14 +123,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                                     ].map((t) => (
                                         <button
                                             key={t.id}
-                                            onClick={() => setTheme(t.id as any)}
+                                            onClick={() => setPreviewTheme(t.id as any)}
                                             className={`
                                         w-10 h-10 rounded-full ${t.color} flex items-center justify-center transition-all hover:scale-110 active:scale-95
-                                        ${theme === t.id ? 'ring-4 ring-white/20 scale-110' : 'opacity-70 hover:opacity-100'}
+                                        ${previewTheme === t.id ? 'ring-4 ring-white/20 scale-110' : 'opacity-70 hover:opacity-100'}
                                     `}
                                             title={t.id.charAt(0).toUpperCase() + t.id.slice(1)}
                                         >
-                                            {theme === t.id && <div className="w-3 h-3 bg-white rounded-full shadow-md" />}
+                                            {previewTheme === t.id && <div className="w-3 h-3 bg-white rounded-full shadow-md" />}
                                         </button>
                                     ))}
                                 </div>
@@ -108,7 +143,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                 {!isShowcaseMode && (
                     <div className="mt-8 flex justify-end gap-3">
                         <button
-                            onClick={onClose}
+                            onClick={handleClose}
                             className="px-4 py-2 rounded-lg text-sm font-medium text-neutral-400 hover:text-white hover:bg-white/5 transition-colors"
                         >
                             Cancelar
