@@ -473,6 +473,18 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                                 <Share2 size={20} />
                             </button>
 
+                            {/* Refresh Data Button */}
+                            {!isShowcaseMode && tmdbId && (
+                                <button
+                                    type="button"
+                                    onClick={handleRefreshData}
+                                    className="p-2 text-yellow-400 hover:bg-yellow-500/10 rounded-full transition-colors bg-black/20 backdrop-blur-md"
+                                    title="Atualizar Dados (TMDB/OMDB)"
+                                >
+                                    <Wand2 size={20} />
+                                </button>
+                            )}
+
 
                             <button onClick={onClose} className="p-2 text-neutral-400 hover:text-white rounded-full hover:bg-white/10 transition-colors bg-black/20 backdrop-blur-md">
                                 <X size={20} />
