@@ -77,17 +77,31 @@ export class GeminiService {
             } catch (error: any) {
                 console.warn(`Gemini Model '${modelName}' failed:`, error.message);
                 lastError = error;
-                // If error is NOT 404 or 400 (Client errors), maybe wait? 
-                // But for 404 (Model not found), we definitely want to try the next one.
-                if (!error.message?.includes('404') && !error.message?.includes('not found')) {
-                    // If it's a critical auth error or rate limit, might not help to switch models, but let's try anyway.
-                }
+                // If 404, valid key but wrong model. If 400, maybe key issue?
             }
         }
+
+        // If all failed, try to list what IS available to help debug
+        await this.logAvailableModels();
 
         // If all failed
         console.error("All Gemini models failed. Last error:", lastError);
         throw new Error(lastError?.message || "Falha em todos os modelos de IA disponíveis.");
+    }
+
+    private async logAvailableModels() {
+        if (!API_KEY) return;
+        try {
+            console.log("🔍 Tentando listar modelos disponíveis para esta Chave...");
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${API_KEY}`);
+            const data = await response.json();
+            console.log("📋 MODELOS DISPONÍVEIS NA API:", data);
+            if (data.error) {
+                console.error("Erro ao listar modelos:", data.error);
+            }
+        } catch (e) {
+            console.error("Falha ao conectar com endpoint de listagem", e);
+        }
     }
 }
 
