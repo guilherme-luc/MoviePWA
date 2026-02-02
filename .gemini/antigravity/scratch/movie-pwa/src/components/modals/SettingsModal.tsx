@@ -54,16 +54,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
 
                     {/* Guest Mode Link Generator */}
                     {!isShowcaseMode && (
-                        <div className="bg-primary-500/10 p-4 rounded-xl border border-primary-500/20">
+                        <div className="bg-primary-500/10 p-4 rounded-xl border border-primary-500/20 mb-6">
                             <h3 className="text-white font-bold text-sm mb-2 flex items-center gap-2">
                                 <Share2 size={16} className="text-primary-400" />
                                 Compartilhar Coleção (Link Público)
                             </h3>
-                            <p className="text-xs text-neutral-400 mb-3 leading-relaxed">
-                                Gere um link para amigos visualizarem sua coleção sem poder editar.
-                                <br />
-                                <strong className="text-primary-300">Atenção:</strong> Configure sua planilha como <u>"Qualquer pessoa com o link pode Ler"</u>.
-                            </p>
                             <button
                                 onClick={() => {
                                     const link = `${window.location.origin}/?guest=true`;
@@ -85,26 +80,30 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                                     <Paintbrush size={16} />
                                     Tema do Aplicativo
                                 </label>
-                                <div className="flex flex-wrap gap-3">
+                                <div className="grid grid-cols-2 gap-3">
                                     {[
-                                        { id: 'indigo', color: 'bg-[#6366f1]' },
-                                        { id: 'red', color: 'bg-[#ef4444]' }, // Netflix
-                                        { id: 'blue', color: 'bg-[#3b82f6]' }, // Prime
-                                        { id: 'green', color: 'bg-[#22c55e]' }, // Hulu
-                                        { id: 'amber', color: 'bg-[#f59e0b]' }, // IMDb
-                                        { id: 'rose', color: 'bg-[#f43f5e]' },
-                                        { id: 'cyan', color: 'bg-[#06b6d4]' },
+                                        { id: 'netflix', name: 'N-Flix', color: 'bg-[#E50914]' },
+                                        { id: 'prime', name: 'Prime', color: 'bg-[#00A8E1]' },
+                                        { id: 'hulu', name: 'Hulu', color: 'bg-[#1CE783]', text: 'text-black' },
+                                        { id: 'disney', name: 'Disney', color: 'bg-[#113CCF]' },
+                                        { id: 'hbo', name: 'HBO', color: 'bg-[#9900FF]' },
+                                        { id: 'crunchyroll', name: 'Crunchy', color: 'bg-[#F47521]' },
+                                        { id: 'apple', name: 'Apple', color: 'bg-[#64748b]' },
                                     ].map((t) => (
                                         <button
                                             key={t.id}
                                             onClick={() => setPreviewTheme(t.id as any)}
                                             className={`
-                                        w-10 h-10 rounded-full ${t.color} flex items-center justify-center transition-all hover:scale-110 active:scale-95
-                                        ${previewTheme === t.id ? 'ring-4 ring-white/20 scale-110' : 'opacity-70 hover:opacity-100'}
+                                        flex items-center gap-3 p-3 rounded-xl border transition-all active:scale-95
+                                        ${previewTheme === t.id
+                                                    ? 'bg-neutral-800 border-white/40 ring-1 ring-white/20'
+                                                    : 'bg-neutral-800/50 border-white/5 hover:border-white/20 hover:bg-neutral-800'}
                                     `}
-                                            title={t.id.charAt(0).toUpperCase() + t.id.slice(1)}
                                         >
-                                            {previewTheme === t.id && <div className="w-3 h-3 bg-white rounded-full shadow-md" />}
+                                            <div className={`w-8 h-8 rounded-full ${t.color} flex items-center justify-center shrink-0 shadow-lg`}>
+                                                {previewTheme === t.id && <div className="w-2.5 h-2.5 bg-white rounded-full" />}
+                                            </div>
+                                            <span className="text-sm font-bold text-neutral-200">{t.name}</span>
                                         </button>
                                     ))}
                                 </div>
