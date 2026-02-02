@@ -147,15 +147,23 @@ export const SmartSuggestionModal: React.FC<SmartSuggestionModalProps> = ({ isOp
                 const recommendation = await geminiService.getRecommendation(candidates, preferences);
 
                 if (recommendation) {
-                    // Find the movie object that matches the title
-                    const found = movies.find(m => m.title === recommendation.movieTitle);
+                    // Find the movie object that matches the ID (Reliable)
+                    const found = movies.find(m => m.id === recommendation.movieId);
+
                     if (found) {
                         winner = found;
                         aiReasoning = recommendation.reasoning;
                     } else {
-                        // Fallback if AI hallucinates a title
-                        winner = candidates[0];
-                        aiReasoning = `O Gemini sugeriu "${recommendation.movieTitle}", mas não achei na lista. Fica este como consolo!`;
+                        // If ID fails try title (Legacy fallback)
+                        const foundByTitle = movies.find(m => m.title === recommendation.movieTitle);
+                        if (foundByTitle) {
+                            winner = foundByTitle;
+                            aiReasoning = recommendation.reasoning;
+                        } else {
+                            // Fallback only if absolutely necessary
+                            winner = candidates[0];
+                            aiReasoning = `O Gemini sugeriu "${recommendation.movieTitle}" (ID: ${recommendation.movieId}), mas houve um erro interno de sincronia.`;
+                        }
                     }
                 } else {
                     // Should not happen as service throws now, but safe fallback
