@@ -8,6 +8,7 @@ import { TrailerModal } from './TrailerModal';
 import { TagInput } from '../ui/TagInput';
 import { StreamingProviders } from '../ui/StreamingProviders';
 import { useQueryClient } from '@tanstack/react-query';
+import { triggerConfetti, triggerSmallConfetti } from '../../utils/confetti';
 
 interface MovieEditorModalProps {
     isOpen: boolean;
@@ -172,8 +173,6 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
         setCast('');
         setTmdbId('');
         setUserRating('');
-
-        setWatched(false);
         setWatched(false);
         setTags([]);
         setFranchise('');
@@ -181,6 +180,14 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
         setRottenTomatoesRating('');
         setMetacriticRating('');
         setIsMetadataLocked(false);
+    };
+
+    const handleRatingChange = (val: string) => {
+        setUserRating(val);
+        const num = parseFloat(val);
+        if (num >= 9) {
+            triggerConfetti();
+        }
     };
 
     // TMDB Search Results
@@ -393,7 +400,7 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
             <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
 
             <div className="relative z-10 w-full max-w-2xl bg-neutral-900 border border-white/10 rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
@@ -644,7 +651,7 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                                             max="10"
                                             step="0.5"
                                             value={userRating}
-                                            onChange={(e) => setUserRating(e.target.value)}
+                                            onChange={(e) => handleRatingChange(e.target.value)}
                                             className="w-full bg-neutral-800 border-none rounded-lg pl-10 pr-4 py-2 text-white focus:ring-2 focus:ring-indigo-500 font-bold"
                                             placeholder="-"
                                         />
@@ -656,7 +663,11 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                                     <span className="text-sm font-medium text-white">Já assisti?</span>
                                     <button
                                         type="button"
-                                        onClick={() => setWatched(!watched)}
+                                        onClick={() => {
+                                            const newVal = !watched;
+                                            setWatched(newVal);
+                                            if (newVal) triggerSmallConfetti();
+                                        }}
                                         className={`
                                             relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-neutral-900
                                             ${watched ? 'bg-indigo-600' : 'bg-neutral-600'}
