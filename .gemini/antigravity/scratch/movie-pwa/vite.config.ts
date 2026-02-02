@@ -44,6 +44,9 @@ export default defineConfig({
         // which implies we might want to serve stale data if we cached it, or handle it in app.
         // For Google Sheets, we'll rely on React Query persistence.
         navigateFallback: '/index.html',
+      },
+      devOptions: {
+        enabled: false, // Disable service worker in dev to avoid ES6 module errors
       }
     })
   ],
