@@ -125,14 +125,24 @@ export const SmartSuggestionModal: React.FC<SmartSuggestionModalProps> = ({ isOp
                     } else {
                         // Fallback if AI hallucinates a title
                         winner = candidates[0];
-                        aiReasoning = "O Gemini escolheu este, mas se perdeu no título. Aproveite!";
+                        aiReasoning = `O Gemini sugeriu "${recommendation.movieTitle}", mas não achei na lista. Fica este como consolo!`;
                     }
                 } else {
+                    // Should not happen as service throws now, but safe fallback
                     winner = pool[Math.floor(Math.random() * pool.length)];
-                    aiReasoning = "O Gemini estava dormindo, mas o algoritmo local escolheu este!";
+                    aiReasoning = "O Gemini ficou em silêncio (sem resposta).";
                 }
-            } catch (e) {
+            } catch (e: any) {
                 winner = pool[Math.floor(Math.random() * pool.length)];
+                // Show the specific error to help debug (e.g. "API Key not valid")
+                const msg = e.message || 'Erro desconhecido';
+                if (msg.includes('400') || msg.includes('API key')) {
+                    aiReasoning = "Erro de Chave API: Verifique se sua chave está correta e reinicie o app.";
+                } else if (msg.includes('429')) {
+                    aiReasoning = "O Gemini está sobrecarregado (Muitos pedidos). Tente de novo em instantes.";
+                } else {
+                    aiReasoning = `O Gemini falhou: ${msg.slice(0, 50)}... mas escolhi este!`;
+                }
             }
         } else {
             // LOCAL MODE

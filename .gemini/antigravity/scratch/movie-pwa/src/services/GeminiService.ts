@@ -26,7 +26,7 @@ export class GeminiService {
     constructor() {
         if (API_KEY) {
             this.genAI = new GoogleGenerativeAI(API_KEY);
-            this.model = this.genAI.getGenerativeModel({ model: "gemini-pro" });
+            this.model = this.genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
         }
     }
 
@@ -62,14 +62,16 @@ export class GeminiService {
             const response = await result.response;
             const text = response.text();
 
-            // Clean markdown if present
-            const cleanText = text.replace(/```json/g, '').replace(/```/g, '').trim();
-            const data = JSON.parse(cleanText) as GeminiRecommendation;
+            // Extract JSON from potential markdown
+            const jsonMatch = text.match(/\{[\s\S]*\}/);
+            const jsonStr = jsonMatch ? jsonMatch[0] : text;
 
+            const data = JSON.parse(jsonStr) as GeminiRecommendation;
             return data;
-        } catch (error) {
+        } catch (error: any) {
             console.error("Gemini AI Error:", error);
-            return null; // Fallback to local
+            // Throw so UI can show the message
+            throw new Error(error.message || "Erro desconhecido na API");
         }
     }
 }
