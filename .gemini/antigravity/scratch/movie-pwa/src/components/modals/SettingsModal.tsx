@@ -41,30 +41,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                     </button>
                 </div>
 
-                <div className="space-y-6">
+                <div className="space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar pr-2">
 
-                    {/* Showcase Mode Toggle (Top Priority to Exit) */}
-                    <div className="bg-neutral-800 p-4 rounded-xl border border-white/10 flex items-center justify-between shadow-sm">
-                        <div>
-                            <h3 className="text-white font-bold flex items-center gap-2">
-                                {isShowcaseMode ? <Eye size={18} className="text-green-400" /> : <EyeOff size={18} className="text-neutral-400" />}
-                                Modo Showcase
-                            </h3>
-                            <p className="text-xs text-neutral-400 mt-1">
-                                {isShowcaseMode ? 'Proteção ativa. Edição bloqueada.' : 'Edição liberada.'}
-                            </p>
-                        </div>
-                        <button
-                            onClick={toggleShowcaseMode}
-                            className={`
-                                relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-neutral-900
-                                ${isShowcaseMode ? 'bg-green-600' : 'bg-neutral-600'}
-                            `}
-                        >
-                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isShowcaseMode ? 'translate-x-6' : 'translate-x-1'}`} />
-                        </button>
-                    </div>
-
+                    {/* Guest Mode Link Generator */}
                     {!isShowcaseMode && (
                         <div className="bg-primary-500/10 p-4 rounded-xl border border-primary-500/20">
                             <h3 className="text-white font-bold text-sm mb-2 flex items-center gap-2">
@@ -74,13 +53,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                             <p className="text-xs text-neutral-400 mb-3 leading-relaxed">
                                 Gere um link para amigos visualizarem sua coleção sem poder editar.
                                 <br />
-                                <strong className="text-primary-300">Atenção:</strong> Você precisará deixar sua planilha do Google como <u>"Qualquer pessoa com o link pode Ler"</u>.
+                                <strong className="text-primary-300">Atenção:</strong> Configure sua planilha como <u>"Qualquer pessoa com o link pode Ler"</u>.
                             </p>
                             <button
                                 onClick={() => {
                                     const link = `${window.location.origin}/?guest=true`;
                                     navigator.clipboard.writeText(link);
-                                    alert("🔗 Link copiado!\n\nAgora vá no seu Google Sheets > Compartilhar > Acesso Geral > 'Qualquer pessoa com o link' (Leitor).\n\nEnvie o link copiado para seus amigos!");
+                                    alert("🔗 Link copiado!\n\nEnvie para seus amigos. Eles entrarão em modo somente leitura.");
                                 }}
                                 className="w-full py-2 bg-primary-600 hover:bg-primary-500 text-white rounded-lg text-sm font-bold shadow-lg shadow-primary-500/20 transition-all active:scale-95"
                             >
@@ -120,27 +99,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                                         </button>
                                     ))}
                                 </div>
-                            </div>
-
-                            <div className="h-px bg-white/5" />
-
-                            <div>
-                                <label className="block text-sm font-medium text-neutral-300 mb-1">
-                                    TMDB API Key
-                                </label>
-                                <p className="text-xs text-neutral-500 mb-2">
-                                    Necessária para buscar capas de filmes automaticamente.
-                                    <a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noreferrer" className="text-primary-400 hover:underline ml-1">
-                                        Obter chave grátis
-                                    </a>
-                                </p>
-                                <input
-                                    type="text"
-                                    value={apiKey}
-                                    onChange={(e) => setApiKey(e.target.value)}
-                                    placeholder="Cole sua chave aqui..."
-                                    className="w-full bg-neutral-800 border-none rounded-xl px-4 py-3 text-white placeholder:text-neutral-600 focus:ring-2 focus:ring-primary-500/50 transition-all font-mono text-sm"
-                                />
                             </div>
                         </>
                     )}
