@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { X, Save, Key, Paintbrush, Eye, EyeOff, Share2 } from 'lucide-react';
+import { X, Save, Key, Paintbrush, Share2 } from 'lucide-react';
 import { useTheme } from '../../providers/ThemeProvider';
 import { useShowcase } from '../../providers/ShowcaseProvider';
 
@@ -10,7 +9,7 @@ interface SettingsModalProps {
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
     const { theme, setTheme } = useTheme();
-    const { isShowcaseMode, toggleShowcaseMode } = useShowcase();
+    const { isShowcaseMode } = useShowcase();
     const [apiKey, setApiKey] = useState('');
 
     useEffect(() => {
