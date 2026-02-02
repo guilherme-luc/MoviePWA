@@ -696,10 +696,10 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                                             if (newVal) triggerSmallConfetti();
                                         }}
                                         className={`
-                                            relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-neutral-900
-                                            ${watched ? 'bg-primary-600' : 'bg-neutral-600'}
-                                            ${isShowcaseMode ? 'cursor-default opacity-80' : ''}
-                                        `}
+                                                relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-neutral-900
+                                                ${watched ? 'bg-primary-600' : 'bg-neutral-600'}
+                                                ${isShowcaseMode ? 'cursor-default opacity-80' : ''}
+                                            `}
                                     >
                                         <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${watched ? 'translate-x-6' : 'translate-x-1'}`} />
                                     </button>
@@ -986,33 +986,35 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                     </div>
                 </div>
 
-                {/* Barcode Scanner Overlay */}
-                <BarcodeScanner
-                    isOpen={isScannerOpen}
-                    onClose={() => setIsScannerOpen(false)}
-                    onDetected={(code) => {
-                        setBarcode(code);
-                        setIsScannerOpen(false);
-                    }}
-                />
-
-                {isTrailerOpen && trailerId && (
-                    <TrailerModal
-                        isOpen={isTrailerOpen}
-                        onClose={() => setIsTrailerOpen(false)}
-                        videoId={trailerId}
-                    />
-                )}
-
-                {isShareOpen && (
-                    <ShareModal
-                        isOpen={isShareOpen}
-                        onClose={() => setIsShareOpen(false)}
-                        movie={{
-                            barcode, title, year, genre, imageType, imageValue, backdropType, backdropValue, synopsis, rating, duration, director, cast, tmdbId, userRating, watched, tags, franchise, soundtrackUrl, rottenTomatoesRating, metacriticRating
-                        } as Movie}
-                    />
-                )}
             </div>
-            );
+
+            {/* Barcode Scanner Overlay */}
+            <BarcodeScanner
+                isOpen={isScannerOpen}
+                onClose={() => setIsScannerOpen(false)}
+                onDetected={(code) => {
+                    setBarcode(code);
+                    setIsScannerOpen(false);
+                }}
+            />
+
+            {isTrailerOpen && trailerId && (
+                <TrailerModal
+                    isOpen={isTrailerOpen}
+                    onClose={() => setIsTrailerOpen(false)}
+                    videoId={trailerId}
+                />
+            )}
+
+            {isShareOpen && (
+                <ShareModal
+                    isOpen={isShareOpen}
+                    onClose={() => setIsShareOpen(false)}
+                    movie={{
+                        barcode, title, year, genre, imageType, imageValue, backdropType, backdropValue, synopsis, rating, duration, director, cast, tmdbId, userRating, watched, tags, franchise, soundtrackUrl, rottenTomatoesRating, metacriticRating
+                    } as Movie}
+                />
+            )}
+        </div>
+    );
 };
