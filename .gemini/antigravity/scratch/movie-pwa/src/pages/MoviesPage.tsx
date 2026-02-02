@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useMovies } from '../hooks/useMovies';
 import { ArrowLeft, Search, Plus, Edit2, Wand2, Loader2, CheckSquare, Trash2, X, Star, Eye, AlertTriangle } from 'lucide-react';
@@ -12,6 +12,7 @@ export const MoviesPage: React.FC = () => {
     const { genre } = useParams<{ genre: string }>();
     const decodedGenre = decodeURIComponent(genre || '');
     const queryClient = useQueryClient();
+    const navigate = useNavigate();
 
     const { data: movies, isLoading, isError } = useMovies(decodedGenre);
     const [search, setSearch] = useState('');
@@ -41,6 +42,15 @@ export const MoviesPage: React.FC = () => {
         movies.forEach(m => m.tags?.forEach(t => tags.add(t)));
         return Array.from(tags).sort();
     }, [movies]);
+
+    const handleBack = () => {
+        if (search || tagFilter) {
+            setSearch('');
+            setTagFilter('');
+        } else {
+            navigate(-1);
+        }
+    };
 
     const filteredMovies = useMemo(() => {
         if (!movies) return [];
@@ -293,9 +303,9 @@ export const MoviesPage: React.FC = () => {
                 <div className="flex flex-col gap-4 mb-6">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                            <Link to="/" className="p-2 rounded-full hover:bg-white/5 text-neutral-300 transition-colors">
+                            <button onClick={handleBack} className="p-2 rounded-full hover:bg-white/5 text-neutral-300 transition-colors">
                                 <ArrowLeft size={24} />
-                            </Link>
+                            </button>
                             <div>
                                 <h2 className="text-2xl font-bold text-white max-w-[200px] truncate">{decodedGenre}</h2>
                                 <p className="text-neutral-400 text-sm">{movies?.length || 0} filmes</p>
