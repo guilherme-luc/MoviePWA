@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, Key, Paintbrush, Share2, LogIn } from 'lucide-react';
+import { X, Save, Key, Paintbrush, Share2, LogIn, Database, FileJson, FileSpreadsheet } from 'lucide-react';
 import { useTheme } from '../../providers/ThemeProvider';
 import { useShowcase } from '../../providers/ShowcaseProvider';
+import { useAllMovies } from '../../hooks/useAllMovies';
+import { exportToJSON, exportToCSV } from '../../utils/exportUtils';
 
 interface SettingsModalProps {
     isOpen: boolean;
@@ -11,6 +13,7 @@ interface SettingsModalProps {
 export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
     const { theme, setTheme } = useTheme();
     const { isShowcaseMode, toggleShowcaseMode } = useShowcase();
+    const { data: movies, isLoading } = useAllMovies(); // Fetch ALL data for export
     const [previewTheme, setPreviewTheme] = useState(theme);
 
     // Sync preview with actual theme when opening
@@ -109,6 +112,37 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                     )}
 
                 </div>
+
+                {/* Data Management Section */}
+                {!isShowcaseMode && (
+                    <div className="mt-8 pt-6 border-t border-white/10">
+                        <label className="block text-sm font-medium text-neutral-300 mb-3 flex items-center gap-2">
+                            <Database size={16} />
+                            Gerenciamento de Dados (Backup)
+                        </label>
+                        <div className="grid grid-cols-2 gap-3">
+                            <button
+                                onClick={() => exportToJSON(movies || [])}
+                                disabled={isLoading}
+                                className="flex flex-col items-center justify-center p-3 bg-neutral-800 hover:bg-neutral-700 border border-white/5 hover:border-white/20 rounded-xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <FileJson size={20} className="text-yellow-400 mb-1" />
+                                <span className="text-xs font-bold text-neutral-300">Backup JSON</span>
+                            </button>
+                            <button
+                                onClick={() => exportToCSV(movies || [])}
+                                disabled={isLoading}
+                                className="flex flex-col items-center justify-center p-3 bg-neutral-800 hover:bg-neutral-700 border border-white/5 hover:border-white/20 rounded-xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <FileSpreadsheet size={20} className="text-green-400 mb-1" />
+                                <span className="text-xs font-bold text-neutral-300">Exportar CSV</span>
+                            </button>
+                        </div>
+                        <p className="text-[10px] text-neutral-500 mt-2 text-center">
+                            Salve seus dados localmente. O JSON é ideal para backup, o CSV para Excel.
+                        </p>
+                    </div>
+                )}
 
                 {/* Show Login/Exit button ONLY if in Showcase Mode (Guest) */}
                 {isShowcaseMode && (
