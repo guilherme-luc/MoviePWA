@@ -364,7 +364,7 @@ export const MoviesPage: React.FC = () => {
 
             {/* Search & Sort Row */}
             {!isSelectionMode && (
-                <div className="flex gap-2 mb-6">
+                <div className="flex flex-col sm:flex-row gap-3 mb-6">
                     <div className="relative flex-1">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500" size={20} />
                         <input
@@ -376,48 +376,48 @@ export const MoviesPage: React.FC = () => {
                         />
                     </div>
 
-
-                    {/* Tag Filter */}
-                    <div className={`relative ${tagFilter ? 'min-w-[120px]' : ''}`}>
-                        <select
-                            value={tagFilter}
-                            onChange={(e) => setTagFilter(e.target.value)}
-                            className={`
-                                h-full appearance-none bg-neutral-800 text-neutral-300 pl-4 pr-10 py-3 rounded-xl border-none focus:ring-2 focus:ring-indigo-500/50 cursor-pointer text-sm font-medium
-                                ${tagFilter ? 'text-indigo-400 bg-indigo-500/10' : ''}
-                            `}
-                        >
-                            <option value="">Tags</option>
-                            {allTags.map(tag => (
-                                <option key={tag} value={tag}>{tag}</option>
-                            ))}
-                        </select>
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-neutral-500">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+                    <div className="flex gap-2">
+                        {/* Tag Filter */}
+                        <div className={`relative flex-1 sm:flex-initial ${tagFilter ? 'min-w-[120px]' : ''}`}>
+                            <select
+                                value={tagFilter}
+                                onChange={(e) => setTagFilter(e.target.value)}
+                                className={`
+                                    w-full h-full appearance-none bg-neutral-800 text-neutral-300 pl-4 pr-10 py-3 rounded-xl border-none focus:ring-2 focus:ring-indigo-500/50 cursor-pointer text-sm font-medium
+                                    ${tagFilter ? 'text-indigo-400 bg-indigo-500/10' : ''}
+                                `}
+                            >
+                                <option value="">Tags</option>
+                                {allTags.map(tag => (
+                                    <option key={tag} value={tag}>{tag}</option>
+                                ))}
+                            </select>
+                            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-neutral-500">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+                            </div>
                         </div>
-                    </div>
 
-                    {/* Sort Dropdown */}
-                    <div className="relative">
-                        <select
-                            value={sortBy}
-                            onChange={(e) => setSortBy(e.target.value)}
-                            className="h-full appearance-none bg-neutral-800 text-neutral-300 pl-4 pr-10 py-3 rounded-xl border-none focus:ring-2 focus:ring-indigo-500/50 cursor-pointer text-sm font-medium"
-                        >
-                            <option value="title_asc">A-Z</option>
-                            <option value="title_desc">Z-A</option>
-                            <option value="year_desc">Mais Recentes (Ano)</option>
-                            <option value="year_asc">Mais Antigos (Ano)</option>
-                            <option value="rating_desc">Melhor Avaliados</option>
-                            <option value="rating_asc">Pior Avaliados</option>
-                            <option value="duration_desc">Mais Longos</option>
-                            <option value="duration_asc">Mais Curtos</option>
-                            <option value="added_desc">Adicionados Recentemente</option>
-                            <option value="added_asc">Adicionados Antigamente</option>
-                        </select>
-                        {/* Custom Arrow because appearance-none removes it */}
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-neutral-500">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+                        {/* Sort Dropdown */}
+                        <div className="relative flex-1 sm:flex-initial">
+                            <select
+                                value={sortBy}
+                                onChange={(e) => setSortBy(e.target.value)}
+                                className="w-full h-full appearance-none bg-neutral-800 text-neutral-300 pl-4 pr-10 py-3 rounded-xl border-none focus:ring-2 focus:ring-indigo-500/50 cursor-pointer text-sm font-medium"
+                            >
+                                <option value="title_asc">A-Z</option>
+                                <option value="title_desc">Z-A</option>
+                                <option value="year_desc">Recentes</option>
+                                <option value="year_asc">Antigos</option>
+                                <option value="rating_desc">Melhores</option>
+                                <option value="rating_asc">Piores</option>
+                                <option value="duration_desc">Longos</option>
+                                <option value="duration_asc">Curtos</option>
+                                <option value="added_desc">Novos</option>
+                                <option value="added_asc">Antigos</option>
+                            </select>
+                            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-neutral-500">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+                            </div>
                         </div>
                     </div>
                 </div>
