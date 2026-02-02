@@ -39,7 +39,7 @@ export function useAutoEnrichment() {
             if (!m.title) return false;
 
             // Unique ID for cache (Barcode or Title+Year)
-            const uid = m.barcode || `${m.title}-${m.year}`;
+            const uid = m.barcode ? m.barcode.trim() : `${m.title.trim()}-${m.year}`;
             if (processedIds.has(uid)) return false;
 
             // Missing visual?
@@ -82,6 +82,10 @@ export function useAutoEnrichment() {
         for (let i = 0; i < queue.length; i++) {
             const movie = queue[i];
             const uid = movie.barcode || `${movie.title}-${movie.year}`;
+
+            // Mark as processed immediately to avoid restart loops if user refreshes during fetch
+            processedCache.add(uid);
+            localStorage.setItem('auto_enrich_processed', JSON.stringify(Array.from(processedCache)));
 
             setState(prev => ({ ...prev, currentMovie: movie.title }));
 
@@ -137,10 +141,6 @@ export function useAutoEnrichment() {
                         });
                     }
                 }
-
-                // Mark as processed regardless of result to avoid infinite loops on unfindable movies
-                processedCache.add(uid);
-                localStorage.setItem('auto_enrich_processed', JSON.stringify(Array.from(processedCache)));
 
             } catch (error) {
                 console.error(`Auto-Enrich failed for ${movie.title}`, error);
