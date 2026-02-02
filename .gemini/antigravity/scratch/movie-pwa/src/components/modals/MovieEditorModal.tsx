@@ -278,19 +278,29 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
             }
 
             // Fetch OMDB Ratings (Rotten Tomatoes / Metacritic)
+            console.log("🎬 TMDB Details Loaded:", { imdb_id: details.imdb_id, title: details.title });
+
             if (details.imdb_id) {
                 const omdbKey = import.meta.env.VITE_OMDB_API_KEY || localStorage.getItem('omdb_api_key');
+                console.log("🔑 OMDB Key Status:", omdbKey ? "Encotrada (Oculta)" : "Não encontrada");
+
                 if (omdbKey) {
                     try {
-                        const omdbRes = await fetch(`https://www.omdbapi.com/?apikey=${omdbKey}&i=${details.imdb_id}`);
+                        const url = `https://www.omdbapi.com/?apikey=${omdbKey}&i=${details.imdb_id}`;
+                        console.log("🌍 Fetching OMDB:", url.replace(omdbKey, "XXX"));
+
+                        const omdbRes = await fetch(url);
                         const omdbData = await omdbRes.json();
+                        console.log("📦 OMDB Response:", omdbData);
 
                         if (omdbData.Ratings) {
                             const rt = omdbData.Ratings.find((r: any) => r.Source === 'Rotten Tomatoes')?.Value;
                             const mc = omdbData.Ratings.find((r: any) => r.Source === 'Metacritic')?.Value;
 
+                            console.log("📊 Ratings Found:", { rt, mc });
+
                             if (rt) setRottenTomatoesRating(rt);
-                            if (mc) setMetacriticRating(mc); // OMDB returns "88/100", maybe just keep it or parse
+                            if (mc) setMetacriticRating(mc);
                         }
                     } catch (err) {
                         console.error("OMDB Fetch Error", err);
@@ -298,6 +308,8 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                 } else {
                     console.warn("OMDB API Key not found. Skipping Critics Ratings.");
                 }
+            } else {
+                console.warn("⚠️ No IMDB ID found in TMDB details. Cannot fetch critics ratings.");
             }
 
             setIsMetadataLocked(true);
