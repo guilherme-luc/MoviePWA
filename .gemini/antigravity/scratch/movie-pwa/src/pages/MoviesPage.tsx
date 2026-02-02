@@ -19,6 +19,7 @@ export const MoviesPage: React.FC = () => {
 
     const [isEditorOpen, setIsEditorOpen] = useState(false);
     const [selectedMovie, setSelectedMovie] = useState<Movie | undefined>(undefined);
+    const [lastViewedMovie, setLastViewedMovie] = useState<Movie | undefined>(undefined);
 
     // Bulk Selection State
     const [isSelectionMode, setIsSelectionMode] = useState(false);
@@ -47,6 +48,13 @@ export const MoviesPage: React.FC = () => {
         if (search || tagFilter) {
             setSearch('');
             setTagFilter('');
+
+            // If we have a history of a movie being viewed, restore it
+            if (lastViewedMovie) {
+                setSelectedMovie(lastViewedMovie);
+                setIsEditorOpen(true);
+                setLastViewedMovie(undefined); // Clear history after restoring
+            }
         } else {
             navigate(-1);
         }
@@ -275,6 +283,7 @@ export const MoviesPage: React.FC = () => {
                 initialGenre={decodedGenre}
                 onSearch={(term) => {
                     setSearch(term);
+                    setLastViewedMovie(selectedMovie); // Save current movie to history
                     setIsEditorOpen(false);
                 }}
             />
