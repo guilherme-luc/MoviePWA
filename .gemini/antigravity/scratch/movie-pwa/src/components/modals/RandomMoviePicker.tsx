@@ -128,10 +128,10 @@ export const RandomMoviePicker: React.FC<RandomMoviePickerProps> = ({ isOpen, on
             <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
 
             {/* Modal */}
-            <div className="relative z-10 w-full max-w-sm bg-neutral-900 border border-indigo-500/30 rounded-3xl shadow-[0_0_50px_rgba(79,70,229,0.2)] overflow-hidden flex flex-col items-center animate-in zoom-in-95 duration-300">
+            <div className="relative z-10 w-full max-w-sm bg-neutral-900 border border-primary-500/30 rounded-3xl shadow-[0_0_50px_rgba(79,70,229,0.2)] overflow-hidden flex flex-col items-center animate-in zoom-in-95 duration-300">
 
                 {/* Header Pattern */}
-                <div className="absolute top-0 w-full h-32 bg-gradient-to-b from-indigo-600/20 to-transparent pointer-events-none" />
+                <div className="absolute top-0 w-full h-32 bg-gradient-to-b from-primary-600/20 to-transparent pointer-events-none" />
 
                 <button
                     onClick={onClose}
@@ -143,7 +143,7 @@ export const RandomMoviePicker: React.FC<RandomMoviePickerProps> = ({ isOpen, on
                 {/* Content */}
                 <div className="pt-12 pb-8 px-6 flex flex-col items-center w-full">
 
-                    <div className="text-indigo-400 font-medium tracking-wider text-xs uppercase mb-6 flex items-center gap-2">
+                    <div className="text-primary-400 font-medium tracking-wider text-xs uppercase mb-6 flex items-center gap-2">
                         <Dice5 size={16} />
                         {isAnimating ? 'Sorteando...' : 'Sorteado para você'}
                     </div>
@@ -194,7 +194,7 @@ export const RandomMoviePicker: React.FC<RandomMoviePickerProps> = ({ isOpen, on
                         {/* Placeholder for "Watch" if we had deep links, for now looks cool */}
                         <button
                             onClick={onClose}
-                            className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl font-bold shadow-lg shadow-indigo-500/20 transition-transform active:scale-95 flex items-center justify-center gap-2"
+                            className="flex-1 bg-primary-600 hover:bg-primary-500 text-white py-3 rounded-xl font-bold shadow-lg shadow-primary-500/20 transition-transform active:scale-95 flex items-center justify-center gap-2"
                         >
                             <Play size={20} fill="currentColor" />
                             Assistir

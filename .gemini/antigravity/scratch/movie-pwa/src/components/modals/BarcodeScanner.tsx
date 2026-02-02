@@ -28,7 +28,7 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ isOpen, onClose,
             <div className="relative z-10 w-full max-w-md bg-neutral-900 border border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden">
                 <div className="p-4 border-b border-white/10 flex justify-between items-center bg-white/5">
                     <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                        <ScanLine size={20} className="text-indigo-400" />
+                        <ScanLine size={20} className="text-primary-400" />
                         Escanear Código
                     </h3>
                     <button onClick={onClose} className="p-2 text-neutral-400 hover:text-white rounded-full hover:bg-white/10 transition-colors">
@@ -75,7 +75,7 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ isOpen, onClose,
                                 type="text"
                                 value={manualCode}
                                 onChange={(e) => setManualCode(e.target.value)}
-                                className="w-full bg-neutral-800 border-none rounded-lg pl-10 pr-4 py-3 text-white focus:ring-2 focus:ring-indigo-500 font-mono"
+                                className="w-full bg-neutral-800 border-none rounded-lg pl-10 pr-4 py-3 text-white focus:ring-2 focus:ring-primary-500 font-mono"
                                 placeholder="Código de Barras..."
                                 autoFocus
                             />
@@ -83,7 +83,7 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ isOpen, onClose,
                         <button
                             type="submit"
                             disabled={!manualCode}
-                            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 rounded-lg font-medium transition-colors disabled:opacity-50"
+                            className="bg-primary-600 hover:bg-primary-700 text-white px-4 rounded-lg font-medium transition-colors disabled:opacity-50"
                         >
                             Usar
                         </button>

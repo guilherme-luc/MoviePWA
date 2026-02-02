@@ -290,12 +290,12 @@ export const MoviesPage: React.FC = () => {
 
             {/* Selection Header */}
             {isSelectionMode ? (
-                <div className="flex items-center justify-between mb-6 bg-indigo-500/10 p-4 -mx-4 sm:mx-0 sm:rounded-2xl border border-indigo-500/30">
+                <div className="flex items-center justify-between mb-6 bg-primary-500/10 p-4 -mx-4 sm:mx-0 sm:rounded-2xl border border-primary-500/30">
                     <div className="flex items-center gap-3">
                         <button onClick={exitSelectionMode} className="p-2 text-white hover:bg-white/10 rounded-full">
                             <X size={20} />
                         </button>
-                        <span className="font-bold text-indigo-200">{selectedMovies.length} selecionados</span>
+                        <span className="font-bold text-primary-200">{selectedMovies.length} selecionados</span>
                     </div>
                     <button onClick={() => {
                         if (selectedMovies.length === filteredMovies.length) {
@@ -303,7 +303,7 @@ export const MoviesPage: React.FC = () => {
                         } else {
                             setSelectedMovies(filteredMovies);
                         }
-                    }} className="text-sm text-indigo-400 font-medium">
+                    }} className="text-sm text-primary-400 font-medium">
                         {selectedMovies.length === filteredMovies.length ? 'Desmarcar' : 'Todos'}
                     </button>
                 </div>
@@ -337,7 +337,7 @@ export const MoviesPage: React.FC = () => {
                                 disabled={isAutoFetching && autoFetchProgress > 0}
                                 className={`p-3 rounded-full transition-all ${isAutoFetching
                                     ? 'bg-red-500/20 text-red-400 animate-pulse'
-                                    : 'bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30'
+                                    : 'bg-primary-500/20 text-primary-400 hover:bg-primary-500/30'
                                     }`}
                             >
                                 {isAutoFetching ? <Loader2 className="animate-spin" size={20} /> : <Wand2 size={20} />}
@@ -349,20 +349,20 @@ export const MoviesPage: React.FC = () => {
                     <div className="flex p-1 bg-neutral-900 rounded-xl">
                         <button
                             onClick={() => setViewMode('all')}
-                            className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all ${viewMode === 'all' ? 'bg-indigo-600 text-white shadow-lg' : 'text-neutral-500 hover:text-neutral-300'}`}
+                            className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all ${viewMode === 'all' ? 'bg-primary-600 text-white shadow-lg' : 'text-neutral-500 hover:text-neutral-300'}`}
                         >
                             Todos
                         </button>
                         <button
                             onClick={() => setViewMode('watched')}
-                            className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all flex items-center justify-center gap-1 ${viewMode === 'watched' ? 'bg-indigo-600 text-white shadow-lg' : 'text-neutral-500 hover:text-neutral-300'}`}
+                            className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all flex items-center justify-center gap-1 ${viewMode === 'watched' ? 'bg-primary-600 text-white shadow-lg' : 'text-neutral-500 hover:text-neutral-300'}`}
                         >
                             <Eye size={12} />
                             Vistos
                         </button>
                         <button
                             onClick={() => setViewMode('watchlist')}
-                            className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all flex items-center justify-center gap-1 ${viewMode === 'watchlist' ? 'bg-indigo-600 text-white shadow-lg' : 'text-neutral-500 hover:text-neutral-300'}`}
+                            className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all flex items-center justify-center gap-1 ${viewMode === 'watchlist' ? 'bg-primary-600 text-white shadow-lg' : 'text-neutral-500 hover:text-neutral-300'}`}
                         >
                             <Star size={12} />
                             Watchlist
@@ -375,7 +375,7 @@ export const MoviesPage: React.FC = () => {
             {isAutoFetching && (
                 <div className="mb-6 bg-neutral-800 rounded-full h-2 overflow-hidden">
                     <div
-                        className="h-full bg-indigo-500 transition-all duration-300"
+                        className="h-full bg-primary-500 transition-all duration-300"
                         style={{ width: `${(autoFetchProgress / autoFetchTotal) * 100}%` }}
                     />
                 </div>
@@ -391,7 +391,7 @@ export const MoviesPage: React.FC = () => {
                             placeholder="Buscar título, ano ou código..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            className="w-full bg-neutral-800 border-none rounded-xl pl-12 pr-4 py-3 text-white placeholder:text-neutral-500 focus:ring-2 focus:ring-indigo-500/50 transition-all shadow-inner"
+                            className="w-full bg-neutral-800 border-none rounded-xl pl-12 pr-4 py-3 text-white placeholder:text-neutral-500 focus:ring-2 focus:ring-primary-500/50 transition-all shadow-inner"
                         />
                     </div>
 
@@ -402,8 +402,8 @@ export const MoviesPage: React.FC = () => {
                                 value={tagFilter}
                                 onChange={(e) => setTagFilter(e.target.value)}
                                 className={`
-                                    w-full h-full appearance-none bg-neutral-800 text-neutral-300 pl-4 pr-10 py-3 rounded-xl border-none focus:ring-2 focus:ring-indigo-500/50 cursor-pointer text-sm font-medium
-                                    ${tagFilter ? 'text-indigo-400 bg-indigo-500/10' : ''}
+                                    w-full h-full appearance-none bg-neutral-800 text-neutral-300 pl-4 pr-10 py-3 rounded-xl border-none focus:ring-2 focus:ring-primary-500/50 cursor-pointer text-sm font-medium
+                                    ${tagFilter ? 'text-primary-400 bg-primary-500/10' : ''}
                                 `}
                             >
                                 <option value="">Tags</option>
@@ -421,7 +421,7 @@ export const MoviesPage: React.FC = () => {
                             <select
                                 value={sortBy}
                                 onChange={(e) => setSortBy(e.target.value)}
-                                className="w-full h-full appearance-none bg-neutral-800 text-neutral-300 pl-4 pr-10 py-3 rounded-xl border-none focus:ring-2 focus:ring-indigo-500/50 cursor-pointer text-sm font-medium"
+                                className="w-full h-full appearance-none bg-neutral-800 text-neutral-300 pl-4 pr-10 py-3 rounded-xl border-none focus:ring-2 focus:ring-primary-500/50 cursor-pointer text-sm font-medium"
                             >
                                 <option value="title_asc">A-Z</option>
                                 <option value="title_desc">Z-A</option>
@@ -456,7 +456,7 @@ export const MoviesPage: React.FC = () => {
                         <p className="text-sm mb-6">Verifique sua conexão e tente novamente.</p>
                         <button
                             onClick={() => queryClient.invalidateQueries({ queryKey: ['movies', decodedGenre] })}
-                            className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2 rounded-full font-medium transition-colors"
+                            className="bg-primary-600 hover:bg-primary-500 text-white px-6 py-2 rounded-full font-medium transition-colors"
                         >
                             Tentar Novamente
                         </button>
@@ -464,7 +464,7 @@ export const MoviesPage: React.FC = () => {
                 ) : filteredMovies.length === 0 ? (
                     <div className="text-center py-12 text-neutral-500">
                         <p>Nenhum filme encontrado.</p>
-                        {search && <button onClick={() => setSearch('')} className="text-indigo-400 text-sm mt-2">Limpar busca</button>}
+                        {search && <button onClick={() => setSearch('')} className="text-primary-400 text-sm mt-2">Limpar busca</button>}
                     </div>
                 ) : (
                     <div className="space-y-2">
@@ -476,7 +476,7 @@ export const MoviesPage: React.FC = () => {
                                     className={`
                                         glass-panel p-3 rounded-xl flex items-center gap-3 justify-between group active:scale-[0.99] transition-all
                                         ${isSelectionMode ? 'cursor-pointer' : ''}
-                                        ${isSelected ? 'ring-2 ring-indigo-500 bg-indigo-500/10' : ''}
+                                        ${isSelected ? 'ring-2 ring-primary-500 bg-primary-500/10' : ''}
                                     `}
                                     onClick={() => handleEdit(movie)}
                                 >
@@ -486,7 +486,7 @@ export const MoviesPage: React.FC = () => {
                                         {isSelectionMode && (
                                             <div className={`
                                                 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors flex-shrink-0
-                                                ${isSelected ? 'bg-indigo-500 border-indigo-500' : 'border-neutral-600'}
+                                                ${isSelected ? 'bg-primary-500 border-primary-500' : 'border-neutral-600'}
                                              `}>
                                                 {isSelected && <CheckSquare size={14} className="text-white" />}
                                             </div>
@@ -511,7 +511,7 @@ export const MoviesPage: React.FC = () => {
                                         </div>
 
                                         <div className="overflow-hidden">
-                                            <h3 className={`font-semibold transition-colors ${isSelected ? 'text-indigo-200' : 'text-neutral-200'}`}>
+                                            <h3 className={`font-semibold transition-colors ${isSelected ? 'text-primary-200' : 'text-neutral-200'}`}>
                                                 {movie.title}
                                             </h3>
                                             <div className="flex flex-wrap items-center gap-2 mt-1">
@@ -535,7 +535,7 @@ export const MoviesPage: React.FC = () => {
                                     </div>
 
                                     {!isSelectionMode && (
-                                        <button className="p-2 text-neutral-600 group-hover:text-indigo-400 transition-colors flex-shrink-0">
+                                        <button className="p-2 text-neutral-600 group-hover:text-primary-400 transition-colors flex-shrink-0">
                                             <Edit2 size={18} />
                                         </button>
                                     )}
@@ -563,7 +563,7 @@ export const MoviesPage: React.FC = () => {
                     /* FAB */
                     <button
                         onClick={handleAddNew}
-                        className="fixed bottom-6 right-6 w-14 h-14 bg-indigo-600 hover:bg-indigo-500 rounded-full shadow-2xl flex items-center justify-center text-white transition-all hover:scale-105 active:scale-95 shadow-indigo-500/30 z-20"
+                        className="fixed bottom-6 right-6 w-14 h-14 bg-primary-600 hover:bg-primary-500 rounded-full shadow-2xl flex items-center justify-center text-white transition-all hover:scale-105 active:scale-95 shadow-primary-500/30 z-20"
                     >
                         <Plus size={28} />
                     </button>

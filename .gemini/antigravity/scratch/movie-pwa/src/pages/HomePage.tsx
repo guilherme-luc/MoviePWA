@@ -72,7 +72,7 @@ export const HomePage: React.FC = () => {
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder="Pesquisar filme..."
-                        className="w-full bg-neutral-800 border-none text-white text-sm rounded-full py-2.5 pl-10 pr-4 focus:ring-2 focus:ring-indigo-500 placeholder:text-neutral-500"
+                        className="w-full bg-neutral-800 border-none text-white text-sm rounded-full py-2.5 pl-10 pr-4 focus:ring-2 focus:ring-primary-500 placeholder:text-neutral-500"
                     />
                     {search && (
                         <button
@@ -109,7 +109,7 @@ export const HomePage: React.FC = () => {
                                                 )}
                                                 <div>
                                                     <h4 className="text-white font-medium text-sm line-clamp-1">{movie.title}</h4>
-                                                    <span className="text-xs text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-full inline-block mt-1">
+                                                    <span className="text-xs text-primary-400 bg-primary-500/10 px-2 py-0.5 rounded-full inline-block mt-1">
                                                         {movie.genre}
                                                     </span>
                                                 </div>
@@ -126,7 +126,7 @@ export const HomePage: React.FC = () => {
                     {/* Random Button */}
                     <button
                         onClick={() => setIsRandomOpen(true)}
-                        className="p-2.5 bg-indigo-600/20 text-indigo-400 hover:text-white hover:bg-indigo-600 rounded-full transition-all flex-shrink-0"
+                        className="p-2.5 bg-primary-600/20 text-primary-400 hover:text-white hover:bg-primary-600 rounded-full transition-all flex-shrink-0"
                         title="O que assistir?"
                     >
                         <Dice5 size={20} />
@@ -143,15 +143,15 @@ export const HomePage: React.FC = () => {
 
             {/* Stats Header */}
             <div className="grid grid-cols-2 gap-4 cursor-pointer" onClick={() => setIsStatsOpen(true)}>
-                <div className="glass-panel p-4 rounded-2xl flex flex-col justify-between h-32 relative overflow-hidden group hover:bg-neutral-800/80 transition-all border border-transparent hover:border-indigo-500/30">
-                    <div className="absolute -right-4 -top-4 bg-indigo-500/10 w-24 h-24 rounded-full blur-2xl group-hover:bg-indigo-500/20 transition-all"></div>
+                <div className="glass-panel p-4 rounded-2xl flex flex-col justify-between h-32 relative overflow-hidden group hover:bg-neutral-800/80 transition-all border border-transparent hover:border-primary-500/30">
+                    <div className="absolute -right-4 -top-4 bg-primary-500/10 w-24 h-24 rounded-full blur-2xl group-hover:bg-primary-500/20 transition-all"></div>
                     <div className="z-10">
                         <p className="text-neutral-400 text-sm font-medium">Filmes</p>
                         <h2 className="text-4xl font-bold mt-1 text-white">{totalMovies}</h2>
                     </div>
                     <div className="z-10 flex justify-between items-end w-full">
-                        <span className="text-xs text-indigo-400 bg-indigo-500/10 px-2 py-1 rounded-full">Ver Estatísticas</span>
-                        <Film className="text-indigo-400" size={24} />
+                        <span className="text-xs text-primary-400 bg-primary-500/10 px-2 py-1 rounded-full">Ver Estatísticas</span>
+                        <Film className="text-primary-400" size={24} />
                     </div>
                 </div>
 
@@ -170,7 +170,7 @@ export const HomePage: React.FC = () => {
                 <h3 className="text-lg font-semibold text-white">Coleções</h3>
                 <button
                     onClick={() => setIsModalOpen(true)}
-                    className="bg-neutral-800 hover:bg-neutral-700 text-indigo-400 px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1 transition-colors"
+                    className="bg-neutral-800 hover:bg-neutral-700 text-primary-400 px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1 transition-colors"
                 >
                     <Plus size={16} />
                     <span>Novo Gênero</span>
@@ -193,7 +193,7 @@ export const HomePage: React.FC = () => {
                         </div>
                         <button
                             onClick={() => window.location.reload()}
-                            className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2 rounded-full font-medium transition-colors"
+                            className="bg-primary-600 hover:bg-primary-500 text-white px-6 py-2 rounded-full font-medium transition-colors"
                         >
                             Recarregar Página
                         </button>

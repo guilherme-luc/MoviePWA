@@ -32,9 +32,9 @@ export const TagInput: React.FC<TagInputProps> = ({ tags, onChange }) => {
     };
 
     return (
-        <div className="flex flex-wrap items-center gap-2 p-2 bg-neutral-800 rounded-lg border border-neutral-700/50 focus-within:ring-2 focus-within:ring-indigo-500/50 transition-all">
+        <div className="flex flex-wrap items-center gap-2 p-2 bg-neutral-800 rounded-lg border border-neutral-700/50 focus-within:ring-2 focus-within:ring-primary-500/50 transition-all">
             {tags.map(tag => (
-                <span key={tag} className="flex items-center gap-1 bg-indigo-500/20 text-indigo-200 px-2 py-1 rounded-md text-sm animate-in fade-in zoom-in duration-200">
+                <span key={tag} className="flex items-center gap-1 bg-primary-500/20 text-primary-200 px-2 py-1 rounded-md text-sm animate-in fade-in zoom-in duration-200">
                     {tag}
                     <button onClick={() => removeTag(tag)} className="hover:text-white transition-colors">
                         <X size={12} />
@@ -54,7 +54,7 @@ export const TagInput: React.FC<TagInputProps> = ({ tags, onChange }) => {
                 <button
                     onClick={addTag}
                     disabled={!input.trim()}
-                    className="p-1 text-neutral-400 hover:text-indigo-400 disabled:opacity-0 transition-all"
+                    className="p-1 text-neutral-400 hover:text-primary-400 disabled:opacity-0 transition-all"
                 >
                     <Plus size={16} />
                 </button>

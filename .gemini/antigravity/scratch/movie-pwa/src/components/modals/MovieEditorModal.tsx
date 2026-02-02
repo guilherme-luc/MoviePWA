@@ -429,7 +429,7 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                             <button
                                 type="button"
                                 onClick={() => setIsScannerOpen(true)}
-                                className="p-2 text-indigo-400 hover:bg-indigo-500/10 rounded-full transition-colors bg-black/20 backdrop-blur-md"
+                                className="p-2 text-primary-400 hover:bg-primary-500/10 rounded-full transition-colors bg-black/20 backdrop-blur-md"
                                 title="Escanear Código de Barras"
                             >
                                 <ScanLine size={20} />
@@ -496,7 +496,7 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                                             </div>
                                         )}
                                         {/* Magic Wand */}
-                                        <div className="p-1 bg-black/50 rounded-full cursor-pointer hover:bg-indigo-500/80 transition-colors"
+                                        <div className="p-1 bg-black/50 rounded-full cursor-pointer hover:bg-primary-500/80 transition-colors"
                                             title="Buscar imagem via URL ou TMDB"
                                             onClick={(e) => {
                                                 e.stopPropagation();
@@ -543,7 +543,7 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                                                 // Don't auto-fetch on blur anymore to avoid annoying behavior
                                                 // let user click search manually
                                             }}
-                                            className="w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-indigo-500"
+                                            className="w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500"
                                             placeholder="Nome do Filme"
                                             required
                                         />
@@ -551,7 +551,7 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                                             type="button"
                                             onClick={() => fetchTmdbData(title, year)}
                                             disabled={isSearching}
-                                            className="p-2 bg-indigo-600/20 text-indigo-400 rounded-lg hover:bg-indigo-600/30 transition-colors"
+                                            className="p-2 bg-primary-600/20 text-primary-400 rounded-lg hover:bg-primary-600/30 transition-colors"
                                         >
                                             {isSearching ? <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" /> : <Search size={20} />}
                                         </button>
@@ -598,7 +598,7 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                                         type="text"
                                         value={year}
                                         onChange={(e) => setYear(e.target.value)}
-                                        className="w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-indigo-500"
+                                        className="w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500"
                                         placeholder="Ex: 2024"
                                         maxLength={4}
                                     />
@@ -609,7 +609,7 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                                     <select
                                         value={genre}
                                         onChange={(e) => setGenre(e.target.value)}
-                                        className="w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-indigo-500"
+                                        className="w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500"
                                         required
                                     >
                                         <option value="" disabled>Selecione...</option>
@@ -625,7 +625,7 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                                         type="text"
                                         value={barcode}
                                         onChange={(e) => setBarcode(e.target.value)}
-                                        className="w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-neutral-300 font-mono text-sm focus:ring-2 focus:ring-indigo-500"
+                                        className="w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-neutral-300 font-mono text-sm focus:ring-2 focus:ring-primary-500"
                                         placeholder="Escanear ou digitar..."
                                     />
                                 </div>
@@ -635,9 +635,9 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                         <div className="h-px bg-white/5 my-6" />
 
                         {/* User Data Section */}
-                        <div className="bg-indigo-500/5 p-4 rounded-xl border border-indigo-500/10 space-y-4">
+                        <div className="bg-primary-500/5 p-4 rounded-xl border border-primary-500/10 space-y-4">
                             <div className="flex items-center gap-2 mb-2">
-                                <span className="text-indigo-400 font-bold text-sm uppercase tracking-wider">Meus Dados</span>
+                                <span className="text-primary-400 font-bold text-sm uppercase tracking-wider">Meus Dados</span>
                             </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 {/* User Rating */}
@@ -652,7 +652,7 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                                             step="0.5"
                                             value={userRating}
                                             onChange={(e) => handleRatingChange(e.target.value)}
-                                            className="w-full bg-neutral-800 border-none rounded-lg pl-10 pr-4 py-2 text-white focus:ring-2 focus:ring-indigo-500 font-bold"
+                                            className="w-full bg-neutral-800 border-none rounded-lg pl-10 pr-4 py-2 text-white focus:ring-2 focus:ring-primary-500 font-bold"
                                             placeholder="-"
                                         />
                                     </div>
@@ -669,8 +669,8 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                                             if (newVal) triggerSmallConfetti();
                                         }}
                                         className={`
-                                            relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-neutral-900
-                                            ${watched ? 'bg-indigo-600' : 'bg-neutral-600'}
+                                            relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-neutral-900
+                                            ${watched ? 'bg-primary-600' : 'bg-neutral-600'}
                                         `}
                                     >
                                         <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${watched ? 'translate-x-6' : 'translate-x-1'}`} />
@@ -713,7 +713,7 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                                         value={rating}
                                         onChange={(e) => setRating(e.target.value)} // Safe fallback if unlocked
                                         readOnly={isMetadataLocked}
-                                        className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-indigo-500 ${isMetadataLocked ? 'text-neutral-500 cursor-not-allowed' : ''}`}
+                                        className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500 ${isMetadataLocked ? 'text-neutral-500 cursor-not-allowed' : ''}`}
                                     />
                                 </div>
                                 <div className="space-y-1">
@@ -723,7 +723,7 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                                         value={duration}
                                         onChange={(e) => setDuration(e.target.value)}
                                         readOnly={isMetadataLocked}
-                                        className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-indigo-500 ${isMetadataLocked ? 'text-neutral-500 cursor-not-allowed' : ''}`}
+                                        className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500 ${isMetadataLocked ? 'text-neutral-500 cursor-not-allowed' : ''}`}
                                     />
                                 </div>
                                 <div className="col-span-2 space-y-1">
@@ -733,7 +733,7 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                                         value={director}
                                         onChange={(e) => setDirector(e.target.value)}
                                         readOnly={isMetadataLocked}
-                                        className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-indigo-500 ${isMetadataLocked ? 'text-neutral-500 cursor-not-allowed' : ''}`}
+                                        className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500 ${isMetadataLocked ? 'text-neutral-500 cursor-not-allowed' : ''}`}
                                     />
                                     {director && onSearch && (
                                         <div className="flex flex-wrap gap-1 mt-1">
@@ -760,7 +760,7 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                                         value={rottenTomatoesRating}
                                         onChange={(e) => setRottenTomatoesRating(e.target.value)}
                                         readOnly={isMetadataLocked}
-                                        className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-indigo-500 ${isMetadataLocked ? 'text-neutral-500 cursor-not-allowed' : ''}`}
+                                        className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500 ${isMetadataLocked ? 'text-neutral-500 cursor-not-allowed' : ''}`}
                                         placeholder="Ex: 95%"
                                     />
                                 </div>
@@ -773,7 +773,7 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                                         value={metacriticRating}
                                         onChange={(e) => setMetacriticRating(e.target.value)}
                                         readOnly={isMetadataLocked}
-                                        className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-indigo-500 ${isMetadataLocked ? 'text-neutral-500 cursor-not-allowed' : ''}`}
+                                        className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500 ${isMetadataLocked ? 'text-neutral-500 cursor-not-allowed' : ''}`}
                                         placeholder="Ex: 88"
                                     />
                                 </div>
@@ -787,7 +787,7 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                                     value={cast}
                                     onChange={(e) => setCast(e.target.value)}
                                     readOnly={isMetadataLocked}
-                                    className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-indigo-500 ${isMetadataLocked ? 'text-neutral-500 cursor-not-allowed' : ''}`}
+                                    className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500 ${isMetadataLocked ? 'text-neutral-500 cursor-not-allowed' : ''}`}
                                 />
                                 {cast && onSearch && (
                                     <div className="flex flex-wrap gap-1 mt-1">
@@ -816,7 +816,7 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                                     value={synopsis}
                                     onChange={(e) => setSynopsis(e.target.value)}
                                     readOnly={isMetadataLocked}
-                                    className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-indigo-500 resize-none ${isMetadataLocked ? 'text-neutral-500 cursor-not-allowed' : ''}`}
+                                    className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500 resize-none ${isMetadataLocked ? 'text-neutral-500 cursor-not-allowed' : ''}`}
                                 />
                             </div>
 
@@ -829,13 +829,13 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                                             value={franchise}
                                             onChange={(e) => setFranchise(e.target.value)}
                                             readOnly={isMetadataLocked}
-                                            className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-indigo-500 ${isMetadataLocked ? 'text-neutral-500 cursor-not-allowed' : ''}`}
+                                            className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500 ${isMetadataLocked ? 'text-neutral-500 cursor-not-allowed' : ''}`}
                                         />
                                         {onSearch && (
                                             <button
                                                 type="button"
                                                 onClick={() => onSearch(franchise)}
-                                                className="p-2 bg-indigo-600/20 text-indigo-400 rounded-lg hover:bg-indigo-600/30 transition-colors whitespace-nowrap text-xs font-bold"
+                                                className="p-2 bg-primary-600/20 text-primary-400 rounded-lg hover:bg-primary-600/30 transition-colors whitespace-nowrap text-xs font-bold"
                                             >
                                                 Ver Coleção
                                             </button>
@@ -858,7 +858,7 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                                         type="text"
                                         value={soundtrackUrl}
                                         onChange={(e) => setSoundtrackUrl(e.target.value)}
-                                        className="w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-indigo-500 placeholder-neutral-600"
+                                        className="w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500 placeholder-neutral-600"
                                         placeholder="Link do Álbum/Playlist..."
                                     />
                                     <button
@@ -936,7 +936,7 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                             form="movie-form"
                             type="submit"
                             disabled={isLoading}
-                            className="px-4 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold shadow-lg shadow-indigo-500/25 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm whitespace-nowrap"
+                            className="px-4 py-3 bg-primary-600 hover:bg-primary-500 text-white rounded-xl font-bold shadow-lg shadow-primary-500/25 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm whitespace-nowrap"
                         >
                             {isLoading ? (
                                 <>

@@ -65,7 +65,7 @@ export const StatsModal: React.FC<StatsModalProps> = ({ isOpen, onClose, movies,
                 {/* Header */}
                 <div className="px-6 py-4 border-b border-white/5 bg-neutral-900/50 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg text-white shadow-lg shadow-indigo-500/20">
+                        <div className="p-2 bg-gradient-to-br from-primary-500 to-purple-600 rounded-lg text-white shadow-lg shadow-primary-500/20">
                             <PieChart size={20} />
                         </div>
                         <h2 className="text-xl font-bold text-white tracking-tight">Estatísticas da Coleção</h2>
@@ -88,7 +88,7 @@ export const StatsModal: React.FC<StatsModalProps> = ({ isOpen, onClose, movies,
 
                         {/* Genres */}
                         <div className="glass-panel bg-neutral-800/30 p-4 rounded-2xl border border-white/5 flex flex-col items-center justify-center text-center hover:bg-neutral-800/50 transition-colors group">
-                            <span className="text-3xl font-bold text-indigo-400 group-hover:scale-110 transition-transform duration-300">{genres_.length}</span>
+                            <span className="text-3xl font-bold text-primary-400 group-hover:scale-110 transition-transform duration-300">{genres_.length}</span>
                             <span className="text-xs text-neutral-400 uppercase tracking-wider mt-1 font-medium">Gêneros</span>
                         </div>
 
@@ -113,7 +113,7 @@ export const StatsModal: React.FC<StatsModalProps> = ({ isOpen, onClose, movies,
                         {/* Top Genres Bars */}
                         <div>
                             <div className="flex items-center gap-2 mb-4">
-                                <TrendingUp size={18} className="text-indigo-400" />
+                                <TrendingUp size={18} className="text-primary-400" />
                                 <h3 className="text-white font-semibold text-lg">Gêneros Favoritos</h3>
                             </div>
                             <div className="space-y-4 bg-neutral-800/20 p-5 rounded-3xl border border-white/5">
@@ -125,8 +125,8 @@ export const StatsModal: React.FC<StatsModalProps> = ({ isOpen, onClose, movies,
                                         </div>
                                         <div className="w-full h-2.5 bg-black/50 rounded-full overflow-hidden">
                                             <div
-                                                className={`h-full rounded-full transition-all duration-1000 ease-out ${idx === 0 ? 'bg-gradient-to-r from-indigo-500 to-purple-500' :
-                                                    idx === 1 ? 'bg-indigo-600' :
+                                                className={`h-full rounded-full transition-all duration-1000 ease-out ${idx === 0 ? 'bg-gradient-to-r from-primary-500 to-purple-500' :
+                                                    idx === 1 ? 'bg-primary-600' :
                                                         'bg-neutral-600'
                                                     }`}
                                                 style={{ width: `${(g.count / stats.maxGenreCount) * 100}%` }}

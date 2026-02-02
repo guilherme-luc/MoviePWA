@@ -25,7 +25,7 @@ const BADGES: Badge[] = [
         name: 'Colecionador Dedicado',
         description: 'Adicionou 50 filmes à coleção.',
         icon: Clapperboard,
-        color: 'text-indigo-400',
+        color: 'text-primary-400',
         condition: (movies) => movies.length >= 50
     },
     {

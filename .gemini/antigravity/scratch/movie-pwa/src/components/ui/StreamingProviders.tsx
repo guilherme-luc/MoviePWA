@@ -56,7 +56,7 @@ export const StreamingProviders: React.FC<StreamingProvidersProps> = ({ tmdbId }
             <div className="flex items-center justify-between">
                 <label className="text-xs font-medium text-neutral-500 uppercase tracking-wider">Onde Assistir (Brasil)</label>
                 {link && (
-                    <a href={link} target="_blank" rel="noopener noreferrer" className="text-[10px] text-indigo-400 hover:text-indigo-300">
+                    <a href={link} target="_blank" rel="noopener noreferrer" className="text-[10px] text-primary-400 hover:text-primary-300">
                         Ver tudo no TMDB ↗
                     </a>
                 )}
