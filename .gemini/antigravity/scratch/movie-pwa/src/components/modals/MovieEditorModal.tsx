@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, Search, ScanLine, Wand2, Star, Lock, Unlock, Upload, ImageIcon, Loader2, Trash2, Play, Music, Share2 } from 'lucide-react';
+import { X, Save, Search, Wand2, Star, Lock, Unlock, Upload, ImageIcon, Loader2, Trash2, Play, Music, Share2 } from 'lucide-react';
 import type { Movie } from '../../types';
 import { GoogleSheetsService } from '../../services/GoogleSheetsService';
 
