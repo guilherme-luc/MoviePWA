@@ -105,16 +105,23 @@ const themes: Record<ThemeColor, Record<string, string>> = {
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const [theme, setTheme] = useState<ThemeColor>(() => {
-        return (localStorage.getItem('theme') as ThemeColor) || 'netflix';
+        const stored = localStorage.getItem('theme') as ThemeColor;
+        // Check if stored theme exists in our new theme map, otherwise fallback to default
+        if (stored && themes[stored]) {
+            return stored;
+        }
+        return 'netflix';
     });
 
     useEffect(() => {
         const root = document.documentElement;
-        const colors = themes[theme];
+        const colors = themes[theme] || themes['netflix']; // Safety fallback
 
-        Object.entries(colors).forEach(([shade, value]) => {
-            root.style.setProperty(`--color-primary-${shade}`, value);
-        });
+        if (colors) {
+            Object.entries(colors).forEach(([shade, value]) => {
+                root.style.setProperty(`--color-primary-${shade}`, value);
+            });
+        }
 
         localStorage.setItem('theme', theme);
     }, [theme]);
