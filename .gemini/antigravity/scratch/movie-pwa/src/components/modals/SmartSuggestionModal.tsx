@@ -148,7 +148,8 @@ export const SmartSuggestionModal: React.FC<SmartSuggestionModalProps> = ({ isOp
 
                 if (recommendation) {
                     // Find the movie object that matches the ID (Reliable)
-                    const found = movies.find(m => m.id === recommendation.movieId);
+                    // The API returns 'movieId' which corresponds to our 'barcode'
+                    const found = movies.find(m => m.barcode === String(recommendation.movieId));
 
                     if (found) {
                         winner = found;

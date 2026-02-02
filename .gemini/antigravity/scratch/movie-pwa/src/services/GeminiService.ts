@@ -16,7 +16,7 @@ interface UserPreferences {
 }
 
 interface GeminiRecommendation {
-    movieId: number;
+    movieId: string;
     movieTitle: string;
     reasoning: string;
 }
@@ -36,7 +36,7 @@ export class GeminiService {
         if (!this.genAI || candidates.length === 0) return null;
 
         // Simplify movie list to save tokens/complexity, but keep IDs for reliable matching
-        const movieList = candidates.map(m => `- [ID: ${m.id}] ${m.title} (${m.year}, ${m.genre}, ${m.duration || '?'})`).join('\n');
+        const movieList = candidates.map(m => `- [ID: ${m.barcode}] ${m.title} (${m.year}, ${m.genre}, ${m.duration || '?'})`).join('\n');
 
         const prompt = `
         Atue como um crítico de cinema experiente e personalizado.
@@ -55,7 +55,7 @@ export class GeminiService {
         
         Responda APENAS um JSON válido no seguinte formato, sem markdown:
         {
-            "movieId": 123, // O ID numérico exato do filme escolhido da lista acima
+            "movieId": "123456", // O ID (código de barras) EXATO do filme escolhido da lista acima (String)
             "movieTitle": "Titulo do filme",
             "reasoning": "Uma frase curta e persuasiva (máximo 20 palavras) explicando por que escolheu este filme para mim hoje."
         }
