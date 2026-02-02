@@ -11,6 +11,8 @@ interface SettingsModalProps {
 export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
     const { theme, setTheme } = useTheme();
     const { isShowcaseMode } = useShowcase();
+    const [previewTheme, setPreviewTheme] = useState(theme);
+
     // Sync preview with actual theme when opening
     useEffect(() => {
         if (isOpen) {
