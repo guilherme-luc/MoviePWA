@@ -2,11 +2,13 @@ import React, { useState, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useMovies } from '../hooks/useMovies';
-import { ArrowLeft, Search, Plus, Edit2, Wand2, Loader2, CheckSquare, Trash2, X, Star, Eye, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Search, Plus, Wand2, Loader2, CheckSquare, Trash2, X, Star, Eye, AlertTriangle } from 'lucide-react';
 import { MovieEditorModal } from '../components/modals/MovieEditorModal';
 import { GoogleSheetsService } from '../services/GoogleSheetsService';
 import type { Movie } from '../types';
 import { MovieCardSkeleton } from '../components/movies/MovieCardSkeleton';
+import { MovieCard } from '../components/movies/MovieCard';
+import { PullToRefresh } from '../components/ui/PullToRefresh';
 
 import { useShowcase } from '../providers/ShowcaseProvider';
 
@@ -412,6 +414,7 @@ export const MoviesPage: React.FC = () => {
                                 `}
                             >
                                 <option value="">Tags</option>
+                                <option value={""}>Todas</option>
                                 {allTags.map(tag => (
                                     <option key={tag} value={tag}>{tag}</option>
                                 ))}
@@ -449,112 +452,53 @@ export const MoviesPage: React.FC = () => {
             }
 
             {/* List */}
-            <div className="flex-1 pb-32">
-                {isLoading ? (
-                    <div className="space-y-4">
-                        {[1, 2, 3, 4, 5].map(i => <MovieCardSkeleton key={i} />)}
-                    </div>
-                ) : isError ? (
-                    <div className="flex flex-col items-center justify-center py-20 text-neutral-500 animate-in fade-in">
-                        <AlertTriangle size={48} className="text-red-500 mb-4 opacity-50" />
-                        <p className="text-lg font-medium text-neutral-300">Erro ao carregar filmes</p>
-                        <p className="text-sm mb-6">Verifique sua conexão e tente novamente.</p>
-                        <button
-                            onClick={() => queryClient.invalidateQueries({ queryKey: ['movies', decodedGenre] })}
-                            className="bg-primary-600 hover:bg-primary-500 text-white px-6 py-2 rounded-full font-medium transition-colors"
-                        >
-                            Tentar Novamente
-                        </button>
-                    </div>
-                ) : filteredMovies.length === 0 ? (
-                    <div className="text-center py-12 text-neutral-500">
-                        <p>Nenhum filme encontrado.</p>
-                        {search && <button onClick={() => setSearch('')} className="text-primary-400 text-sm mt-2">Limpar busca</button>}
-                    </div>
-                ) : (
-                    <div className="space-y-2">
-                        {filteredMovies.map((movie) => {
-                            const isSelected = selectedMovies.some(m => m === movie);
-                            return (
-                                <div
+            <PullToRefresh onRefresh={async () => {
+                await queryClient.invalidateQueries({ queryKey: ['movies', decodedGenre] });
+                // Optional: trigger auto-enrichment check if user pulls
+            }}>
+                <div className="flex-1 pb-32">
+                    {isLoading ? (
+                        <div className="space-y-4">
+                            {[1, 2, 3, 4, 5].map(i => <MovieCardSkeleton key={i} />)}
+                        </div>
+                    ) : isError ? (
+                        <div className="flex flex-col items-center justify-center py-20 text-neutral-500 animate-in fade-in">
+                            <AlertTriangle size={48} className="text-red-500 mb-4 opacity-50" />
+                            <p className="text-lg font-medium text-neutral-300">Erro ao carregar filmes</p>
+                            <p className="text-sm mb-6">Verifique sua conexão e tente novamente.</p>
+                            <button
+                                onClick={() => queryClient.invalidateQueries({ queryKey: ['movies', decodedGenre] })}
+                                className="bg-primary-600 hover:bg-primary-500 text-white px-6 py-2 rounded-full font-medium transition-colors"
+                            >
+                                Tentar Novamente
+                            </button>
+                        </div>
+                    ) : filteredMovies.length === 0 ? (
+                        <div className="text-center py-12 text-neutral-500">
+                            <p>Nenhum filme encontrado.</p>
+                            {search && <button onClick={() => setSearch('')} className="text-primary-400 text-sm mt-2">Limpar busca</button>}
+                        </div>
+                    ) : (
+                        <div className="space-y-2">
+                            {filteredMovies.map((movie) => (
+                                <MovieCard
                                     key={`${movie._rowIndex}-${movie.barcode}`}
-                                    className={`
-                                        glass-panel p-3 rounded-xl flex items-center gap-3 justify-between group active:scale-[0.99] transition-all
-                                        ${isSelectionMode ? 'cursor-pointer' : ''}
-                                        ${isSelected ? 'ring-2 ring-primary-500 bg-primary-500/10' : ''}
-                                    `}
-                                    onClick={() => handleEdit(movie)}
-                                >
-                                    <div className="flex items-center gap-3 overflow-hidden flex-1">
-
-                                        {/* Checkbox for Selection */}
-                                        {isSelectionMode && (
-                                            <div className={`
-                                                w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors flex-shrink-0
-                                                ${isSelected ? 'bg-primary-500 border-primary-500' : 'border-neutral-600'}
-                                             `}>
-                                                {isSelected && <CheckSquare size={14} className="text-white" />}
-                                            </div>
-                                        )}
-
-                                        {/* Thumbnail */}
-                                        <div className="w-12 h-16 bg-neutral-900 rounded-md flex-shrink-0 overflow-hidden border border-white/5 relative">
-                                            {movie.imageValue ? (
-                                                <img
-                                                    src={movie.imageType === 'tmdb'
-                                                        ? `https://image.tmdb.org/t/p/w92${movie.imageValue}`
-                                                        : movie.imageValue}
-                                                    alt=""
-                                                    className="w-full h-full object-cover"
-                                                    loading="lazy"
-                                                />
-                                            ) : (
-                                                <div className="w-full h-full flex items-center justify-center text-neutral-700">
-                                                    <div className="w-4 h-4 bg-white/10 rounded-full" />
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        <div className="overflow-hidden">
-                                            <h3 className={`font-semibold transition-colors ${isSelected ? 'text-primary-200' : 'text-neutral-200'}`}>
-                                                {movie.title}
-                                            </h3>
-                                            <div className="flex flex-wrap items-center gap-2 mt-1">
-                                                <span className="text-xs text-neutral-400 bg-white/5 px-2 py-0.5 rounded-full">{movie.year}</span>
-
-                                                {/* User Rating Badge */}
-                                                {movie.userRating && (
-                                                    <span className="text-xs text-yellow-500 bg-yellow-500/10 px-2 py-0.5 rounded-full flex items-center gap-1 font-medium">
-                                                        <Star size={10} fill="currentColor" /> {movie.userRating}
-                                                    </span>
-                                                )}
-
-                                                {/* Watched Badge */}
-                                                {movie.watched && (
-                                                    <span className="text-xs text-green-500 bg-green-500/10 px-2 py-0.5 rounded-full flex items-center gap-1" title="Assistido">
-                                                        <Eye size={12} />
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {!isSelectionMode && !isShowcaseMode && (
-                                        <button className="p-2 text-neutral-600 group-hover:text-primary-400 transition-colors flex-shrink-0">
-                                            <Edit2 size={18} />
-                                        </button>
-                                    )}
-                                </div>
-                            );
-                        })}
-                    </div>
-                )}
-            </div>
+                                    movie={movie}
+                                    isSelected={selectedMovies.some(m => m === movie)}
+                                    isSelectionMode={isSelectionMode}
+                                    isShowcaseMode={isShowcaseMode}
+                                    onClick={handleEdit}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </PullToRefresh>
 
             {/* Bottom Actions Bar (Selection Mode) */}
             {
                 isSelectionMode ? (
-                    <div className="fixed bottom-0 left-0 right-0 p-4 bg-neutral-900 border-t border-white/10 flex items-center justify-center gap-4 animate-in slide-in-from-bottom z-30">
+                    <div className="fixed bottom-0 left-0 right-0 p-4 bg-neutral-900 border-t border-white/10 flex items-center justify-center gap-4 animate-in slide-in-from-bottom z-30 pb-safe mb-[env(safe-area-inset-bottom)]">
                         <button
                             onClick={handleBulkDelete}
                             disabled={selectedMovies.length === 0}
@@ -565,11 +509,11 @@ export const MoviesPage: React.FC = () => {
                         </button>
                     </div>
                 ) : (
-                    /* FAB */
+                    /* FAB - Adjusted for Safe Area and Bottom Nav */
                     !isShowcaseMode && (
                         <button
                             onClick={handleAddNew}
-                            className="fixed bottom-6 right-6 w-14 h-14 bg-primary-600 hover:bg-primary-500 rounded-full shadow-2xl flex items-center justify-center text-white transition-all hover:scale-105 active:scale-95 shadow-primary-500/30 z-20"
+                            className="fixed bottom-24 right-6 md:bottom-6 w-14 h-14 bg-primary-600 hover:bg-primary-500 rounded-full shadow-2xl flex items-center justify-center text-white transition-all hover:scale-105 active:scale-95 shadow-primary-500/30 z-20"
                         >
                             <Plus size={28} />
                         </button>
