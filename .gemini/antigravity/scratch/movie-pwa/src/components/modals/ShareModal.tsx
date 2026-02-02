@@ -88,8 +88,8 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, movie }
                     </button>
                 </div>
 
-                {/* The Card Preview (Also the capture target) */}
-                <div className="relative group w-full aspect-[9/16] max-h-[500px] shadow-2xl overflow-hidden rounded-xl mb-6 select-none">
+                {/* The Card Preview (Responsive 9:16) */}
+                <div className="relative group h-[60vh] w-auto aspect-[9/16] shadow-2xl overflow-hidden rounded-xl mb-6 select-none mx-auto">
                     <div
                         ref={cardRef}
                         className="w-full h-full bg-neutral-900 relative flex flex-col font-sans"
@@ -101,6 +101,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, movie }
                                     src={movie.imageType === 'tmdb' ? `https://image.tmdb.org/t/p/w500${movie.imageValue}` : movie.imageValue}
                                     className="w-full h-full object-cover opacity-40 blur-sm scale-110"
                                     alt=""
+                                    crossOrigin="anonymous"
                                 />
                             ) : (
                                 <div className="w-full h-full bg-neutral-800" />
@@ -112,12 +113,13 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, movie }
                         <div className="relative z-10 flex-1 flex flex-col p-6 items-center justify-center text-center">
 
                             {/* Main Poster (Shadowed) */}
-                            <div className="relative w-40 h-60 rounded-lg shadow-2xl shadow-black/60 mb-6 transform rotate-[-2deg] border-2 border-white/10 overflow-hidden bg-neutral-800">
+                            <div className="relative w-48 aspect-[2/3] rounded-lg shadow-2xl shadow-black/60 mb-6 transform rotate-[-2deg] border-2 border-white/10 overflow-hidden bg-neutral-800">
                                 {movie.imageValue ? (
                                     <img
                                         src={movie.imageType === 'tmdb' ? `https://image.tmdb.org/t/p/w342${movie.imageValue}` : movie.imageValue}
                                         className="w-full h-full object-cover"
                                         alt={movie.title}
+                                        crossOrigin="anonymous"
                                     />
                                 ) : (
                                     <div className="w-full h-full flex items-center justify-center text-neutral-600">No Image</div>

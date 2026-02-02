@@ -277,6 +277,28 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                 setFranchise('');
             }
 
+            // Fetch OMDB Ratings (Rotten Tomatoes / Metacritic)
+            if (details.imdb_id) {
+                const omdbKey = import.meta.env.VITE_OMDB_API_KEY || localStorage.getItem('omdb_api_key');
+                if (omdbKey) {
+                    try {
+                        const omdbRes = await fetch(`https://www.omdbapi.com/?apikey=${omdbKey}&i=${details.imdb_id}`);
+                        const omdbData = await omdbRes.json();
+
+                        if (omdbData.Ratings) {
+                            const rt = omdbData.Ratings.find((r: any) => r.Source === 'Rotten Tomatoes')?.Value;
+                            const mc = omdbData.Ratings.find((r: any) => r.Source === 'Metacritic')?.Value;
+
+                            if (rt) setRottenTomatoesRating(rt);
+                            if (mc) setMetacriticRating(mc); // OMDB returns "88/100", maybe just keep it or parse
+                        }
+                    } catch (err) {
+                        console.error("OMDB Fetch Error", err);
+                    }
+                } else {
+                    console.warn("OMDB API Key not found. Skipping Critics Ratings.");
+                }
+            }
 
             setIsMetadataLocked(true);
         } catch (error) {
