@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, Search, ScanLine, Wand2, Star, Lock, Unlock, Upload, ImageIcon, Loader2, Trash2, Play } from 'lucide-react';
+import { X, Save, Search, ScanLine, Wand2, Star, Lock, Unlock, Upload, ImageIcon, Loader2, Trash2, Play, Music } from 'lucide-react';
 import type { Movie } from '../../types';
 import { GoogleSheetsService } from '../../services/GoogleSheetsService';
 import { BarcodeScanner } from './BarcodeScanner';
+
 import { TrailerModal } from './TrailerModal';
+import { TagInput } from '../ui/TagInput';
+import { StreamingProviders } from '../ui/StreamingProviders';
 import { useQueryClient } from '@tanstack/react-query';
 
 interface MovieEditorModalProps {
@@ -11,6 +14,7 @@ interface MovieEditorModalProps {
     onClose: () => void;
     movieToEdit?: Movie;
     initialGenre?: string;
+    onSearch?: (term: string) => void;
 }
 
 // Compressor function for Base64 fallback
@@ -53,7 +57,7 @@ const compressImage = (file: File): Promise<string> => {
     });
 };
 
-export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onClose, movieToEdit, initialGenre }) => {
+export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onClose, movieToEdit, initialGenre, onSearch }) => {
     const queryClient = useQueryClient();
     const [isLoading, setIsLoading] = useState(false);
     const [genres, setGenres] = useState<string[]>([]);
@@ -85,6 +89,18 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
     const [imageType, setImageType] = useState<'tmdb' | 'base64'>('tmdb');
     const [imageValue, setImageValue] = useState('');
 
+    // Backdrops (Phase 7)
+    const [backdropType, setBackdropType] = useState<'tmdb' | 'base64'>('tmdb');
+
+    const [backdropValue, setBackdropValue] = useState('');
+
+    const [tags, setTags] = useState<string[]>([]);
+    const [franchise, setFranchise] = useState(''); // [NEW] Phase 7
+    const [soundtrackUrl, setSoundtrackUrl] = useState(''); // [NEW] Phase 7
+    const [rottenTomatoesRating, setRottenTomatoesRating] = useState(''); // [NEW] Phase 7
+    const [metacriticRating, setMetacriticRating] = useState(''); // [NEW] Phase 7
+
+
     const [isScannerOpen, setIsScannerOpen] = useState(false);
     const [isSearching, setIsSearching] = useState(false);
 
@@ -102,6 +118,9 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                 setImageType(movieToEdit.imageType || 'tmdb');
                 setImageValue(movieToEdit.imageValue || '');
 
+                setBackdropType(movieToEdit.backdropType || 'tmdb');
+                setBackdropValue(movieToEdit.backdropValue || '');
+
                 // Metadata
                 setSynopsis(movieToEdit.synopsis || '');
                 setRating(movieToEdit.rating || '');
@@ -112,7 +131,15 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
 
                 // User Data
                 setUserRating(movieToEdit.userRating || '');
+
                 setWatched(movieToEdit.watched || false);
+                setWatched(movieToEdit.watched || false);
+                setTags(movieToEdit.tags || []);
+                setFranchise(movieToEdit.franchise || '');
+                setSoundtrackUrl(movieToEdit.soundtrackUrl || '');
+                setRottenTomatoesRating(movieToEdit.rottenTomatoesRating || '');
+                setMetacriticRating(movieToEdit.metacriticRating || '');
+
 
                 // Lock metadata if it looks like it came from TMDB
                 setIsMetadataLocked(!!movieToEdit.tmdbId || !!movieToEdit.synopsis);
@@ -136,6 +163,8 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
         setGenre(initialGenre || '');
         setImageType('tmdb');
         setImageValue('');
+        setBackdropType('tmdb');
+        setBackdropValue('');
         setSynopsis('');
         setRating('');
         setDuration('');
@@ -143,7 +172,14 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
         setCast('');
         setTmdbId('');
         setUserRating('');
+
         setWatched(false);
+        setWatched(false);
+        setTags([]);
+        setFranchise('');
+        setSoundtrackUrl('');
+        setRottenTomatoesRating('');
+        setMetacriticRating('');
         setIsMetadataLocked(false);
     };
 
@@ -200,6 +236,11 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                 setImageValue(movie.poster_path);
             }
 
+            if (movie.backdrop_path) {
+                setBackdropType('tmdb');
+                setBackdropValue(movie.backdrop_path);
+            }
+
             // Fetch Details
             const detailsUrl = `https://api.themoviedb.org/3/movie/${movie.id}?api_key=${apiKey}&language=pt-BR&append_to_response=credits`;
             const detailsRes = await fetch(detailsUrl);
@@ -218,6 +259,13 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                 const topCast = details.credits.cast?.slice(0, 4).map((c: any) => c.name).join(', ');
                 if (topCast) setCast(topCast);
             }
+
+            if (details.belongs_to_collection) {
+                setFranchise(details.belongs_to_collection.name);
+            } else {
+                setFranchise('');
+            }
+
 
             setIsMetadataLocked(true);
         } catch (error) {
@@ -294,6 +342,8 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
             genre,
             imageType,
             imageValue,
+            backdropType,
+            backdropValue,
             synopsis,
             rating,
             duration,
@@ -301,7 +351,15 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
             cast,
             tmdbId,
             userRating,
+
+
             watched,
+            tags,
+            franchise,
+            soundtrackUrl,
+            rottenTomatoesRating,
+            metacriticRating,
+
 
             // Pass through internal props if editing
             _rowIndex: movieToEdit?._rowIndex,
@@ -340,35 +398,51 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
 
             <div className="relative z-10 w-full max-w-2xl bg-neutral-900 border border-white/10 rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
 
-                {/* Header */}
-                <div className="p-6 border-b border-white/10 flex justify-between items-center bg-white/5 rounded-t-2xl">
-                    <h2 className="text-xl font-bold text-white">
-                        {movieToEdit ? 'Editar Filme' : 'Adicionar Filme'}
-                    </h2>
-                    <div className="flex items-center gap-2">
-                        <button
-                            type="button"
-                            onClick={() => setIsScannerOpen(true)}
-                            className="p-2 text-indigo-400 hover:bg-indigo-500/10 rounded-full transition-colors"
-                            title="Escanear Código de Barras"
-                        >
-                            <ScanLine size={20} />
-                        </button>
-                        <button onClick={onClose} className="p-2 text-neutral-400 hover:text-white rounded-full hover:bg-white/10 transition-colors">
-                            <X size={20} />
-                        </button>
+                {/* Backdrop Header */}
+                <div className="relative">
+                    {backdropValue && (
+                        <div className="absolute inset-0 h-48 sm:h-64 z-0">
+                            <div className="w-full h-full relative">
+                                <img
+                                    src={backdropType === 'tmdb' ? `https://image.tmdb.org/t/p/w1280${backdropValue}` : backdropValue}
+                                    alt=""
+                                    className="w-full h-full object-cover opacity-50 mask-image-gradient"
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-neutral-900 via-neutral-900/80 to-transparent" />
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Header Content */}
+                    <div className="relative z-10 p-6 flex justify-between items-center transition-colors rounded-t-2xl">
+                        <h2 className="text-xl font-bold text-white drop-shadow-md">
+                            {movieToEdit ? 'Editar Filme' : 'Adicionar Filme'}
+                        </h2>
+                        <div className="flex items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setIsScannerOpen(true)}
+                                className="p-2 text-indigo-400 hover:bg-indigo-500/10 rounded-full transition-colors bg-black/20 backdrop-blur-md"
+                                title="Escanear Código de Barras"
+                            >
+                                <ScanLine size={20} />
+                            </button>
+                            <button onClick={onClose} className="p-2 text-neutral-400 hover:text-white rounded-full hover:bg-white/10 transition-colors bg-black/20 backdrop-blur-md">
+                                <X size={20} />
+                            </button>
+                        </div>
                     </div>
                 </div>
 
                 {/* Scrollable Content */}
-                <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+                <div className="flex-1 overflow-y-auto p-6 custom-scrollbar relative z-10">
                     <form id="movie-form" onSubmit={handleSubmit} className="space-y-6">
 
                         {/* Top Section: Poster + Main Info */}
                         <div className="flex flex-col sm:flex-row gap-6">
                             {/* Poster Preview */}
                             <div className="w-32 sm:w-40 flex-shrink-0 mx-auto sm:mx-0">
-                                <div className="aspect-[2/3] bg-neutral-800 rounded-lg overflow-hidden border border-white/5 relative group cursor-pointer shadow-lg">
+                                <div className="aspect-[2/3] bg-neutral-800 rounded-lg overflow-hidden border border-white/5 relative group cursor-pointer shadow-lg shadow-black/50">
                                     {imageValue ? (
                                         <img
                                             src={imageType === 'tmdb' ? `https://image.tmdb.org/t/p/w342${imageValue}` : imageValue}
@@ -592,6 +666,15 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                                     </button>
                                 </div>
                             </div>
+
+                            {/* Tags Input */}
+                            <div className="mt-4 space-y-1">
+                                <label className="text-xs font-medium text-neutral-400">Listas & Tags</label>
+                                <TagInput
+                                    tags={tags}
+                                    onChange={setTags}
+                                />
+                            </div>
                         </div>
 
                         {/* Metadata Section (Read Only-ish) */}
@@ -641,8 +724,50 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                                         readOnly={isMetadataLocked}
                                         className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-indigo-500 ${isMetadataLocked ? 'text-neutral-500 cursor-not-allowed' : ''}`}
                                     />
+                                    {director && onSearch && (
+                                        <div className="flex flex-wrap gap-1 mt-1">
+                                            <button
+                                                type="button"
+                                                onClick={() => onSearch(director)}
+                                                className="px-2 py-0.5 bg-neutral-800 text-neutral-400 text-[10px] rounded-full hover:bg-neutral-700 hover:text-white transition-colors"
+                                            >
+                                                🔍 {director}
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
+
+                            {/* Critics Ratings */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1">
+                                    <label className="text-xs font-medium text-neutral-500 flex items-center gap-1">
+                                        <span>🍅</span> Rotten Tomatoes
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={rottenTomatoesRating}
+                                        onChange={(e) => setRottenTomatoesRating(e.target.value)}
+                                        readOnly={isMetadataLocked}
+                                        className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-indigo-500 ${isMetadataLocked ? 'text-neutral-500 cursor-not-allowed' : ''}`}
+                                        placeholder="Ex: 95%"
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-xs font-medium text-neutral-500 flex items-center gap-1">
+                                        <span className="grayscale brightness-150">Ⓜ️</span> Metacritic
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={metacriticRating}
+                                        onChange={(e) => setMetacriticRating(e.target.value)}
+                                        readOnly={isMetadataLocked}
+                                        className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-indigo-500 ${isMetadataLocked ? 'text-neutral-500 cursor-not-allowed' : ''}`}
+                                        placeholder="Ex: 88"
+                                    />
+                                </div>
+                            </div>
+
 
                             <div className="space-y-1">
                                 <label className="text-xs font-medium text-neutral-500">Elenco Principal</label>
@@ -653,6 +778,24 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                                     readOnly={isMetadataLocked}
                                     className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-indigo-500 ${isMetadataLocked ? 'text-neutral-500 cursor-not-allowed' : ''}`}
                                 />
+                                {cast && onSearch && (
+                                    <div className="flex flex-wrap gap-1 mt-1">
+                                        {cast.split(',').map((c, i) => {
+                                            const name = c.trim();
+                                            if (!name) return null;
+                                            return (
+                                                <button
+                                                    key={i}
+                                                    type="button"
+                                                    onClick={() => onSearch(name)}
+                                                    className="px-2 py-0.5 bg-neutral-800 text-neutral-400 text-[10px] rounded-full hover:bg-neutral-700 hover:text-white transition-colors"
+                                                >
+                                                    🔍 {name}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                )}
                             </div>
 
                             <div className="space-y-1">
@@ -665,6 +808,78 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                                     className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-indigo-500 resize-none ${isMetadataLocked ? 'text-neutral-500 cursor-not-allowed' : ''}`}
                                 />
                             </div>
+
+                            {franchise && (
+                                <div className="space-y-1">
+                                    <label className="text-xs font-medium text-neutral-500">Franquia / Coleção</label>
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="text"
+                                            value={franchise}
+                                            onChange={(e) => setFranchise(e.target.value)}
+                                            readOnly={isMetadataLocked}
+                                            className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-indigo-500 ${isMetadataLocked ? 'text-neutral-500 cursor-not-allowed' : ''}`}
+                                        />
+                                        {onSearch && (
+                                            <button
+                                                type="button"
+                                                onClick={() => onSearch(franchise)}
+                                                className="p-2 bg-indigo-600/20 text-indigo-400 rounded-lg hover:bg-indigo-600/30 transition-colors whitespace-nowrap text-xs font-bold"
+                                            >
+                                                Ver Coleção
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+
+
+
+                            {/* Soundtrack (Spotify) */}
+                            <div className="space-y-1">
+                                <label className="text-xs font-medium text-neutral-500 flex items-center gap-1">
+                                    <Music size={12} />
+                                    Trilha Sonora (Spotify)
+                                </label>
+                                <div className="flex gap-2">
+                                    <input
+                                        type="text"
+                                        value={soundtrackUrl}
+                                        onChange={(e) => setSoundtrackUrl(e.target.value)}
+                                        className="w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-indigo-500 placeholder-neutral-600"
+                                        placeholder="Link do Álbum/Playlist..."
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            window.open(`https://open.spotify.com/search/${encodeURIComponent(title + " Soundtrack")}`, '_blank');
+                                        }}
+                                        className="p-2 bg-[#1DB954]/20 text-[#1DB954] rounded-lg hover:bg-[#1DB954]/30 transition-colors whitespace-nowrap"
+                                        title="Buscar no Spotify"
+                                    >
+                                        <Search size={20} />
+                                    </button>
+                                </div>
+                                {soundtrackUrl && (
+                                    <a
+                                        href={soundtrackUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-2 text-xs text-[#1DB954] hover:underline mt-1"
+                                    >
+                                        <Music size={12} />
+                                        Abrir no Spotify
+                                    </a>
+                                )}
+                            </div>
+
+                            {/* Streaming Providers */}
+                            {tmdbId && (
+                                <div className="pt-2 border-t border-white/5">
+                                    <StreamingProviders tmdbId={tmdbId} />
+                                </div>
+                            )}
                         </div>
 
                     </form>
@@ -727,10 +942,10 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                     </div>
                 </div>
 
-            </div>
+            </div >
 
             {/* Barcode Scanner Overlay */}
-            <BarcodeScanner
+            < BarcodeScanner
                 isOpen={isScannerOpen}
                 onClose={() => setIsScannerOpen(false)}
                 onDetected={(code) => {
@@ -745,6 +960,6 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                 onClose={() => setIsTrailerOpen(false)}
                 videoId={trailerId}
             />
-        </div>
+        </div >
     );
 };

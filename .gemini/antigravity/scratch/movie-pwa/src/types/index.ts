@@ -17,6 +17,15 @@ export interface Movie {
     userRating?: string; // [NEW] User's personal rating
     watched?: boolean; // [NEW] Watched status
 
+    // Phase 7
+    backdropType?: 'tmdb' | 'base64';
+    backdropValue?: string;
+    tags?: string[]; // [NEW] Custom tags/lists
+    franchise?: string; // [NEW] Phase 7: Franchise/Collection
+    soundtrackUrl?: string; // [NEW] Phase 7: Spotify Link
+    rottenTomatoesRating?: string; // [NEW] Phase 7: RT Score
+    metacriticRating?: string; // [NEW] Phase 7: Metascore
+
     // Metadata for internal use
     _rowIndex?: number;
     _sheetTitle?: string;

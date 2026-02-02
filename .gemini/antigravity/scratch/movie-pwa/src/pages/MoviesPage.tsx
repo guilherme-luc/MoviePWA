@@ -31,26 +31,86 @@ export const MoviesPage: React.FC = () => {
 
     // Filter State
     const [viewMode, setViewMode] = useState<'all' | 'watched' | 'watchlist'>('all');
+    const [tagFilter, setTagFilter] = useState('');
+    const [sortBy, setSortBy] = useState<string>('title_asc');
+
+    // Extract Tags
+    const allTags = useMemo(() => {
+        if (!movies) return [];
+        const tags = new Set<string>();
+        movies.forEach(m => m.tags?.forEach(t => tags.add(t)));
+        return Array.from(tags).sort();
+    }, [movies]);
 
     const filteredMovies = useMemo(() => {
         if (!movies) return [];
         const q = search.toLowerCase();
 
+        // 1. Filter by Search
         let result = movies.filter(m =>
             m.title.toLowerCase().includes(q) ||
             m.barcode.toLowerCase().includes(q) ||
-            m.year.includes(q)
+            m.year.includes(q) ||
+            (m.director && m.director.toLowerCase().includes(q)) ||
+            (m.cast && m.cast.toLowerCase().includes(q)) ||
+            (m.franchise && m.franchise.toLowerCase().includes(q))
         );
 
-        // Apply View Mode Filter
+        // 2. Filter by View Mode
         if (viewMode === 'watched') {
             result = result.filter(m => m.watched);
         } else if (viewMode === 'watchlist') {
             result = result.filter(m => !m.watched);
         }
 
-        return result;
-    }, [movies, search, viewMode]);
+        // 3. Filter by Tag
+        if (tagFilter) {
+            result = result.filter(m => m.tags?.includes(tagFilter));
+        }
+
+        // 3. Apply Sorting
+        return result.sort((a, b) => {
+            switch (sortBy) {
+                case 'title_asc':
+                    return a.title.localeCompare(b.title);
+                case 'title_desc':
+                    return b.title.localeCompare(a.title);
+                case 'year_desc':
+                    return String(b.year).localeCompare(String(a.year));
+                case 'year_asc':
+                    return String(a.year).localeCompare(String(b.year));
+                case 'rating_desc':
+                    return (Number(b.rating) || 0) - (Number(a.rating) || 0);
+                case 'rating_asc':
+                    return (Number(a.rating) || 0) - (Number(b.rating) || 0);
+                case 'duration_desc': {
+                    // "2h 30m" -> minutes
+                    const parseDuration = (d?: string) => {
+                        if (!d) return 0;
+                        const match = d.match(/(\d+)h\s*(\d*)m?/);
+                        if (!match) return 0;
+                        return (parseInt(match[1] || '0') * 60) + parseInt(match[2] || '0');
+                    };
+                    return parseDuration(b.duration) - parseDuration(a.duration);
+                }
+                case 'duration_asc': {
+                    const parseDuration = (d?: string) => {
+                        if (!d) return 0;
+                        const match = d.match(/(\d+)h\s*(\d*)m?/);
+                        if (!match) return 0;
+                        return (parseInt(match[1] || '0') * 60) + parseInt(match[2] || '0');
+                    };
+                    return parseDuration(a.duration) - parseDuration(b.duration);
+                }
+                case 'added_desc':
+                    return (b._rowIndex || 0) - (a._rowIndex || 0);
+                case 'added_asc':
+                    return (a._rowIndex || 0) - (b._rowIndex || 0);
+                default:
+                    return 0;
+            }
+        });
+    }, [movies, search, viewMode, tagFilter, sortBy]);
 
     const handleEdit = (movie: Movie) => {
         if (isSelectionMode) {
@@ -108,7 +168,8 @@ export const MoviesPage: React.FC = () => {
             return;
         }
 
-        const missingImages = movies?.filter(m => !m.imageValue && m.title) || [];
+        // Extended Logic: Check for missing Poster OR missing Backdrop
+        const missingImages = movies?.filter(m => (!m.imageValue || !m.backdropValue) && m.title) || [];
         if (missingImages.length === 0) {
             alert("Todos os filmes já têm capa! 🎉");
             return;
@@ -133,7 +194,7 @@ export const MoviesPage: React.FC = () => {
         setAutoFetchTotal(missingImages.length);
         setAutoFetchProgress(0);
 
-        const updates: { movie: Movie, imageType: 'tmdb', imageValue: string }[] = [];
+        const updates: { movie: Movie, imageType: 'tmdb' | 'base64', imageValue: string, backdropType?: 'tmdb' | 'base64', backdropValue?: string }[] = [];
         const BATCH_SIZE = 10;
 
         let successCount = 0;
@@ -154,11 +215,16 @@ export const MoviesPage: React.FC = () => {
 
                 if (data.results && data.results.length > 0) {
                     const best = data.results.sort((a: any, b: any) => b.popularity - a.popularity)[0];
-                    if (best && best.poster_path) {
+                    if (best) {
+                        // Smart Update: Only update what is missing
                         updates.push({
                             movie,
-                            imageType: 'tmdb',
-                            imageValue: best.poster_path
+                            imageType: movie.imageType || 'tmdb',
+                            // Keep existing poster if present, otherwise use new one
+                            imageValue: movie.imageValue || best.poster_path || '',
+                            backdropType: 'tmdb',
+                            // Keep existing backdrop if present (unlikely if we are here for backdrop), otherwise use new one
+                            backdropValue: movie.backdropValue || best.backdrop_path || ''
                         });
                         successCount++;
                     } else {
@@ -197,6 +263,10 @@ export const MoviesPage: React.FC = () => {
                 onClose={() => setIsEditorOpen(false)}
                 movieToEdit={selectedMovie}
                 initialGenre={decodedGenre}
+                onSearch={(term) => {
+                    setSearch(term);
+                    setIsEditorOpen(false);
+                }}
             />
 
             {/* Selection Header */}
@@ -292,19 +362,67 @@ export const MoviesPage: React.FC = () => {
                 </div>
             )}
 
-            {/* Search */}
+            {/* Search & Sort Row */}
             {!isSelectionMode && (
-                <div className="relative mb-6">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500" size={20} />
-                    <input
-                        type="text"
-                        placeholder="Buscar título, ano ou código..."
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        className="w-full bg-neutral-800 border-none rounded-xl pl-12 pr-4 py-3 text-white placeholder:text-neutral-500 focus:ring-2 focus:ring-indigo-500/50 transition-all shadow-inner"
-                    />
+                <div className="flex gap-2 mb-6">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500" size={20} />
+                        <input
+                            type="text"
+                            placeholder="Buscar título, ano ou código..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            className="w-full bg-neutral-800 border-none rounded-xl pl-12 pr-4 py-3 text-white placeholder:text-neutral-500 focus:ring-2 focus:ring-indigo-500/50 transition-all shadow-inner"
+                        />
+                    </div>
+
+
+                    {/* Tag Filter */}
+                    <div className={`relative ${tagFilter ? 'min-w-[120px]' : ''}`}>
+                        <select
+                            value={tagFilter}
+                            onChange={(e) => setTagFilter(e.target.value)}
+                            className={`
+                                h-full appearance-none bg-neutral-800 text-neutral-300 pl-4 pr-10 py-3 rounded-xl border-none focus:ring-2 focus:ring-indigo-500/50 cursor-pointer text-sm font-medium
+                                ${tagFilter ? 'text-indigo-400 bg-indigo-500/10' : ''}
+                            `}
+                        >
+                            <option value="">Tags</option>
+                            {allTags.map(tag => (
+                                <option key={tag} value={tag}>{tag}</option>
+                            ))}
+                        </select>
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-neutral-500">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+                        </div>
+                    </div>
+
+                    {/* Sort Dropdown */}
+                    <div className="relative">
+                        <select
+                            value={sortBy}
+                            onChange={(e) => setSortBy(e.target.value)}
+                            className="h-full appearance-none bg-neutral-800 text-neutral-300 pl-4 pr-10 py-3 rounded-xl border-none focus:ring-2 focus:ring-indigo-500/50 cursor-pointer text-sm font-medium"
+                        >
+                            <option value="title_asc">A-Z</option>
+                            <option value="title_desc">Z-A</option>
+                            <option value="year_desc">Mais Recentes (Ano)</option>
+                            <option value="year_asc">Mais Antigos (Ano)</option>
+                            <option value="rating_desc">Melhor Avaliados</option>
+                            <option value="rating_asc">Pior Avaliados</option>
+                            <option value="duration_desc">Mais Longos</option>
+                            <option value="duration_asc">Mais Curtos</option>
+                            <option value="added_desc">Adicionados Recentemente</option>
+                            <option value="added_asc">Adicionados Antigamente</option>
+                        </select>
+                        {/* Custom Arrow because appearance-none removes it */}
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-neutral-500">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+                        </div>
+                    </div>
                 </div>
-            )}
+            )
+            }
 
             {/* List */}
             <div className="flex-1 pb-32">
@@ -398,28 +516,30 @@ export const MoviesPage: React.FC = () => {
             </div>
 
             {/* Bottom Actions Bar (Selection Mode) */}
-            {isSelectionMode ? (
-                <div className="fixed bottom-0 left-0 right-0 p-4 bg-neutral-900 border-t border-white/10 flex items-center justify-center gap-4 animate-in slide-in-from-bottom z-30">
+            {
+                isSelectionMode ? (
+                    <div className="fixed bottom-0 left-0 right-0 p-4 bg-neutral-900 border-t border-white/10 flex items-center justify-center gap-4 animate-in slide-in-from-bottom z-30">
+                        <button
+                            onClick={handleBulkDelete}
+                            disabled={selectedMovies.length === 0}
+                            className="flex flex-col items-center gap-1 text-red-500 hover:text-red-400 disabled:opacity-50 disabled:cursor-not-allowed px-6"
+                        >
+                            <Trash2 size={24} />
+                            <span className="text-xs">Excluir ({selectedMovies.length})</span>
+                        </button>
+                    </div>
+                ) : (
+                    /* FAB */
                     <button
-                        onClick={handleBulkDelete}
-                        disabled={selectedMovies.length === 0}
-                        className="flex flex-col items-center gap-1 text-red-500 hover:text-red-400 disabled:opacity-50 disabled:cursor-not-allowed px-6"
+                        onClick={handleAddNew}
+                        className="fixed bottom-6 right-6 w-14 h-14 bg-indigo-600 hover:bg-indigo-500 rounded-full shadow-2xl flex items-center justify-center text-white transition-all hover:scale-105 active:scale-95 shadow-indigo-500/30 z-20"
                     >
-                        <Trash2 size={24} />
-                        <span className="text-xs">Excluir ({selectedMovies.length})</span>
+                        <Plus size={28} />
                     </button>
-                </div>
-            ) : (
-                /* FAB */
-                <button
-                    onClick={handleAddNew}
-                    className="fixed bottom-6 right-6 w-14 h-14 bg-indigo-600 hover:bg-indigo-500 rounded-full shadow-2xl flex items-center justify-center text-white transition-all hover:scale-105 active:scale-95 shadow-indigo-500/30 z-20"
-                >
-                    <Plus size={28} />
-                </button>
-            )}
+                )
+            }
 
-        </div>
+        </div >
     );
 };
 

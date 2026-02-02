@@ -162,7 +162,7 @@ export class GoogleSheetsService {
         try {
             const response = await gapi.client.sheets.spreadsheets.values.get({
                 spreadsheetId: this.SPREADSHEET_ID,
-                range: `'${genre}'!A2:N`, // Extended range
+                range: `'${genre}'!A2:Q`, // Extended range (Phase 7: Tags)
             });
             if (response.result.values) {
                 const rows = response.result.values;
@@ -181,6 +181,13 @@ export class GoogleSheetsService {
                     cast: row[11] || undefined,
                     userRating: row[12] || undefined,
                     watched: row[13] === 'TRUE', // Parse boolean
+                    backdropType: (row[14] as 'tmdb' | 'base64' | undefined) || undefined,
+                    backdropValue: row[15] || undefined,
+                    tags: row[16] ? row[16].split(',').map((t: string) => t.trim()).filter(Boolean) : [], // Parse Tags
+                    franchise: row[17] || undefined,
+                    soundtrackUrl: row[18] || undefined,
+                    rottenTomatoesRating: row[19] || undefined,
+                    metacriticRating: row[20] || undefined,
                     _rowIndex: index + 2,
                     _sheetTitle: genre
                 }));
@@ -220,9 +227,8 @@ export class GoogleSheetsService {
         });
     }
 
-    public async addMovie(movie: Movie): Promise<void> {
-        if (!this.isInitialized) await this.initClient();
-        const values = [[
+    private movieToRow(movie: Movie): string[] {
+        return [
             movie.barcode,
             movie.title,
             movie.year,
@@ -236,11 +242,23 @@ export class GoogleSheetsService {
             movie.tmdbId || '',
             movie.cast || '',
             movie.userRating || '',
-            movie.watched ? 'TRUE' : 'FALSE'
-        ]];
+            movie.watched ? 'TRUE' : 'FALSE',
+            movie.backdropType || '',
+            movie.backdropValue || '',
+            movie.tags ? movie.tags.join(', ') : '',
+            movie.franchise || '',
+            movie.soundtrackUrl || '',
+            movie.rottenTomatoesRating || '',
+            movie.metacriticRating || ''
+        ];
+    }
+
+    public async addMovie(movie: Movie): Promise<void> {
+        if (!this.isInitialized) await this.initClient();
+        const values = [this.movieToRow(movie)];
         await gapi.client.sheets.spreadsheets.values.append({
             spreadsheetId: this.SPREADSHEET_ID,
-            range: `'${movie.genre}'!A:N`,
+            range: `'${movie.genre}'!A:U`, // Updated range to U
             valueInputOption: 'USER_ENTERED',
             resource: { values }
         });
@@ -248,17 +266,24 @@ export class GoogleSheetsService {
         await this.sortSheet(movie.genre);
     }
 
-    public async batchUpdateImages(updates: { movie: Movie, imageType: 'tmdb' | 'base64', imageValue: string }[]): Promise<void> {
+    public async batchUpdateImages(updates: { movie: Movie, imageType: 'tmdb' | 'base64', imageValue: string, backdropType?: 'tmdb' | 'base64', backdropValue?: string }[]): Promise<void> {
         if (!this.isInitialized) await this.initClient();
         if (updates.length === 0) return;
 
         const data: any[] = [];
         updates.forEach(update => {
-            const { movie, imageType, imageValue } = update;
+            const { movie, imageType, imageValue, backdropType, backdropValue } = update;
             if (!movie._rowIndex || !movie._sheetTitle) return;
 
-            const range = `'${movie._sheetTitle}'!E${movie._rowIndex}:F${movie._rowIndex}`;
-            data.push({ range, values: [[imageType, imageValue]] });
+            // Update Poster (E:F)
+            const rangePoster = `'${movie._sheetTitle}'!E${movie._rowIndex}:F${movie._rowIndex}`;
+            data.push({ range: rangePoster, values: [[imageType, imageValue]] });
+
+            // Update Backdrop (O:P) if provided
+            if (backdropValue) {
+                const rangeBackdrop = `'${movie._sheetTitle}'!O${movie._rowIndex}:P${movie._rowIndex}`;
+                data.push({ range: rangeBackdrop, values: [[backdropType || 'tmdb', backdropValue]] });
+            }
         });
 
         if (data.length === 0) return;
@@ -319,23 +344,8 @@ export class GoogleSheetsService {
         if (!this.isInitialized) await this.initClient();
         if (!movie._rowIndex || !movie._sheetTitle) throw new Error("Metadata missing for update");
 
-        const range = `'${movie._sheetTitle}'!A${movie._rowIndex}:N${movie._rowIndex}`;
-        const values = [[
-            movie.barcode,
-            movie.title,
-            movie.year,
-            movie.genre,
-            movie.imageType || '',
-            movie.imageValue || '',
-            movie.synopsis || '',
-            movie.rating || '',
-            movie.duration || '',
-            movie.director || '',
-            movie.tmdbId || '',
-            movie.cast || '',
-            movie.userRating || '',
-            movie.watched ? 'TRUE' : 'FALSE'
-        ]];
+        const range = `'${movie._sheetTitle}'!A${movie._rowIndex}:U${movie._rowIndex}`;
+        const values = [this.movieToRow(movie)];
 
         await gapi.client.sheets.spreadsheets.values.update({
             spreadsheetId: this.SPREADSHEET_ID,
@@ -398,7 +408,7 @@ export class GoogleSheetsService {
         const values = [this.EXPECTED_HEADERS];
         await gapi.client.sheets.spreadsheets.values.update({
             spreadsheetId: this.SPREADSHEET_ID,
-            range: `'${genreName}'!A1:N1`,
+            range: `'${genreName}'!A1:U1`, // Updated range to U1
             valueInputOption: 'USER_ENTERED',
             resource: { values }
         });
@@ -436,7 +446,9 @@ export class GoogleSheetsService {
         })) || [];
     }
 
-    private readonly EXPECTED_HEADERS = ["Barcode", "Title", "Year", "Genres", "ImageType", "ImageValue", "Synopsis", "Rating", "Duration", "Director", "TMDB_ID", "Cast", "UserRating", "Watched"];
+
+    // H: Rating, I: Duration, J: Director, K: TMDB_ID, L: Cast, M: UserRating, N: Watched, O: BackdropType, P: BackdropVal, Q: Tags, R: Franchise, S: Soundtrack, T: RottenTomatoes, U: Metacritic
+    private readonly EXPECTED_HEADERS = ['Barcode', 'Title', 'Year', 'Genre', 'ImageType', 'ImageValue', 'Synopsis', 'Rating', 'Duration', 'Director', 'TMDB_ID', 'Cast', 'UserRating', 'Watched', 'BackdropType', 'BackdropValue', 'Tags', 'Franchise', 'Soundtrack', 'RottenTomatoes', 'Metacritic'];
 
     public async validateSheetStructure(): Promise<boolean> {
         if (!this.isInitialized) await this.initClient();
@@ -481,7 +493,7 @@ export class GoogleSheetsService {
 
         const values = [this.EXPECTED_HEADERS];
         const data = sheets.map(s => ({
-            range: `'${s.title}'!A1:N1`,
+            range: `'${s.title}'!A1:Q1`,
             values: values
         }));
 

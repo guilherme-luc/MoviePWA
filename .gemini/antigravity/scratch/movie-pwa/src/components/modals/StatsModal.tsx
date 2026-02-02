@@ -1,6 +1,8 @@
 import React, { useMemo } from 'react';
 import { X, PieChart, TrendingUp, Calendar } from 'lucide-react';
 import type { Movie } from '../../types';
+import { BadgeSystem } from '../gamification/BadgeSystem';
+
 
 interface StatsModalProps {
     isOpen: boolean;
@@ -124,8 +126,8 @@ export const StatsModal: React.FC<StatsModalProps> = ({ isOpen, onClose, movies,
                                         <div className="w-full h-2.5 bg-black/50 rounded-full overflow-hidden">
                                             <div
                                                 className={`h-full rounded-full transition-all duration-1000 ease-out ${idx === 0 ? 'bg-gradient-to-r from-indigo-500 to-purple-500' :
-                                                        idx === 1 ? 'bg-indigo-600' :
-                                                            'bg-neutral-600'
+                                                    idx === 1 ? 'bg-indigo-600' :
+                                                        'bg-neutral-600'
                                                     }`}
                                                 style={{ width: `${(g.count / stats.maxGenreCount) * 100}%` }}
                                             />
@@ -187,6 +189,10 @@ export const StatsModal: React.FC<StatsModalProps> = ({ isOpen, onClose, movies,
                                 </div>
                             </div>
                         </div>
+                    </div>
+
+                    <div className="mt-8 pt-8 border-t border-white/5">
+                        <BadgeSystem movies={movies} />
                     </div>
 
                 </div>

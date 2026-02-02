@@ -45,3 +45,10 @@
     @apply bg-neutral-800/60 backdrop-blur-md border border-white/10 shadow-xl;
   }
 }
+
+@layer utilities {
+  .mask-image-gradient {
+    -webkit-mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
+    mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
+  }
+}
