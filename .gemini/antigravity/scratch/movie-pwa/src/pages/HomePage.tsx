@@ -1,21 +1,22 @@
 import React, { useState } from 'react';
 import { useGenres } from '../hooks/useGenres';
 import { useAllMovies } from '../hooks/useAllMovies';
-import { Film, Plus, Database, Search, X, Settings, Dice5 } from 'lucide-react';
+import { Film, Plus, Database, Search, X, Dice5 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { GenreManagerModal } from '../components/modals/GenreManagerModal';
-import { SettingsModal } from '../components/modals/SettingsModal';
 import { MovieEditorModal } from '../components/modals/MovieEditorModal';
 import { RandomMoviePicker } from '../components/modals/RandomMoviePicker';
 import { StatsModal } from '../components/modals/StatsModal';
 import type { Movie } from '../types';
 import { Skeleton } from '../components/ui/Skeleton';
 
+import { useShowcase } from '../providers/ShowcaseProvider';
+
 export const HomePage: React.FC = () => {
+    const { isShowcaseMode } = useShowcase();
     const { data: genres, isLoading, isError } = useGenres();
     const { data: allMovies } = useAllMovies();
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isRandomOpen, setIsRandomOpen] = useState(false);
     const [isStatsOpen, setIsStatsOpen] = useState(false); // Stats State
 
@@ -40,7 +41,6 @@ export const HomePage: React.FC = () => {
         <div className="flex flex-col gap-6 animate-in fade-in duration-500 relative min-h-screen">
 
             <GenreManagerModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
-            <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
             <MovieEditorModal
                 isOpen={isEditOpen}
                 onClose={() => setIsEditOpen(false)}
@@ -131,13 +131,6 @@ export const HomePage: React.FC = () => {
                     >
                         <Dice5 size={20} />
                     </button>
-
-                    <button
-                        onClick={() => setIsSettingsOpen(true)}
-                        className="p-2.5 bg-neutral-800 text-neutral-400 hover:text-white hover:bg-neutral-700 rounded-full transition-colors flex-shrink-0"
-                    >
-                        <Settings size={20} />
-                    </button>
                 </div>
             </div>
 
@@ -168,13 +161,15 @@ export const HomePage: React.FC = () => {
             {/* Action Bar */}
             <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-white">Coleções</h3>
-                <button
-                    onClick={() => setIsModalOpen(true)}
-                    className="bg-neutral-800 hover:bg-neutral-700 text-primary-400 px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1 transition-colors"
-                >
-                    <Plus size={16} />
-                    <span>Novo Gênero</span>
-                </button>
+                {!isShowcaseMode && (
+                    <button
+                        onClick={() => setIsModalOpen(true)}
+                        className="bg-neutral-800 hover:bg-neutral-700 text-primary-400 px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1 transition-colors"
+                    >
+                        <Plus size={16} />
+                        <span>Novo Gênero</span>
+                    </button>
+                )}
             </div>
 
             {/* Genres Grid */}

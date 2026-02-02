@@ -8,7 +8,10 @@ import { GoogleSheetsService } from '../services/GoogleSheetsService';
 import type { Movie } from '../types';
 import { MovieCardSkeleton } from '../components/movies/MovieCardSkeleton';
 
+import { useShowcase } from '../providers/ShowcaseProvider';
+
 export const MoviesPage: React.FC = () => {
+    const { isShowcaseMode } = useShowcase();
     const { genre } = useParams<{ genre: string }>();
     const decodedGenre = decodeURIComponent(genre || '');
     const queryClient = useQueryClient();
@@ -321,28 +324,30 @@ export const MoviesPage: React.FC = () => {
                             </div>
                         </div>
 
-                        <div className="flex gap-2">
-                            {/* Select Mode Button */}
-                            <button
-                                onClick={() => setIsSelectionMode(true)}
-                                className="p-3 bg-neutral-800 rounded-full text-neutral-400 hover:text-white hover:bg-neutral-700 transition-all"
-                                title="Selecionar Filmes"
-                            >
-                                <CheckSquare size={20} />
-                            </button>
+                        {!isShowcaseMode && (
+                            <div className="flex gap-2">
+                                {/* Select Mode Button */}
+                                <button
+                                    onClick={() => setIsSelectionMode(true)}
+                                    className="p-3 bg-neutral-800 rounded-full text-neutral-400 hover:text-white hover:bg-neutral-700 transition-all"
+                                    title="Selecionar Filmes"
+                                >
+                                    <CheckSquare size={20} />
+                                </button>
 
-                            {/* Magic Wand Button */}
-                            <button
-                                onClick={handleMagicWand}
-                                disabled={isAutoFetching && autoFetchProgress > 0}
-                                className={`p-3 rounded-full transition-all ${isAutoFetching
-                                    ? 'bg-red-500/20 text-red-400 animate-pulse'
-                                    : 'bg-primary-500/20 text-primary-400 hover:bg-primary-500/30'
-                                    }`}
-                            >
-                                {isAutoFetching ? <Loader2 className="animate-spin" size={20} /> : <Wand2 size={20} />}
-                            </button>
-                        </div>
+                                {/* Magic Wand Button */}
+                                <button
+                                    onClick={handleMagicWand}
+                                    disabled={isAutoFetching && autoFetchProgress > 0}
+                                    className={`p-3 rounded-full transition-all ${isAutoFetching
+                                        ? 'bg-red-500/20 text-red-400 animate-pulse'
+                                        : 'bg-primary-500/20 text-primary-400 hover:bg-primary-500/30'
+                                        }`}
+                                >
+                                    {isAutoFetching ? <Loader2 className="animate-spin" size={20} /> : <Wand2 size={20} />}
+                                </button>
+                            </div>
+                        )}
                     </div>
 
                     {/* View Mode Toggle */}
@@ -534,7 +539,7 @@ export const MoviesPage: React.FC = () => {
                                         </div>
                                     </div>
 
-                                    {!isSelectionMode && (
+                                    {!isSelectionMode && !isShowcaseMode && (
                                         <button className="p-2 text-neutral-600 group-hover:text-primary-400 transition-colors flex-shrink-0">
                                             <Edit2 size={18} />
                                         </button>
@@ -561,12 +566,14 @@ export const MoviesPage: React.FC = () => {
                     </div>
                 ) : (
                     /* FAB */
-                    <button
-                        onClick={handleAddNew}
-                        className="fixed bottom-6 right-6 w-14 h-14 bg-primary-600 hover:bg-primary-500 rounded-full shadow-2xl flex items-center justify-center text-white transition-all hover:scale-105 active:scale-95 shadow-primary-500/30 z-20"
-                    >
-                        <Plus size={28} />
-                    </button>
+                    !isShowcaseMode && (
+                        <button
+                            onClick={handleAddNew}
+                            className="fixed bottom-6 right-6 w-14 h-14 bg-primary-600 hover:bg-primary-500 rounded-full shadow-2xl flex items-center justify-center text-white transition-all hover:scale-105 active:scale-95 shadow-primary-500/30 z-20"
+                        >
+                            <Plus size={28} />
+                        </button>
+                    )
                 )
             }
 

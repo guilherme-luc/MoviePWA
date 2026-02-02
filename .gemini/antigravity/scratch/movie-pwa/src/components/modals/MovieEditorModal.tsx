@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, Search, ScanLine, Wand2, Star, Lock, Unlock, Upload, ImageIcon, Loader2, Trash2, Play, Music } from 'lucide-react';
+import { X, Save, Search, ScanLine, Wand2, Star, Lock, Unlock, Upload, ImageIcon, Loader2, Trash2, Play, Music, Share2 } from 'lucide-react';
 import type { Movie } from '../../types';
 import { GoogleSheetsService } from '../../services/GoogleSheetsService';
 import { BarcodeScanner } from './BarcodeScanner';
+import { ShareModal } from './ShareModal';
 
 import { TrailerModal } from './TrailerModal';
 import { TagInput } from '../ui/TagInput';
 import { StreamingProviders } from '../ui/StreamingProviders';
 import { useQueryClient } from '@tanstack/react-query';
 import { triggerConfetti, triggerSmallConfetti } from '../../utils/confetti';
+import { useShowcase } from '../../providers/ShowcaseProvider';
 
 interface MovieEditorModalProps {
     isOpen: boolean;
@@ -59,6 +61,7 @@ const compressImage = (file: File): Promise<string> => {
 };
 
 export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onClose, movieToEdit, initialGenre, onSearch }) => {
+    const { isShowcaseMode } = useShowcase();
     const queryClient = useQueryClient();
     const [isLoading, setIsLoading] = useState(false);
     const [genres, setGenres] = useState<string[]>([]);
@@ -67,6 +70,9 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
     const [trailerId, setTrailerId] = useState<string | null>(null);
     const [isTrailerOpen, setIsTrailerOpen] = useState(false);
     const [isLoadingTrailer, setIsLoadingTrailer] = useState(false);
+
+    // Share Modal
+    const [isShareOpen, setIsShareOpen] = useState(false);
 
     // Form State
     const [barcode, setBarcode] = useState('');
@@ -92,7 +98,6 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
 
     // Backdrops (Phase 7)
     const [backdropType, setBackdropType] = useState<'tmdb' | 'base64'>('tmdb');
-
     const [backdropValue, setBackdropValue] = useState('');
 
     const [tags, setTags] = useState<string[]>([]);
@@ -133,7 +138,6 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                 // User Data
                 setUserRating(movieToEdit.userRating || '');
 
-                setWatched(movieToEdit.watched || false);
                 setWatched(movieToEdit.watched || false);
                 setTags(movieToEdit.tags || []);
                 setFranchise(movieToEdit.franchise || '');
@@ -428,12 +432,23 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                         <div className="flex items-center gap-2">
                             <button
                                 type="button"
-                                onClick={() => setIsScannerOpen(true)}
+                                onClick={() => setIsShareOpen(true)}
                                 className="p-2 text-primary-400 hover:bg-primary-500/10 rounded-full transition-colors bg-black/20 backdrop-blur-md"
-                                title="Escanear Código de Barras"
+                                title="Compartilhar Card"
                             >
-                                <ScanLine size={20} />
+                                <Share2 size={20} />
                             </button>
+
+                            {!isShowcaseMode && (
+                                <button
+                                    type="button"
+                                    onClick={() => setIsScannerOpen(true)}
+                                    className="p-2 text-primary-400 hover:bg-primary-500/10 rounded-full transition-colors bg-black/20 backdrop-blur-md"
+                                    title="Escanear Código de Barras"
+                                >
+                                    <ScanLine size={20} />
+                                </button>
+                            )}
                             <button onClick={onClose} className="p-2 text-neutral-400 hover:text-white rounded-full hover:bg-white/10 transition-colors bg-black/20 backdrop-blur-md">
                                 <X size={20} />
                             </button>
@@ -468,48 +483,52 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                                     )}
 
                                     {/* Upload Overlay */}
-                                    <label className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center cursor-pointer text-white">
-                                        <Upload size={24} className="mb-2" />
-                                        <span className="text-xs font-medium">Alterar Foto</span>
-                                        <input
-                                            type="file"
-                                            className="hidden"
-                                            accept="image/*"
-                                            onChange={handleFileChange}
-                                        />
-                                    </label>
+                                    {!isShowcaseMode && (
+                                        <label className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center cursor-pointer text-white">
+                                            <Upload size={24} className="mb-2" />
+                                            <span className="text-xs font-medium">Alterar Foto</span>
+                                            <input
+                                                type="file"
+                                                className="hidden"
+                                                accept="image/*"
+                                                onChange={handleFileChange}
+                                            />
+                                        </label>
+                                    )}
 
-                                    <div className="absolute top-2 right-2 flex gap-1">
-                                        {/* Remove Photo */}
-                                        {imageValue && (
-                                            <div className="p-1 bg-black/50 rounded-full cursor-pointer hover:bg-red-500/80 transition-colors"
-                                                title="Remover Capa"
+                                    {!isShowcaseMode && (
+                                        <div className="absolute top-2 right-2 flex gap-1">
+                                            {/* Remove Photo */}
+                                            {imageValue && (
+                                                <div className="p-1 bg-black/50 rounded-full cursor-pointer hover:bg-red-500/80 transition-colors"
+                                                    title="Remover Capa"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        if (confirm("Remover a capa atual?")) {
+                                                            setImageValue('');
+                                                            setImageType('tmdb');
+                                                        }
+                                                    }}
+                                                >
+                                                    <Trash2 size={12} className="text-white" />
+                                                </div>
+                                            )}
+                                            {/* Magic Wand */}
+                                            <div className="p-1 bg-black/50 rounded-full cursor-pointer hover:bg-primary-500/80 transition-colors"
+                                                title="Buscar imagem via URL ou TMDB"
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    if (confirm("Remover a capa atual?")) {
-                                                        setImageValue('');
+                                                    const url = prompt("Cole a URL da imagem TMDB:");
+                                                    if (url) {
+                                                        setImageValue(url);
                                                         setImageType('tmdb');
                                                     }
                                                 }}
                                             >
-                                                <Trash2 size={12} className="text-white" />
+                                                <Wand2 size={12} className="text-white" />
                                             </div>
-                                        )}
-                                        {/* Magic Wand */}
-                                        <div className="p-1 bg-black/50 rounded-full cursor-pointer hover:bg-primary-500/80 transition-colors"
-                                            title="Buscar imagem via URL ou TMDB"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                const url = prompt("Cole a URL da imagem TMDB:");
-                                                if (url) {
-                                                    setImageValue(url);
-                                                    setImageType('tmdb');
-                                                }
-                                            }}
-                                        >
-                                            <Wand2 size={12} className="text-white" />
                                         </div>
-                                    </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -543,18 +562,21 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                                                 // Don't auto-fetch on blur anymore to avoid annoying behavior
                                                 // let user click search manually
                                             }}
-                                            className="w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500"
+                                            className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500 ${isShowcaseMode ? 'cursor-default' : ''}`}
                                             placeholder="Nome do Filme"
                                             required
+                                            readOnly={isShowcaseMode}
                                         />
-                                        <button
-                                            type="button"
-                                            onClick={() => fetchTmdbData(title, year)}
-                                            disabled={isSearching}
-                                            className="p-2 bg-primary-600/20 text-primary-400 rounded-lg hover:bg-primary-600/30 transition-colors"
-                                        >
-                                            {isSearching ? <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" /> : <Search size={20} />}
-                                        </button>
+                                        {!isShowcaseMode && (
+                                            <button
+                                                type="button"
+                                                onClick={() => fetchTmdbData(title, year)}
+                                                disabled={isSearching}
+                                                className="p-2 bg-primary-600/20 text-primary-400 rounded-lg hover:bg-primary-600/30 transition-colors"
+                                            >
+                                                {isSearching ? <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" /> : <Search size={20} />}
+                                            </button>
+                                        )}
                                     </div>
 
                                     {/* Result Picker */}
@@ -598,9 +620,10 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                                         type="text"
                                         value={year}
                                         onChange={(e) => setYear(e.target.value)}
-                                        className="w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500"
+                                        className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500 ${isShowcaseMode ? 'cursor-default' : ''}`}
                                         placeholder="Ex: 2024"
                                         maxLength={4}
+                                        readOnly={isShowcaseMode}
                                     />
                                 </div>
 
@@ -609,8 +632,9 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                                     <select
                                         value={genre}
                                         onChange={(e) => setGenre(e.target.value)}
-                                        className="w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500"
+                                        className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500 ${isShowcaseMode ? 'cursor-default appearance-none pointer-events-none' : ''}`}
                                         required
+                                        disabled={isShowcaseMode}
                                     >
                                         <option value="" disabled>Selecione...</option>
                                         {genres.map(g => (
@@ -627,6 +651,7 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                                         onChange={(e) => setBarcode(e.target.value)}
                                         className="w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-neutral-300 font-mono text-sm focus:ring-2 focus:ring-primary-500"
                                         placeholder="Escanear ou digitar..."
+                                        readOnly={isShowcaseMode}
                                     />
                                 </div>
                             </div>
@@ -654,6 +679,7 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                                             onChange={(e) => handleRatingChange(e.target.value)}
                                             className="w-full bg-neutral-800 border-none rounded-lg pl-10 pr-4 py-2 text-white focus:ring-2 focus:ring-primary-500 font-bold"
                                             placeholder="-"
+                                            readOnly={isShowcaseMode}
                                         />
                                     </div>
                                 </div>
@@ -664,6 +690,7 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                                     <button
                                         type="button"
                                         onClick={() => {
+                                            if (isShowcaseMode) return;
                                             const newVal = !watched;
                                             setWatched(newVal);
                                             if (newVal) triggerSmallConfetti();
@@ -671,10 +698,12 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                                         className={`
                                             relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 focus:ring-offset-neutral-900
                                             ${watched ? 'bg-primary-600' : 'bg-neutral-600'}
+                                            ${isShowcaseMode ? 'cursor-default opacity-80' : ''}
                                         `}
                                     >
                                         <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${watched ? 'translate-x-6' : 'translate-x-1'}`} />
                                     </button>
+                                    {isShowcaseMode && <div className="absolute inset-0 z-10 cursor-default" />}
                                 </div>
                             </div>
 
@@ -695,6 +724,8 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                                     Dados do TMDB
                                     {isMetadataLocked && <Lock size={12} />}
                                 </span>
+                            </div>
+                            {!isShowcaseMode && (
                                 <button
                                     type="button"
                                     onClick={() => setIsMetadataLocked(!isMetadataLocked)}
@@ -703,202 +734,202 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                                     {isMetadataLocked ? 'Desbloquear edição' : 'Bloquear edição'}
                                     {isMetadataLocked ? <Unlock size={12} /> : <Lock size={12} />}
                                 </button>
-                            </div>
+                            )}
+                        </div>
 
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                                <div className="space-y-1">
-                                    <label className="text-xs font-medium text-neutral-500">Nota Global (TMDB)</label>
-                                    <input
-                                        type="text"
-                                        value={rating}
-                                        onChange={(e) => setRating(e.target.value)} // Safe fallback if unlocked
-                                        readOnly={isMetadataLocked}
-                                        className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500 ${isMetadataLocked ? 'text-neutral-500 cursor-not-allowed' : ''}`}
-                                    />
-                                </div>
-                                <div className="space-y-1">
-                                    <label className="text-xs font-medium text-neutral-500">Duração</label>
-                                    <input
-                                        type="text"
-                                        value={duration}
-                                        onChange={(e) => setDuration(e.target.value)}
-                                        readOnly={isMetadataLocked}
-                                        className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500 ${isMetadataLocked ? 'text-neutral-500 cursor-not-allowed' : ''}`}
-                                    />
-                                </div>
-                                <div className="col-span-2 space-y-1">
-                                    <label className="text-xs font-medium text-neutral-500">Diretor</label>
-                                    <input
-                                        type="text"
-                                        value={director}
-                                        onChange={(e) => setDirector(e.target.value)}
-                                        readOnly={isMetadataLocked}
-                                        className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500 ${isMetadataLocked ? 'text-neutral-500 cursor-not-allowed' : ''}`}
-                                    />
-                                    {director && onSearch && (
-                                        <div className="flex flex-wrap gap-1 mt-1">
-                                            <button
-                                                type="button"
-                                                onClick={() => onSearch(director)}
-                                                className="px-2 py-0.5 bg-neutral-800 text-neutral-400 text-[10px] rounded-full hover:bg-neutral-700 hover:text-white transition-colors"
-                                            >
-                                                🔍 {director}
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Critics Ratings */}
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-1">
-                                    <label className="text-xs font-medium text-neutral-500 flex items-center gap-1">
-                                        <span>🍅</span> Rotten Tomatoes
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={rottenTomatoesRating}
-                                        onChange={(e) => setRottenTomatoesRating(e.target.value)}
-                                        readOnly={isMetadataLocked}
-                                        className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500 ${isMetadataLocked ? 'text-neutral-500 cursor-not-allowed' : ''}`}
-                                        placeholder="Ex: 95%"
-                                    />
-                                </div>
-                                <div className="space-y-1">
-                                    <label className="text-xs font-medium text-neutral-500 flex items-center gap-1">
-                                        <span className="grayscale brightness-150">Ⓜ️</span> Metacritic
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={metacriticRating}
-                                        onChange={(e) => setMetacriticRating(e.target.value)}
-                                        readOnly={isMetadataLocked}
-                                        className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500 ${isMetadataLocked ? 'text-neutral-500 cursor-not-allowed' : ''}`}
-                                        placeholder="Ex: 88"
-                                    />
-                                </div>
-                            </div>
-
-
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                             <div className="space-y-1">
-                                <label className="text-xs font-medium text-neutral-500">Elenco Principal</label>
+                                <label className="text-xs font-medium text-neutral-500">Nota Global (TMDB)</label>
                                 <input
                                     type="text"
-                                    value={cast}
-                                    onChange={(e) => setCast(e.target.value)}
-                                    readOnly={isMetadataLocked}
-                                    className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500 ${isMetadataLocked ? 'text-neutral-500 cursor-not-allowed' : ''}`}
+                                    value={rating}
+                                    onChange={(e) => setRating(e.target.value)} // Safe fallback if unlocked
+                                    readOnly={isMetadataLocked || isShowcaseMode}
+                                    className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500 ${isMetadataLocked || isShowcaseMode ? 'text-neutral-500 cursor-not-allowed' : ''}`}
                                 />
-                                {cast && onSearch && (
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-xs font-medium text-neutral-500">Duração</label>
+                                <input
+                                    type="text"
+                                    value={duration}
+                                    onChange={(e) => setDuration(e.target.value)}
+                                    readOnly={isMetadataLocked || isShowcaseMode}
+                                    className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500 ${isMetadataLocked || isShowcaseMode ? 'text-neutral-500 cursor-not-allowed' : ''}`}
+                                />
+                            </div>
+                            <div className="col-span-2 space-y-1">
+                                <label className="text-xs font-medium text-neutral-500">Diretor</label>
+                                <input
+                                    type="text"
+                                    value={director}
+                                    onChange={(e) => setDirector(e.target.value)}
+                                    readOnly={isMetadataLocked || isShowcaseMode}
+                                    className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500 ${isMetadataLocked || isShowcaseMode ? 'text-neutral-500 cursor-not-allowed' : ''}`}
+                                />
+                                {director && onSearch && (
                                     <div className="flex flex-wrap gap-1 mt-1">
-                                        {cast.split(',').map((c, i) => {
-                                            const name = c.trim();
-                                            if (!name) return null;
-                                            return (
-                                                <button
-                                                    key={i}
-                                                    type="button"
-                                                    onClick={() => onSearch(name)}
-                                                    className="px-2 py-0.5 bg-neutral-800 text-neutral-400 text-[10px] rounded-full hover:bg-neutral-700 hover:text-white transition-colors"
-                                                >
-                                                    🔍 {name}
-                                                </button>
-                                            );
-                                        })}
+                                        <button
+                                            type="button"
+                                            onClick={() => onSearch(director)}
+                                            className="px-2 py-0.5 bg-neutral-800 text-neutral-400 text-[10px] rounded-full hover:bg-neutral-700 hover:text-white transition-colors"
+                                        >
+                                            🔍 {director}
+                                        </button>
                                     </div>
                                 )}
                             </div>
+                        </div>
 
-                            <div className="space-y-1">
-                                <label className="text-xs font-medium text-neutral-500">Sinopse</label>
-                                <textarea
-                                    rows={4}
-                                    value={synopsis}
-                                    onChange={(e) => setSynopsis(e.target.value)}
-                                    readOnly={isMetadataLocked}
-                                    className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500 resize-none ${isMetadataLocked ? 'text-neutral-500 cursor-not-allowed' : ''}`}
-                                />
-                            </div>
-
-                            {franchise && (
-                                <div className="space-y-1">
-                                    <label className="text-xs font-medium text-neutral-500">Franquia / Coleção</label>
-                                    <div className="flex items-center gap-2">
-                                        <input
-                                            type="text"
-                                            value={franchise}
-                                            onChange={(e) => setFranchise(e.target.value)}
-                                            readOnly={isMetadataLocked}
-                                            className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500 ${isMetadataLocked ? 'text-neutral-500 cursor-not-allowed' : ''}`}
-                                        />
-                                        {onSearch && (
-                                            <button
-                                                type="button"
-                                                onClick={() => onSearch(franchise)}
-                                                className="p-2 bg-primary-600/20 text-primary-400 rounded-lg hover:bg-primary-600/30 transition-colors whitespace-nowrap text-xs font-bold"
-                                            >
-                                                Ver Coleção
-                                            </button>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
-
-
-
-
-                            {/* Soundtrack (Spotify) */}
+                        {/* Critics Ratings */}
+                        <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1">
                                 <label className="text-xs font-medium text-neutral-500 flex items-center gap-1">
-                                    <Music size={12} />
-                                    Trilha Sonora (Spotify)
+                                    <span>🍅</span> Rotten Tomatoes
                                 </label>
-                                <div className="flex gap-2">
-                                    <input
-                                        type="text"
-                                        value={soundtrackUrl}
-                                        onChange={(e) => setSoundtrackUrl(e.target.value)}
-                                        className="w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500 placeholder-neutral-600"
-                                        placeholder="Link do Álbum/Playlist..."
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            window.open(`https://open.spotify.com/search/${encodeURIComponent(title + " Soundtrack")}`, '_blank');
-                                        }}
-                                        className="p-2 bg-[#1DB954]/20 text-[#1DB954] rounded-lg hover:bg-[#1DB954]/30 transition-colors whitespace-nowrap"
-                                        title="Buscar no Spotify"
-                                    >
-                                        <Search size={20} />
-                                    </button>
-                                </div>
-                                {soundtrackUrl && (
-                                    <a
-                                        href={soundtrackUrl}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="inline-flex items-center gap-2 text-xs text-[#1DB954] hover:underline mt-1"
-                                    >
-                                        <Music size={12} />
-                                        Abrir no Spotify
-                                    </a>
-                                )}
+                                <input
+                                    type="text"
+                                    value={rottenTomatoesRating}
+                                    onChange={(e) => setRottenTomatoesRating(e.target.value)}
+                                    readOnly={isMetadataLocked || isShowcaseMode}
+                                    className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500 ${isMetadataLocked || isShowcaseMode ? 'text-neutral-500 cursor-not-allowed' : ''}`}
+                                    placeholder="Ex: 95%"
+                                />
                             </div>
+                            <div className="space-y-1">
+                                <label className="text-xs font-medium text-neutral-500 flex items-center gap-1">
+                                    <span className="grayscale brightness-150">Ⓜ️</span> Metacritic
+                                </label>
+                                <input
+                                    type="text"
+                                    value={metacriticRating}
+                                    onChange={(e) => setMetacriticRating(e.target.value)}
+                                    readOnly={isMetadataLocked || isShowcaseMode}
+                                    className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500 ${isMetadataLocked || isShowcaseMode ? 'text-neutral-500 cursor-not-allowed' : ''}`}
+                                    placeholder="Ex: 88"
+                                />
+                            </div>
+                        </div>
 
-                            {/* Streaming Providers */}
-                            {tmdbId && (
-                                <div className="pt-2 border-t border-white/5">
-                                    <StreamingProviders tmdbId={tmdbId} />
+
+                        <div className="space-y-1">
+                            <label className="text-xs font-medium text-neutral-500">Elenco Principal</label>
+                            <input
+                                type="text"
+                                value={cast}
+                                onChange={(e) => setCast(e.target.value)}
+                                readOnly={isMetadataLocked || isShowcaseMode}
+                                className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500 ${isMetadataLocked || isShowcaseMode ? 'text-neutral-500 cursor-not-allowed' : ''}`}
+                            />
+                            {cast && onSearch && (
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                    {cast.split(',').map((c, i) => {
+                                        const name = c.trim();
+                                        if (!name) return null;
+                                        return (
+                                            <button
+                                                key={i}
+                                                type="button"
+                                                onClick={() => onSearch(name)}
+                                                className="px-2 py-0.5 bg-neutral-800 text-neutral-400 text-[10px] rounded-full hover:bg-neutral-700 hover:text-white transition-colors"
+                                            >
+                                                🔍 {name}
+                                            </button>
+                                        );
+                                    })}
                                 </div>
                             )}
                         </div>
 
+                        <div className="space-y-1">
+                            <label className="text-xs font-medium text-neutral-500">Sinopse</label>
+                            <textarea
+                                rows={4}
+                                value={synopsis}
+                                onChange={(e) => setSynopsis(e.target.value)}
+                                readOnly={isMetadataLocked || isShowcaseMode}
+                                className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500 resize-none ${isMetadataLocked || isShowcaseMode ? 'text-neutral-500 cursor-not-allowed' : ''}`}
+                            />
+                        </div>
+
+                        {franchise && (
+                            <div className="space-y-1">
+                                <label className="text-xs font-medium text-neutral-500">Franquia / Coleção</label>
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        type="text"
+                                        value={franchise}
+                                        onChange={(e) => setFranchise(e.target.value)}
+                                        readOnly={isMetadataLocked || isShowcaseMode}
+                                        className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500 ${isMetadataLocked || isShowcaseMode ? 'text-neutral-500 cursor-not-allowed' : ''}`}
+                                    />
+                                    {onSearch && (
+                                        <button
+                                            type="button"
+                                            onClick={() => onSearch(franchise)}
+                                            className="p-2 bg-primary-600/20 text-primary-400 rounded-lg hover:bg-primary-600/30 transition-colors whitespace-nowrap text-xs font-bold"
+                                        >
+                                            Ver Coleção
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+
+
+
+                        {/* Soundtrack (Spotify) */}
+                        <div className="space-y-1">
+                            <label className="text-xs font-medium text-neutral-500 flex items-center gap-1">
+                                <Music size={12} />
+                                Trilha Sonora (Spotify)
+                            </label>
+                            <div className="flex gap-2">
+                                <input
+                                    type="text"
+                                    value={soundtrackUrl}
+                                    onChange={(e) => setSoundtrackUrl(e.target.value)}
+                                    className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500 placeholder-neutral-600 ${isShowcaseMode ? 'cursor-default opacity-50' : ''}`}
+                                    placeholder="Link do Álbum/Playlist..."
+                                    readOnly={isShowcaseMode}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        window.open(`https://open.spotify.com/search/${encodeURIComponent(title + " Soundtrack")}`, '_blank');
+                                    }}
+                                    className="p-2 bg-[#1DB954]/20 text-[#1DB954] rounded-lg hover:bg-[#1DB954]/30 transition-colors whitespace-nowrap"
+                                    title="Buscar no Spotify"
+                                >
+                                    <Search size={20} />
+                                </button>
+                            </div>
+                            {soundtrackUrl && (
+                                <a
+                                    href={soundtrackUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-2 text-xs text-[#1DB954] hover:underline mt-1"
+                                >
+                                    <Music size={12} />
+                                    Abrir no Spotify
+                                </a>
+                            )}
+                        </div>
+
+                        {/* Streaming Providers */}
+                        {tmdbId && (
+                            <div className="pt-2 border-t border-white/5">
+                                <StreamingProviders tmdbId={tmdbId} />
+                            </div>
+                        )}
                     </form>
                 </div>
 
                 {/* Footer Actions */}
                 <div className="p-6 border-t border-white/10 bg-neutral-900 rounded-b-2xl flex items-center justify-between gap-3">
-                    {movieToEdit ? (
+                    {movieToEdit && !isShowcaseMode ? (
                         <button
                             type="button"
                             onClick={() => {
@@ -930,47 +961,58 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                             onClick={onClose}
                             className="px-4 py-3 rounded-xl text-neutral-400 hover:text-white hover:bg-white/5 transition-colors font-medium text-sm whitespace-nowrap"
                         >
-                            Cancelar
+                            {isShowcaseMode ? 'Fechar' : 'Cancelar'}
                         </button>
-                        <button
-                            form="movie-form"
-                            type="submit"
-                            disabled={isLoading}
-                            className="px-4 py-3 bg-primary-600 hover:bg-primary-500 text-white rounded-xl font-bold shadow-lg shadow-primary-500/25 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm whitespace-nowrap"
-                        >
-                            {isLoading ? (
-                                <>
-                                    <Loader2 className="animate-spin" size={18} />
-                                    Salvando...
-                                </>
-                            ) : (
-                                <>
-                                    <Save size={18} />
-                                    Salvar
-                                </>
-                            )}
-                        </button>
+                        {!isShowcaseMode && (
+                            <button
+                                form="movie-form"
+                                type="submit"
+                                disabled={isLoading}
+                                className="px-4 py-3 bg-primary-600 hover:bg-primary-500 text-white rounded-xl font-bold shadow-lg shadow-primary-500/25 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm whitespace-nowrap"
+                            >
+                                {isLoading ? (
+                                    <>
+                                        <Loader2 className="animate-spin" size={18} />
+                                        Salvando...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Save size={18} />
+                                        Salvar
+                                    </>
+                                )}
+                            </button>
+                        )}
                     </div>
                 </div>
 
-            </div >
+                {/* Barcode Scanner Overlay */}
+                <BarcodeScanner
+                    isOpen={isScannerOpen}
+                    onClose={() => setIsScannerOpen(false)}
+                    onDetected={(code) => {
+                        setBarcode(code);
+                        setIsScannerOpen(false);
+                    }}
+                />
 
-            {/* Barcode Scanner Overlay */}
-            < BarcodeScanner
-                isOpen={isScannerOpen}
-                onClose={() => setIsScannerOpen(false)}
-                onDetected={(code) => {
-                    setBarcode(code);
-                    setIsScannerOpen(false);
-                }}
-            />
+                {isTrailerOpen && trailerId && (
+                    <TrailerModal
+                        isOpen={isTrailerOpen}
+                        onClose={() => setIsTrailerOpen(false)}
+                        videoId={trailerId}
+                    />
+                )}
 
-            {/* Trailer Overlay */}
-            <TrailerModal
-                isOpen={isTrailerOpen}
-                onClose={() => setIsTrailerOpen(false)}
-                videoId={trailerId}
-            />
-        </div >
-    );
+                {isShareOpen && (
+                    <ShareModal
+                        isOpen={isShareOpen}
+                        onClose={() => setIsShareOpen(false)}
+                        movie={{
+                            barcode, title, year, genre, imageType, imageValue, backdropType, backdropValue, synopsis, rating, duration, director, cast, tmdbId, userRating, watched, tags, franchise, soundtrackUrl, rottenTomatoesRating, metacriticRating
+                        } as Movie}
+                    />
+                )}
+            </div>
+            );
 };
