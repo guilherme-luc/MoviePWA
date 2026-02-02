@@ -11,15 +11,10 @@ interface SettingsModalProps {
 export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
     const { theme, setTheme } = useTheme();
     const { isShowcaseMode } = useShowcase();
-    const [apiKey, setApiKey] = useState('');
-    const [previewTheme, setPreviewTheme] = useState(theme);
-
     // Sync preview with actual theme when opening
     useEffect(() => {
         if (isOpen) {
             setPreviewTheme(theme);
-            const stored = localStorage.getItem('tmdb_api_key');
-            if (stored) setApiKey(stored);
         }
     }, [isOpen, theme]);
 
