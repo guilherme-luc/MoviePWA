@@ -1,4 +1,3 @@
-import { useAutoEnrichment } from '../../hooks/useAutoEnrichment';
 import { useAllMovies } from '../../hooks/useAllMovies';
 import { RefreshCw, Settings } from 'lucide-react';
 import { OfflineIndicator } from '../ui/OfflineIndicator';
@@ -12,7 +11,7 @@ interface AppShellProps {
 }
 
 export const AppShell: React.FC<AppShellProps> = ({ children }) => {
-    const { isSyncing, processedCount, totalToProcess } = useAutoEnrichment();
+    // const { isSyncing, processedCount, totalToProcess } = useAutoEnrichment(); // DISABLED
     const { data: allMovies } = useAllMovies();
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isRandomOpen, setIsRandomOpen] = useState(false);
@@ -34,15 +33,15 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
                     </h1>
 
                     <div className="flex items-center gap-2 sm:gap-3">
-                        {/* Sync Indicator */}
-                        {isSyncing && (
+                        {/* Sync Indicator - DISABLED */}
+                        {/* {isSyncing && (
                             <div className="flex items-center gap-2 text-xs text-neutral-400 bg-black/20 px-3 py-1 rounded-full border border-white/5">
                                 <RefreshCw size={12} className="animate-spin text-primary-400" />
                                 <span className="hidden sm:inline">
                                     {processedCount}/{totalToProcess}
                                 </span>
                             </div>
-                        )}
+                        )} */}
 
                         {/* Settings Button */}
                         <button
