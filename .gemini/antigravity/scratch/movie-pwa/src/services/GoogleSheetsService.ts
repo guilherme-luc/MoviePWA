@@ -436,7 +436,7 @@ export class GoogleSheetsService {
 
                 // Range 2: Extended Metadata (R:U)
                 // R: Franchise, S: Soundtrack, T: RottenTomatoes, U: Metacritic
-                const range2 = `'${movie._sheetTitle}'!R${movie._rowIndex}:U${movie._rowIndex}`;
+                const range2 = `'${movie._sheetTitle}'!R${movie._rowIndex!}:U${movie._rowIndex!}`;
                 const values2 = [[
                     updates.franchise || movie.franchise || '',
                     updates.soundtrackUrl || movie.soundtrackUrl || '',
