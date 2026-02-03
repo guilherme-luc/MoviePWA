@@ -61,9 +61,9 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
                     <h1 className="text-lg font-bold bg-gradient-to-r from-primary-400 to-purple-400 bg-clip-text text-transparent">
                         My Movies
                     </h1>
-                    {isSyncing && (
+                    {/* {isSyncing && (
                         <RefreshCw size={14} className="animate-spin text-primary-400" />
-                    )}
+                    )} */}
                 </div>
             </header>
 
