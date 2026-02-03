@@ -1,5 +1,5 @@
 import { useAllMovies } from '../../hooks/useAllMovies';
-import { RefreshCw, Settings } from 'lucide-react';
+import { Settings } from 'lucide-react';
 import { OfflineIndicator } from '../ui/OfflineIndicator';
 import React, { useState } from 'react';
 import { SettingsModal } from '../modals/SettingsModal';
