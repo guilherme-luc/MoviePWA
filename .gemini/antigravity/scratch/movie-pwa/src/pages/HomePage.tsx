@@ -77,6 +77,8 @@ export const HomePage: React.FC = () => {
                     </div>
                     <input
                         type="text"
+                        name="search"
+                        id="home-search"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder="Pesquisar filme..."

@@ -44,6 +44,8 @@ export const TagInput: React.FC<TagInputProps> = ({ tags, onChange }) => {
             <div className="flex-1 min-w-[100px] flex items-center">
                 <input
                     type="text"
+                    name="tag-input"
+                    id="tag-input"
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}

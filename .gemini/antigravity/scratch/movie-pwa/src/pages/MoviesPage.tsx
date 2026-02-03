@@ -395,6 +395,8 @@ export const MoviesPage: React.FC = () => {
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500" size={20} />
                         <input
                             type="text"
+                            name="genre_search"
+                            id="genre-search"
                             placeholder="Buscar título, ano ou código..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
