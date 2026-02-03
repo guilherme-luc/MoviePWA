@@ -30,7 +30,7 @@ export function useAutoEnrichment() {
         if (!allMovies || allMovies.length === 0 || isProcessingRef.current) return;
 
         // Load processed cache
-        const processedIds = new Set(JSON.parse(localStorage.getItem('auto_enrich_processed_v2') || '[]'));
+        const processedIds = new Set(JSON.parse(localStorage.getItem('auto_enrich_processed_v3') || '[]'));
 
         // Identify candidates
         // Candidate = Missing Backdrop OR Missing TMDB Metadata (Synopsis, etc)
@@ -42,8 +42,7 @@ export function useAutoEnrichment() {
             const uid = m.barcode ? m.barcode.trim() : `${m.title.trim()}-${m.year}`;
             if (processedIds.has(uid)) return false;
 
-            // V2: We process everyone who hasn't been processed in V2 yet.
-            // This forces a re-run for OMDB data.
+            // V3: Force re-check for everyone to ensure OMDB ratings are fetched
             return true;
         });
 
@@ -75,7 +74,7 @@ export function useAutoEnrichment() {
         let imageUpdates: { movie: Movie, imageType: 'tmdb', imageValue: string, backdropType: 'tmdb', backdropValue: string }[] = [];
 
         // Load cache to append
-        const processedCache = new Set(JSON.parse(localStorage.getItem('auto_enrich_processed_v2') || '[]'));
+        const processedCache = new Set(JSON.parse(localStorage.getItem('auto_enrich_processed_v3') || '[]'));
 
         for (let i = 0; i < queue.length; i++) {
             const movie = queue[i];
@@ -83,7 +82,7 @@ export function useAutoEnrichment() {
 
             // Mark as processed immediately to avoid restart loops if user refreshes during fetch
             processedCache.add(uid);
-            localStorage.setItem('auto_enrich_processed_v2', JSON.stringify(Array.from(processedCache)));
+            localStorage.setItem('auto_enrich_processed_v3', JSON.stringify(Array.from(processedCache)));
 
             setState(prev => ({ ...prev, currentMovie: movie.title }));
 
