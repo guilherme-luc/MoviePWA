@@ -423,7 +423,7 @@ export class GoogleSheetsService {
                 if (!movie._rowIndex || !movie._sheetTitle) return;
 
                 // Range 1: Core Metadata (G:L)
-                const range1 = `'${movie._sheetTitle}'!G${movie._rowIndex}:L${movie._rowIndex}`;
+                const range1 = `'${movie._sheetTitle}'!G${movie._rowIndex!}:L${movie._rowIndex!}`;
                 const values1 = [[
                     updates.synopsis || movie.synopsis || '',
                     updates.rating || movie.rating || '',
