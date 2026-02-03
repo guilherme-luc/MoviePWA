@@ -77,10 +77,14 @@ export const MovieCard: React.FC<MovieCardProps> = ({ movie, isSelected, isSelec
                 </div>
             </div>
 
-            {/* Edit Button - Large Touch Target */}
+            {/* Edit Button - Always visible on mobile, hover on desktop */}
             {!isSelectionMode && !isShowcaseMode && (
                 <button
-                    className="p-3 -mr-2 text-neutral-600 group-hover:text-primary-400 transition-colors flex-shrink-0 active:scale-90"
+                    className={`
+                        p-3 -mr-2 text-neutral-600 transition-colors flex-shrink-0 active:scale-90
+                        opacity-100 md:opacity-0 md:group-hover:opacity-100
+                        group-hover:text-primary-400
+                    `}
                     aria-label="Editar"
                 >
                     <Edit2 size={20} />

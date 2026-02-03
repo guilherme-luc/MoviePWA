@@ -183,7 +183,7 @@ export const StatsModal: React.FC<StatsModalProps> = ({ isOpen, onClose, movies,
                                         .map(([decade, count]) => (
                                             <div key={decade} className="bg-neutral-800/50 border border-white/5 p-2 rounded-xl text-center hover:bg-neutral-700 transition-colors">
                                                 <div className="text-emerald-400 font-bold text-sm">{decade}s</div>
-                                                <div className="text-[10px] text-neutral-500">{count}</div>
+                                                <div className="text-[10px] text-neutral-400">{count}</div>
                                             </div>
                                         ))}
                                 </div>

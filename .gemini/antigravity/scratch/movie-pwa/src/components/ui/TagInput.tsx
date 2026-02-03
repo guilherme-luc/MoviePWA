@@ -51,7 +51,7 @@ export const TagInput: React.FC<TagInputProps> = ({ tags, onChange }) => {
                     onKeyDown={handleKeyDown}
                     onBlur={addTag}
                     placeholder={tags.length === 0 ? "Adicione tags (Enter para confirmar)..." : ""}
-                    className="bg-transparent border-none outline-none text-white placeholder:text-neutral-500 w-full text-sm"
+                    className="bg-transparent border-none outline-none text-white placeholder:text-neutral-400 w-full text-sm"
                 />
                 <button
                     onClick={addTag}

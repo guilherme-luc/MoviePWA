@@ -18,7 +18,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ onOpenSettings, onOpenRand
             <div className="flex items-center justify-around h-16">
                 <button
                     onClick={() => navigate('/')}
-                    className={`flex flex-col items-center justify-center w-full h-full space-y-1 transition-colors ${isActive('/') ? 'text-primary-400' : 'text-neutral-500 hover:text-neutral-300'
+                    className={`flex flex-col items-center justify-center w-full h-full space-y-1 transition-colors ${isActive('/') ? 'text-primary-400' : 'text-neutral-400 hover:text-neutral-300'
                         }`}
                 >
                     <Home size={22} className={isActive('/') ? 'fill-current' : ''} />
@@ -31,7 +31,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ onOpenSettings, onOpenRand
                         navigate('/');
                         setTimeout(() => document.querySelector<HTMLInputElement>('input[placeholder="Pesquisar filme..."]')?.focus(), 100);
                     }}
-                    className="flex flex-col items-center justify-center w-full h-full space-y-1 text-neutral-500 hover:text-neutral-300 transition-colors"
+                    className="flex flex-col items-center justify-center w-full h-full space-y-1 text-neutral-400 hover:text-neutral-300 transition-colors"
                 >
                     <Search size={22} />
                     <span className="text-[10px] font-medium">Buscar</span>
@@ -39,7 +39,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ onOpenSettings, onOpenRand
 
                 <button
                     onClick={onOpenRandom}
-                    className="flex flex-col items-center justify-center w-full h-full space-y-1 text-neutral-500 hover:text-neutral-300 transition-colors"
+                    className="flex flex-col items-center justify-center w-full h-full space-y-1 text-neutral-400 hover:text-neutral-300 transition-colors"
                 >
                     <Dice5 size={22} />
                     <span className="text-[10px] font-medium">Sugerir</span>
@@ -47,7 +47,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ onOpenSettings, onOpenRand
 
                 <button
                     onClick={onOpenSettings}
-                    className="flex flex-col items-center justify-center w-full h-full space-y-1 text-neutral-500 hover:text-neutral-300 transition-colors"
+                    className="flex flex-col items-center justify-center w-full h-full space-y-1 text-neutral-400 hover:text-neutral-300 transition-colors"
                 >
                     <Settings size={22} />
                     <span className="text-[10px] font-medium">Ajustes</span>

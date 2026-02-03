@@ -436,7 +436,7 @@ export const SmartSuggestionModal: React.FC<SmartSuggestionModalProps> = ({ isOp
 
                             <button
                                 onClick={() => setStep('intro')}
-                                className="text-neutral-500 hover:text-white text-sm py-2"
+                                className="text-neutral-400 hover:text-white text-sm py-2"
                             >
                                 Reiniciar
                             </button>
@@ -471,7 +471,7 @@ const OptionCard = ({ icon, label, desc, onClick, color = 'purple' }: { icon: Re
         >
             <div className={`mb-2 text-neutral-400 transition-colors ${color === 'blue' ? 'group-hover:text-blue-400' : 'group-hover:text-purple-400'}`}>{icon}</div>
             <span className="text-white font-bold text-sm block">{label}</span>
-            <span className="text-neutral-500 text-xs">{desc}</span>
+            <span className="text-neutral-400 text-xs">{desc}</span>
         </button>
     );
 };

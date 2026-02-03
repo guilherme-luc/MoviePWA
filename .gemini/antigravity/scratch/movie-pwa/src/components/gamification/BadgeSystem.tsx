@@ -130,7 +130,7 @@ export const BadgeSystem: React.FC<BadgeSystemProps> = ({ movies }) => {
             {/* Locked Preview (Grayscale) */}
             {lockedBadges.length > 0 && (
                 <div className="space-y-3">
-                    <p className="text-xs font-medium text-neutral-500 uppercase tracking-wider">Ainda Bloqueados</p>
+                    <p className="text-xs font-medium text-neutral-400 uppercase tracking-wider">Ainda Bloqueados</p>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                         {lockedBadges.map(badge => (
                             <div key={badge.id} className="bg-neutral-900/50 border border-white/5 rounded-xl p-4 flex flex-col items-center text-center gap-2 opacity-50 grayscale hover:grayscale-0 hover:opacity-75 transition-all">

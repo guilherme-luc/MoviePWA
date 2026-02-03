@@ -54,7 +54,7 @@ export const StreamingProviders: React.FC<StreamingProvidersProps> = ({ tmdbId }
     return (
         <div className="space-y-2 animate-in fade-in slide-in-from-top-1">
             <div className="flex items-center justify-between">
-                <label className="text-xs font-medium text-neutral-500 uppercase tracking-wider">Onde Assistir (Brasil)</label>
+                <label className="text-xs font-medium text-neutral-400 uppercase tracking-wider">Onde Assistir (Brasil)</label>
                 {link && (
                     <a href={link} target="_blank" rel="noopener noreferrer" className="text-[10px] text-primary-400 hover:text-primary-300">
                         Ver tudo no TMDB ↗
@@ -64,7 +64,7 @@ export const StreamingProviders: React.FC<StreamingProvidersProps> = ({ tmdbId }
 
             <div className="flex flex-wrap gap-2">
                 {isLoading ? (
-                    <div className="text-xs text-neutral-500 italic">Buscando...</div>
+                    <div className="text-xs text-neutral-400 italic">Buscando...</div>
                 ) : (
                     providers.map(p => (
                         <div key={p.provider_id} className="relative group" title={p.provider_name}>

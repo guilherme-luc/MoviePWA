@@ -10,6 +10,7 @@ import { SmartSuggestionModal } from '../components/modals/SmartSuggestionModal'
 import { StatsModal } from '../components/modals/StatsModal';
 import type { Movie } from '../types';
 import { Skeleton } from '../components/ui/Skeleton';
+import { getGenreGradient, getGenreIcon } from '../utils/genreUtils';
 
 import { useShowcase } from '../providers/ShowcaseProvider';
 
@@ -73,7 +74,7 @@ export const HomePage: React.FC = () => {
             <div className="flex items-center gap-3">
                 <div className="relative flex-1">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Search className="text-neutral-500" size={18} />
+                        <Search className="text-neutral-400" size={18} />
                     </div>
                     <input
                         type="text"
@@ -82,12 +83,12 @@ export const HomePage: React.FC = () => {
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder="Pesquisar filme..."
-                        className="w-full bg-neutral-800 border-none text-white text-sm rounded-full py-2.5 pl-10 pr-4 focus:ring-2 focus:ring-primary-500 placeholder:text-neutral-500"
+                        className="w-full bg-neutral-800 border-none text-white text-sm rounded-full py-2.5 pl-10 pr-4 focus:ring-2 focus:ring-primary-500 placeholder:text-neutral-400"
                     />
                     {search && (
                         <button
                             onClick={() => setSearch('')}
-                            className="absolute inset-y-0 right-0 pr-3 flex items-center text-neutral-500 hover:text-white"
+                            className="absolute inset-y-0 right-0 pr-3 flex items-center text-neutral-400 hover:text-white"
                         >
                             <X size={16} />
                         </button>
@@ -97,7 +98,11 @@ export const HomePage: React.FC = () => {
                     {search.length > 0 && (
                         <div className="absolute top-full left-0 right-0 mt-2 bg-neutral-800 rounded-xl shadow-2xl border border-white/10 z-50 overflow-hidden">
                             {filteredMovies.length === 0 ? (
-                                <div className="p-4 text-center text-neutral-500 text-sm">Nenhum filme encontrado</div>
+                                <div className="p-6 text-center text-neutral-400 text-sm flex flex-col items-center gap-2">
+                                    <Film size={32} className="text-neutral-600" />
+                                    <p className="font-medium">Nenhum filme encontrado</p>
+                                    <p className="text-xs text-neutral-500">Tente outro termo de busca</p>
+                                </div>
                             ) : (
                                 <ul>
                                     {filteredMovies.map((movie, idx) => (
@@ -114,7 +119,7 @@ export const HomePage: React.FC = () => {
                                                     />
                                                 ) : (
                                                     <div className="w-10 h-14 bg-neutral-700 rounded flex items-center justify-center">
-                                                        <Film size={16} className="text-neutral-500" />
+                                                        <Film size={16} className="text-neutral-400" />
                                                     </div>
                                                 )}
                                                 <div>
@@ -225,23 +230,32 @@ export const HomePage: React.FC = () => {
                         <Link
                             key={g.genre}
                             to={`/genre/${encodeURIComponent(g.genre)}`}
-                            className="glass-panel p-4 rounded-xl flex items-center justify-between hover:bg-neutral-800/80 transition-all active:scale-[0.98]"
+                            className="glass-panel p-4 rounded-xl flex items-center justify-between hover:bg-neutral-800/80 transition-all active:scale-[0.98] group"
                         >
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-neutral-700 to-neutral-800 flex items-center justify-center border border-white/5">
-                                    <span className="text-lg font-bold text-neutral-300">{g.genre.charAt(0).toUpperCase()}</span>
+                                <div
+                                    className="w-12 h-12 rounded-lg flex items-center justify-center border border-white/10 shadow-lg group-hover:scale-110 transition-transform"
+                                    style={{ background: getGenreGradient(g.genre) }}
+                                >
+                                    <span className="text-2xl">{getGenreIcon(g.genre)}</span>
                                 </div>
                                 <div>
                                     <h4 className="font-semibold text-neutral-200">{g.genre}</h4>
-                                    <p className="text-xs text-neutral-500">{g.count} filmes</p>
+                                    <p className="text-xs text-neutral-400">{g.count} filmes</p>
                                 </div>
                             </div>
                         </Link>
                     ))}
 
                     {genres?.length === 0 && (
-                        <div className="col-span-full text-center py-10 text-neutral-500">
-                            Nenhum gênero encontrado. Crie um para começar.
+                        <div className="col-span-full text-center py-12 flex flex-col items-center gap-3">
+                            <div className="w-16 h-16 rounded-full bg-neutral-800/50 flex items-center justify-center">
+                                <Film size={32} className="text-neutral-600" />
+                            </div>
+                            <div>
+                                <p className="text-neutral-400 font-medium mb-1">Nenhum gênero encontrado</p>
+                                <p className="text-xs text-neutral-500">Crie seu primeiro gênero para começar</p>
+                            </div>
                         </div>
                     )}
                 </div>

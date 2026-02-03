@@ -138,7 +138,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                                 <span className="text-xs font-bold text-neutral-300">Exportar CSV</span>
                             </button>
                         </div>
-                        <p className="text-[10px] text-neutral-500 mt-2 text-center">
+                        <p className="text-[10px] text-neutral-400 mt-2 text-center">
                             Salve seus dados localmente. O JSON é ideal para backup, o CSV para Excel.
                         </p>
                     </div>

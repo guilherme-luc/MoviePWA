@@ -654,7 +654,7 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                                             <button
                                                 type="button"
                                                 onClick={() => setTmdbResults([])}
-                                                className="w-full p-2 text-xs text-center text-neutral-500 hover:text-neutral-300 hover:bg-white/5 transition-colors"
+                                                className="w-full p-2 text-xs text-center text-neutral-400 hover:text-neutral-300 hover:bg-white/5 transition-colors"
                                             >
                                                 Fechar / Nenhum destes
                                             </button>
@@ -768,7 +768,7 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                         {/* Metadata Section (Read Only-ish) */}
                         <div className="space-y-4 opacity-100">
                             <div className="flex items-center justify-between">
-                                <span className="text-neutral-500 font-bold text-xs uppercase tracking-wider flex items-center gap-2">
+                                <span className="text-neutral-400 font-bold text-xs uppercase tracking-wider flex items-center gap-2">
                                     Dados do TMDB
                                     {isMetadataLocked && <Lock size={12} />}
                                 </span>
@@ -787,33 +787,33 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
 
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                             <div className="space-y-1">
-                                <label className="text-xs font-medium text-neutral-500">Nota Global (TMDB)</label>
+                                <label className="text-xs font-medium text-neutral-400">Nota Global (TMDB)</label>
                                 <input
                                     type="text"
                                     value={rating}
                                     onChange={(e) => setRating(e.target.value)} // Safe fallback if unlocked
                                     readOnly={isMetadataLocked || isShowcaseMode}
-                                    className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500 ${isMetadataLocked || isShowcaseMode ? 'text-neutral-500 cursor-not-allowed' : ''}`}
+                                    className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500 ${isMetadataLocked || isShowcaseMode ? 'text-neutral-400 cursor-not-allowed' : ''}`}
                                 />
                             </div>
                             <div className="space-y-1">
-                                <label className="text-xs font-medium text-neutral-500">Duração</label>
+                                <label className="text-xs font-medium text-neutral-400">Duração</label>
                                 <input
                                     type="text"
                                     value={duration}
                                     onChange={(e) => setDuration(e.target.value)}
                                     readOnly={isMetadataLocked || isShowcaseMode}
-                                    className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500 ${isMetadataLocked || isShowcaseMode ? 'text-neutral-500 cursor-not-allowed' : ''}`}
+                                    className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500 ${isMetadataLocked || isShowcaseMode ? 'text-neutral-400 cursor-not-allowed' : ''}`}
                                 />
                             </div>
                             <div className="col-span-2 space-y-1">
-                                <label className="text-xs font-medium text-neutral-500">Diretor</label>
+                                <label className="text-xs font-medium text-neutral-400">Diretor</label>
                                 <input
                                     type="text"
                                     value={director}
                                     onChange={(e) => setDirector(e.target.value)}
                                     readOnly={isMetadataLocked || isShowcaseMode}
-                                    className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500 ${isMetadataLocked || isShowcaseMode ? 'text-neutral-500 cursor-not-allowed' : ''}`}
+                                    className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500 ${isMetadataLocked || isShowcaseMode ? 'text-neutral-400 cursor-not-allowed' : ''}`}
                                 />
                                 {director && onSearch && (
                                     <div className="flex flex-wrap gap-1 mt-1">
@@ -832,7 +832,7 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                         {/* Critics Ratings */}
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-1">
-                                <label className="text-xs font-medium text-neutral-500 flex items-center gap-1">
+                                <label className="text-xs font-medium text-neutral-400 flex items-center gap-1">
                                     <span>🍅</span> Rotten Tomatoes
                                 </label>
                                 <input
@@ -840,12 +840,12 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                                     value={rottenTomatoesRating}
                                     onChange={(e) => setRottenTomatoesRating(e.target.value)}
                                     readOnly={isMetadataLocked || isShowcaseMode}
-                                    className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500 ${isMetadataLocked || isShowcaseMode ? 'text-neutral-500 cursor-not-allowed' : ''}`}
+                                    className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500 ${isMetadataLocked || isShowcaseMode ? 'text-neutral-400 cursor-not-allowed' : ''}`}
                                     placeholder="Ex: 95%"
                                 />
                             </div>
                             <div className="space-y-1">
-                                <label className="text-xs font-medium text-neutral-500 flex items-center gap-1">
+                                <label className="text-xs font-medium text-neutral-400 flex items-center gap-1">
                                     <span className="grayscale brightness-150">Ⓜ️</span> Metacritic
                                 </label>
                                 <input
@@ -853,7 +853,7 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                                     value={metacriticRating}
                                     onChange={(e) => setMetacriticRating(e.target.value)}
                                     readOnly={isMetadataLocked || isShowcaseMode}
-                                    className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500 ${isMetadataLocked || isShowcaseMode ? 'text-neutral-500 cursor-not-allowed' : ''}`}
+                                    className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500 ${isMetadataLocked || isShowcaseMode ? 'text-neutral-400 cursor-not-allowed' : ''}`}
                                     placeholder="Ex: 88"
                                 />
                             </div>
@@ -861,13 +861,13 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
 
 
                         <div className="space-y-1">
-                            <label className="text-xs font-medium text-neutral-500">Elenco Principal</label>
+                            <label className="text-xs font-medium text-neutral-400">Elenco Principal</label>
                             <input
                                 type="text"
                                 value={cast}
                                 onChange={(e) => setCast(e.target.value)}
                                 readOnly={isMetadataLocked || isShowcaseMode}
-                                className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500 ${isMetadataLocked || isShowcaseMode ? 'text-neutral-500 cursor-not-allowed' : ''}`}
+                                className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500 ${isMetadataLocked || isShowcaseMode ? 'text-neutral-400 cursor-not-allowed' : ''}`}
                             />
                             {cast && onSearch && (
                                 <div className="flex flex-wrap gap-1 mt-1">
@@ -890,26 +890,26 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                         </div>
 
                         <div className="space-y-1">
-                            <label className="text-xs font-medium text-neutral-500">Sinopse</label>
+                            <label className="text-xs font-medium text-neutral-400">Sinopse</label>
                             <textarea
                                 rows={4}
                                 value={synopsis}
                                 onChange={(e) => setSynopsis(e.target.value)}
                                 readOnly={isMetadataLocked || isShowcaseMode}
-                                className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500 resize-none ${isMetadataLocked || isShowcaseMode ? 'text-neutral-500 cursor-not-allowed' : ''}`}
+                                className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500 resize-none ${isMetadataLocked || isShowcaseMode ? 'text-neutral-400 cursor-not-allowed' : ''}`}
                             />
                         </div>
 
                         {franchise && (
                             <div className="space-y-1">
-                                <label className="text-xs font-medium text-neutral-500">Franquia / Coleção</label>
+                                <label className="text-xs font-medium text-neutral-400">Franquia / Coleção</label>
                                 <div className="flex items-center gap-2">
                                     <input
                                         type="text"
                                         value={franchise}
                                         onChange={(e) => setFranchise(e.target.value)}
                                         readOnly={isMetadataLocked || isShowcaseMode}
-                                        className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500 ${isMetadataLocked || isShowcaseMode ? 'text-neutral-500 cursor-not-allowed' : ''}`}
+                                        className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500 ${isMetadataLocked || isShowcaseMode ? 'text-neutral-400 cursor-not-allowed' : ''}`}
                                     />
                                     {onSearch && (
                                         <button
@@ -929,7 +929,7 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
 
                         {/* Soundtrack (Spotify) */}
                         <div className="space-y-1">
-                            <label className="text-xs font-medium text-neutral-500 flex items-center gap-1">
+                            <label className="text-xs font-medium text-neutral-400 flex items-center gap-1">
                                 <Music size={12} />
                                 Trilha Sonora (Spotify)
                             </label>
@@ -1016,7 +1016,7 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                                 form="movie-form"
                                 type="submit"
                                 disabled={isLoading}
-                                className="px-4 py-3 bg-primary-600 hover:bg-primary-500 text-white rounded-xl font-bold shadow-lg shadow-primary-500/25 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm whitespace-nowrap"
+                                className="px-4 py-3 bg-primary-600 hover:bg-primary-500 text-white rounded-xl font-bold shadow-lg shadow-primary-500/30 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm whitespace-nowrap"
                             >
                                 {isLoading ? (
                                     <>

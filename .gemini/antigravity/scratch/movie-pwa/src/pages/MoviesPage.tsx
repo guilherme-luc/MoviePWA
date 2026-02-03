@@ -352,24 +352,33 @@ export const MoviesPage: React.FC = () => {
                         )}
                     </div>
 
-                    {/* View Mode Toggle */}
-                    <div className="flex p-1 bg-neutral-900 rounded-xl">
+                    {/* View Mode Toggle - Improved Design */}
+                    <div className="flex p-1 bg-neutral-900/50 rounded-xl border border-white/5 backdrop-blur-sm">
                         <button
                             onClick={() => setViewMode('all')}
-                            className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all ${viewMode === 'all' ? 'bg-primary-600 text-white shadow-lg' : 'text-neutral-500 hover:text-neutral-300'}`}
+                            className={`flex-1 py-2 px-3 text-xs font-semibold rounded-lg transition-all ${viewMode === 'all'
+                                    ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/30'
+                                    : 'text-neutral-400 hover:text-neutral-200 hover:bg-white/5'
+                                }`}
                         >
                             Todos
                         </button>
                         <button
                             onClick={() => setViewMode('watched')}
-                            className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all flex items-center justify-center gap-1 ${viewMode === 'watched' ? 'bg-primary-600 text-white shadow-lg' : 'text-neutral-500 hover:text-neutral-300'}`}
+                            className={`flex-1 py-2 px-3 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1 ${viewMode === 'watched'
+                                    ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/30'
+                                    : 'text-neutral-400 hover:text-neutral-200 hover:bg-white/5'
+                                }`}
                         >
                             <Eye size={12} />
                             Vistos
                         </button>
                         <button
                             onClick={() => setViewMode('watchlist')}
-                            className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all flex items-center justify-center gap-1 ${viewMode === 'watchlist' ? 'bg-primary-600 text-white shadow-lg' : 'text-neutral-500 hover:text-neutral-300'}`}
+                            className={`flex-1 py-2 px-3 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1 ${viewMode === 'watchlist'
+                                    ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/30'
+                                    : 'text-neutral-400 hover:text-neutral-200 hover:bg-white/5'
+                                }`}
                         >
                             <Star size={12} />
                             Watchlist
@@ -392,7 +401,7 @@ export const MoviesPage: React.FC = () => {
             {!isSelectionMode && (
                 <div className="flex flex-col sm:flex-row gap-3 mb-6">
                     <div className="relative flex-1">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500" size={20} />
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400" size={20} />
                         <input
                             type="text"
                             name="genre_search"
@@ -400,7 +409,7 @@ export const MoviesPage: React.FC = () => {
                             placeholder="Buscar título, ano ou código..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            className="w-full bg-neutral-800 border-none rounded-xl pl-12 pr-4 py-3 text-white placeholder:text-neutral-500 focus:ring-2 focus:ring-primary-500/50 transition-all shadow-inner"
+                            className="w-full bg-neutral-800 border-none rounded-xl pl-12 pr-4 py-3 text-white placeholder:text-neutral-400 focus:ring-2 focus:ring-primary-500/50 transition-all shadow-inner"
                         />
                     </div>
 
@@ -421,7 +430,7 @@ export const MoviesPage: React.FC = () => {
                                     <option key={tag} value={tag}>{tag}</option>
                                 ))}
                             </select>
-                            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-neutral-500">
+                            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-neutral-400">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
                             </div>
                         </div>
@@ -444,7 +453,7 @@ export const MoviesPage: React.FC = () => {
                                 <option value="added_desc">Novos</option>
                                 <option value="added_asc">Antigos</option>
                             </select>
-                            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-neutral-500">
+                            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-neutral-400">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
                             </div>
                         </div>
@@ -464,7 +473,7 @@ export const MoviesPage: React.FC = () => {
                             {[1, 2, 3, 4, 5].map(i => <MovieCardSkeleton key={i} />)}
                         </div>
                     ) : isError ? (
-                        <div className="flex flex-col items-center justify-center py-20 text-neutral-500 animate-in fade-in">
+                        <div className="flex flex-col items-center justify-center py-20 text-neutral-400 animate-in fade-in">
                             <AlertTriangle size={48} className="text-red-500 mb-4 opacity-50" />
                             <p className="text-lg font-medium text-neutral-300">Erro ao carregar filmes</p>
                             <p className="text-sm mb-6">Verifique sua conexão e tente novamente.</p>
@@ -476,7 +485,7 @@ export const MoviesPage: React.FC = () => {
                             </button>
                         </div>
                     ) : filteredMovies.length === 0 ? (
-                        <div className="text-center py-12 text-neutral-500">
+                        <div className="text-center py-12 text-neutral-400">
                             <p>Nenhum filme encontrado.</p>
                             {search && <button onClick={() => setSearch('')} className="text-primary-400 text-sm mt-2">Limpar busca</button>}
                         </div>
