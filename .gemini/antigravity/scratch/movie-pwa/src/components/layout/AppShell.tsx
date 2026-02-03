@@ -28,7 +28,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
 
             <header className="sticky top-0 z-40 w-full backdrop-blur-lg bg-neutral-900/80 border-b border-white/10 hidden md:block">
                 <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-                    <h1 className="text-xl font-bold bg-gradient-to-r from-primary-400 to-purple-400 bg-clip-text text-transparent">
+                    <h1 className="text-xl font-bold bg-gradient-to-r from-primary-400 to-primary-500 bg-clip-text text-transparent">
                         My Movies
                     </h1>
 
@@ -58,7 +58,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
             {/* Mobile Header (Simplify for mobile) */}
             <header className="sticky top-0 z-40 w-full backdrop-blur-lg bg-neutral-900/90 border-b border-white/10 md:hidden pt-safe">
                 <div className="px-4 h-14 flex items-center justify-between">
-                    <h1 className="text-lg font-bold bg-gradient-to-r from-primary-400 to-purple-400 bg-clip-text text-transparent">
+                    <h1 className="text-lg font-bold bg-gradient-to-r from-primary-400 to-primary-500 bg-clip-text text-transparent">
                         My Movies
                     </h1>
                     {/* {isSyncing && (

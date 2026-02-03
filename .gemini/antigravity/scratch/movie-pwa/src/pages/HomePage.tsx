@@ -141,7 +141,7 @@ export const HomePage: React.FC = () => {
                     {/* Smart Suggestion Button */}
                     <button
                         onClick={() => setIsSmartOpen(true)}
-                        className="p-2.5 bg-purple-600/20 text-purple-400 hover:text-white hover:bg-purple-600 rounded-full transition-all flex-shrink-0 border border-purple-500/30"
+                        className="p-2.5 bg-primary-600/20 text-primary-400 hover:text-white hover:bg-primary-600 rounded-full transition-all flex-shrink-0 border border-primary-500/30"
                         title="Sugestão Inteligente"
                     >
                         <Sparkles size={20} />
@@ -172,13 +172,13 @@ export const HomePage: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="glass-panel p-4 rounded-2xl flex flex-col justify-between h-32 relative overflow-hidden group hover:bg-neutral-800/80 transition-all border border-transparent hover:border-purple-500/30">
-                    <div className="absolute -right-4 -top-4 bg-purple-500/10 w-24 h-24 rounded-full blur-2xl group-hover:bg-purple-500/20 transition-all"></div>
+                <div className="glass-panel p-4 rounded-2xl flex flex-col justify-between h-32 relative overflow-hidden group hover:bg-neutral-800/80 transition-all border border-transparent hover:border-primary-500/30">
+                    <div className="absolute -right-4 -top-4 bg-primary-500/10 w-24 h-24 rounded-full blur-2xl group-hover:bg-primary-500/20 transition-all"></div>
                     <div className="z-10">
                         <p className="text-neutral-400 text-sm font-medium">Gêneros</p>
                         <h2 className="text-4xl font-bold mt-1 text-white">{genres?.length || 0}</h2>
                     </div>
-                    <Database className="z-10 text-purple-400 self-end" size={24} />
+                    <Database className="z-10 text-primary-400 self-end" size={24} />
                 </div>
             </div>
 

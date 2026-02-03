@@ -41,7 +41,7 @@ const BADGES: Badge[] = [
         name: 'Crítico de Cinema',
         description: 'Avaliou 5 filmes com nota pessoal.',
         icon: Star,
-        color: 'text-purple-400',
+        color: 'text-primary-400',
         condition: (movies) => movies.filter(m => m.userRating).length >= 5
     },
     {

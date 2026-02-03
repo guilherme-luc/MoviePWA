@@ -65,7 +65,7 @@ export const StatsModal: React.FC<StatsModalProps> = ({ isOpen, onClose, movies,
                 {/* Header */}
                 <div className="px-6 py-4 border-b border-white/5 bg-neutral-900/50 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-gradient-to-br from-primary-500 to-purple-600 rounded-lg text-white shadow-lg shadow-primary-500/20">
+                        <div className="p-2 bg-gradient-to-br from-primary-500 to-primary-600 rounded-lg text-white shadow-lg shadow-primary-500/20">
                             <PieChart size={20} />
                         </div>
                         <h2 className="text-xl font-bold text-white tracking-tight">Estatísticas da Coleção</h2>
@@ -125,7 +125,7 @@ export const StatsModal: React.FC<StatsModalProps> = ({ isOpen, onClose, movies,
                                         </div>
                                         <div className="w-full h-2.5 bg-black/50 rounded-full overflow-hidden">
                                             <div
-                                                className={`h-full rounded-full transition-all duration-1000 ease-out ${idx === 0 ? 'bg-gradient-to-r from-primary-500 to-purple-500' :
+                                                className={`h-full rounded-full transition-all duration-1000 ease-out ${idx === 0 ? 'bg-gradient-to-r from-primary-500 to-primary-500' :
                                                     idx === 1 ? 'bg-primary-600' :
                                                         'bg-neutral-600'
                                                     }`}

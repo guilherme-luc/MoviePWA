@@ -106,7 +106,7 @@ export const StartupGuard: React.FC<{ children: React.ReactNode }> = ({ children
                 {/* Loading State */}
                 {(status === 'loading' || status === 'validating') && (
                     <div className="flex flex-col items-center">
-                        <Loader2 className="w-12 h-12 text-indigo-500 animate-spin mb-4" />
+                        <Loader2 className="w-12 h-12 text-primary-500 animate-spin mb-4" />
                         <h2 className="text-xl font-semibold text-white">
                             {status === 'loading' ? 'Conectando ao Google...' : 'Verificando Coleção...'}
                         </h2>
@@ -117,8 +117,8 @@ export const StartupGuard: React.FC<{ children: React.ReactNode }> = ({ children
                 {/* Unauthenticated State */}
                 {status === 'unauthenticated' && (
                     <div className="flex flex-col items-center">
-                        <div className="w-16 h-16 bg-indigo-500/20 rounded-full flex items-center justify-center mb-6">
-                            <LogIn className="w-8 h-8 text-indigo-400" />
+                        <div className="w-16 h-16 bg-primary-500/20 rounded-full flex items-center justify-center mb-6">
+                            <LogIn className="w-8 h-8 text-primary-400" />
                         </div>
                         <h2 className="text-2xl font-bold text-white mb-2">Bem-vindo(a)</h2>
                         <p className="text-neutral-400 mb-8">Faça login com sua conta Google para acessar sua coleção de filmes.</p>
@@ -142,14 +142,14 @@ export const StartupGuard: React.FC<{ children: React.ReactNode }> = ({ children
                         <p className="text-neutral-400 mb-6 text-sm">{errorMsg}</p>
                         <button
                             onClick={() => window.location.reload()}
-                            className="text-indigo-400 hover:text-indigo-300 font-medium"
+                            className="text-primary-400 hover:text-primary-300 font-medium"
                         >
                             Tentar Novamente
                         </button>
 
                         <button
                             onClick={handleUpgrade}
-                            className="mt-4 bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                            className="mt-4 bg-primary-600 hover:bg-primary-500 text-white font-medium py-2 px-4 rounded-lg transition-colors"
                         >
                             Atualizar Estrutura (Migrar)
                         </button>

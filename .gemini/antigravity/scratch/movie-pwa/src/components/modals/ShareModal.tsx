@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { X, Share2, Download, Check } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import type { Movie } from '../../types';
@@ -10,18 +10,62 @@ interface ShareModalProps {
     movie: Movie;
 }
 
+// Helper to convert image URL to base64 (bypasses CORS)
+const imageUrlToBase64 = async (url: string): Promise<string> => {
+    try {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+        });
+    } catch (error) {
+        console.error('Failed to convert image to base64:', error);
+        return '';
+    }
+};
+
 export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, movie }) => {
     const cardRef = useRef<HTMLDivElement>(null);
     const [isGenerating, setIsGenerating] = useState(false);
     const [lastAction, setLastAction] = useState<'download' | 'share' | null>(null);
+    const [posterBase64, setPosterBase64] = useState<string>('');
+    const [backgroundBase64, setBackgroundBase64] = useState<string>('');
+    const [imagesLoaded, setImagesLoaded] = useState(false);
+
+    // Preload and convert images to base64 when modal opens
+    useEffect(() => {
+        if (isOpen && movie.imageValue) {
+            setImagesLoaded(false);
+            const posterUrl = movie.imageType === 'tmdb'
+                ? `https://image.tmdb.org/t/p/w342${movie.imageValue}`
+                : movie.imageValue;
+            const bgUrl = movie.imageType === 'tmdb'
+                ? `https://image.tmdb.org/t/p/w500${movie.imageValue}`
+                : movie.imageValue;
+
+            Promise.all([
+                imageUrlToBase64(posterUrl),
+                imageUrlToBase64(bgUrl)
+            ]).then(([poster, bg]) => {
+                setPosterBase64(poster);
+                setBackgroundBase64(bg);
+                setImagesLoaded(true);
+            });
+        }
+    }, [isOpen, movie.imageValue, movie.imageType]);
 
     const generateImage = async () => {
-        if (!cardRef.current) return null;
+        if (!cardRef.current || !imagesLoaded) return null;
         try {
-            // Wait for images to load if needed, but usually they are cached
+            // Wait a bit for images to fully render
+            await new Promise(resolve => setTimeout(resolve, 100));
+
             const dataUrl = await toPng(cardRef.current, {
                 quality: 0.95,
-                pixelRatio: 2, // High res for retina
+                pixelRatio: 2,
                 cacheBust: true,
             });
             return dataUrl;
@@ -88,20 +132,29 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, movie }
                     </button>
                 </div>
 
+                {/* Loading State */}
+                {!imagesLoaded && movie.imageValue && (
+                    <div className="h-[60vh] w-auto aspect-[9/16] flex items-center justify-center bg-neutral-800 rounded-xl mb-6">
+                        <div className="text-center">
+                            <div className="w-8 h-8 border-2 border-primary-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                            <p className="text-xs text-neutral-400">Preparando imagem...</p>
+                        </div>
+                    </div>
+                )}
+
                 {/* The Card Preview (Responsive 9:16) */}
-                <div className="relative group h-[60vh] w-auto aspect-[9/16] shadow-2xl overflow-hidden rounded-xl mb-6 select-none mx-auto">
+                <div className={`relative group h-[60vh] w-auto aspect-[9/16] shadow-2xl overflow-hidden rounded-xl mb-6 select-none mx-auto ${!imagesLoaded && movie.imageValue ? 'hidden' : ''}`}>
                     <div
                         ref={cardRef}
                         className="w-full h-full bg-neutral-900 relative flex flex-col font-sans"
                     >
                         {/* Background Image (Blurred) */}
                         <div className="absolute inset-0 z-0">
-                            {movie.imageValue ? (
+                            {backgroundBase64 ? (
                                 <img
-                                    src={movie.imageType === 'tmdb' ? `https://image.tmdb.org/t/p/w500${movie.imageValue}` : movie.imageValue}
+                                    src={backgroundBase64}
                                     className="w-full h-full object-cover opacity-40 blur-sm scale-110"
                                     alt=""
-                                    crossOrigin="anonymous"
                                 />
                             ) : (
                                 <div className="w-full h-full bg-neutral-800" />
@@ -114,12 +167,11 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, movie }
 
                             {/* Main Poster (Shadowed) */}
                             <div className="relative w-48 aspect-[2/3] rounded-lg shadow-2xl shadow-black/60 mb-6 transform rotate-[-2deg] border-2 border-white/10 overflow-hidden bg-neutral-800">
-                                {movie.imageValue ? (
+                                {posterBase64 ? (
                                     <img
-                                        src={movie.imageType === 'tmdb' ? `https://image.tmdb.org/t/p/w342${movie.imageValue}` : movie.imageValue}
+                                        src={posterBase64}
                                         className="w-full h-full object-cover"
                                         alt={movie.title}
-                                        crossOrigin="anonymous"
                                     />
                                 ) : (
                                     <div className="w-full h-full flex items-center justify-center text-neutral-600">No Image</div>
@@ -157,7 +209,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, movie }
                 <div className="grid grid-cols-2 gap-3 w-full">
                     <button
                         onClick={handleDownload}
-                        disabled={isGenerating}
+                        disabled={isGenerating || !imagesLoaded}
                         className="flex items-center justify-center gap-2 py-3 bg-neutral-800 hover:bg-neutral-700 text-white rounded-xl font-medium transition-all active:scale-95 disabled:opacity-50"
                     >
                         {lastAction === 'download' ? <Check size={18} className="text-green-400" /> : <Download size={18} />}
@@ -165,8 +217,8 @@ export const ShareModal: React.FC<ShareModalProps> = ({ isOpen, onClose, movie }
                     </button>
                     <button
                         onClick={handleShare}
-                        disabled={isGenerating}
-                        className="flex items-center justify-center gap-2 py-3 bg-primary-600 hover:bg-primary-500 text-white rounded-xl font-bold shadow-lg shadow-primary-500/20 transition-all active:scale-95 disabled:opacity-50"
+                        disabled={isGenerating || !imagesLoaded}
+                        className="flex items-center justify-center gap-2 py-3 bg-primary-600 hover:bg-primary-500 text-white rounded-xl font-bold shadow-lg shadow-primary-500/30 transition-all active:scale-95 disabled:opacity-50"
                     >
                         {lastAction === 'share' ? <Check size={18} /> : <Share2 size={18} />}
                         {isGenerating && lastAction === 'share' ? 'Enviando...' : 'Stories'}
