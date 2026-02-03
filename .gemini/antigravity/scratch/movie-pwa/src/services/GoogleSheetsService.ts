@@ -480,7 +480,7 @@ export class GoogleSheetsService {
             const sheet = (await this.getSheetsMetadata()).find(s => s.title === movie._sheetTitle);
             if (!sheet) throw new Error(`Sheet ${movie._sheetTitle} not found`);
 
-            const startIndex = movie._rowIndex - 1;
+            const startIndex = movie._rowIndex! - 1;
             const endIndex = startIndex + 1;
 
             await gapi.client.sheets.spreadsheets.batchUpdate({
