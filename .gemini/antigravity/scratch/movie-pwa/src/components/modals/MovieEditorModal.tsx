@@ -228,34 +228,27 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
         }
     };
 
-    const selectTmdbMovie = async (movie: any) => {
-        setTmdbResults([]); // Clear list
+    const enrichMovieData = async (id: string, apiKey: string) => {
         try {
-            const apiKey = import.meta.env.VITE_TMDB_API_KEY || localStorage.getItem('tmdb_api_key');
+            console.log("🚀 Enriching Data for ID:", id);
 
-            // Update Basic Info
-            setTitle(movie.title);
-            setYear(movie.release_date ? movie.release_date.substring(0, 4) : '');
-
-            // Update Metadata
-            setTmdbId(movie.id.toString());
-            setSynopsis(movie.overview);
-            setRating(movie.vote_average ? movie.vote_average.toFixed(1) : '');
-
-            if (movie.poster_path) {
-                setImageType('tmdb');
-                setImageValue(movie.poster_path);
-            }
-
-            if (movie.backdrop_path) {
-                setBackdropType('tmdb');
-                setBackdropValue(movie.backdrop_path);
-            }
-
-            // Fetch Details
-            const detailsUrl = `https://api.themoviedb.org/3/movie/${movie.id}?api_key=${apiKey}&language=pt-BR&append_to_response=credits`;
+            // 1. Fetch TMDB Details
+            const detailsUrl = `https://api.themoviedb.org/3/movie/${id}?api_key=${apiKey}&language=pt-BR&append_to_response=credits,release_dates`;
             const detailsRes = await fetch(detailsUrl);
             const details = await detailsRes.json();
+
+            // Update Metadata from Details
+            setSynopsis(details.overview || '');
+            setRating(details.vote_average ? details.vote_average.toFixed(1) : '');
+
+            if (details.poster_path) {
+                setImageType('tmdb');
+                setImageValue(details.poster_path);
+            }
+            if (details.backdrop_path) {
+                setBackdropType('tmdb');
+                setBackdropValue(details.backdrop_path);
+            }
 
             if (details.runtime) {
                 const h = Math.floor(details.runtime / 60);
@@ -264,8 +257,8 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
             }
 
             if (details.credits) {
-                const director = details.credits.crew?.find((c: any) => c.job === 'Director')?.name;
-                if (director) setDirector(director);
+                const dir = details.credits.crew?.find((c: any) => c.job === 'Director')?.name;
+                if (dir) setDirector(dir);
 
                 const topCast = details.credits.cast?.slice(0, 4).map((c: any) => c.name).join(', ');
                 if (topCast) setCast(topCast);
@@ -273,49 +266,67 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
 
             if (details.belongs_to_collection) {
                 setFranchise(details.belongs_to_collection.name);
-            } else {
-                setFranchise('');
             }
 
-            // Fetch OMDB Ratings (Rotten Tomatoes / Metacritic)
-            console.log("🎬 TMDB Details Loaded:", { imdb_id: details.imdb_id, title: details.title });
-
+            // 2. Fetch OMDB (Critics)
+            console.log("🎬 fetchOMDB Target:", { imdb_id: details.imdb_id });
             if (details.imdb_id) {
                 const omdbKey = import.meta.env.VITE_OMDB_API_KEY || localStorage.getItem('omdb_api_key');
-                console.log("🔑 OMDB Key Status:", omdbKey ? "Encotrada (Oculta)" : "Não encontrada");
-
                 if (omdbKey) {
                     try {
-                        const url = `https://www.omdbapi.com/?apikey=${omdbKey}&i=${details.imdb_id}`;
-                        console.log("🌍 Fetching OMDB:", url.replace(omdbKey, "XXX"));
-
-                        const omdbRes = await fetch(url);
+                        const omdbUrl = `https://www.omdbapi.com/?apikey=${omdbKey}&i=${details.imdb_id}`;
+                        console.log("🌍 Calling OMDB...");
+                        const omdbRes = await fetch(omdbUrl);
                         const omdbData = await omdbRes.json();
-                        console.log("📦 OMDB Response:", omdbData);
+                        console.log("📦 OMDB Result:", omdbData);
 
                         if (omdbData.Ratings) {
                             const rt = omdbData.Ratings.find((r: any) => r.Source === 'Rotten Tomatoes')?.Value;
                             const mc = omdbData.Ratings.find((r: any) => r.Source === 'Metacritic')?.Value;
 
-                            console.log("📊 Ratings Found:", { rt, mc });
-
                             if (rt) setRottenTomatoesRating(rt);
                             if (mc) setMetacriticRating(mc);
                         }
                     } catch (err) {
-                        console.error("OMDB Fetch Error", err);
+                        console.error("OMDB Error", err);
                     }
-                } else {
-                    console.warn("OMDB API Key not found. Skipping Critics Ratings.");
                 }
-            } else {
-                console.warn("⚠️ No IMDB ID found in TMDB details. Cannot fetch critics ratings.");
             }
 
             setIsMetadataLocked(true);
         } catch (error) {
-            console.error("Error fetching details", error);
+            console.error("Enrichment Error", error);
         }
+    };
+
+    const selectTmdbMovie = async (movie: any) => {
+        setTmdbResults([]);
+        try {
+            const apiKey = import.meta.env.VITE_TMDB_API_KEY || localStorage.getItem('tmdb_api_key');
+
+            // Set Basic Info immediately
+            setTitle(movie.title);
+            setYear(movie.release_date ? movie.release_date.substring(0, 4) : '');
+            setTmdbId(movie.id.toString());
+            setSynopsis(movie.overview);
+
+            // Trigger full enrichment
+            await enrichMovieData(movie.id.toString(), apiKey!);
+
+        } catch (error) {
+            console.error("Selection Error", error);
+        }
+    };
+
+    const handleRefreshData = async () => {
+        if (!tmdbId) return;
+        setIsLoading(true);
+        const apiKey = import.meta.env.VITE_TMDB_API_KEY || localStorage.getItem('tmdb_api_key');
+        if (apiKey) {
+            await enrichMovieData(tmdbId, apiKey);
+            alert("Dados atualizados! (Sinopse, Elenco, Notas...)");
+        }
+        setIsLoading(false);
     };
 
     const handlePlayTrailer = async () => {
