@@ -13,7 +13,15 @@ interface ShareModalProps {
 // Helper to convert image URL to base64 (bypasses CORS)
 const imageUrlToBase64 = async (url: string): Promise<string> => {
     try {
-        const response = await fetch(url);
+        // Use CORS proxy for TMDB images
+        const isTmdbImage = url.includes('image.tmdb.org');
+        const fetchUrl = isTmdbImage
+            ? `https://corsproxy.io/?${encodeURIComponent(url)}`
+            : url;
+
+        const response = await fetch(fetchUrl);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
         const blob = await response.blob();
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
