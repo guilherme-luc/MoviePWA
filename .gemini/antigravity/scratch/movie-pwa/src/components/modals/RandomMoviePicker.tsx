@@ -52,6 +52,10 @@ export const RandomMoviePicker: React.FC<RandomMoviePickerProps> = ({ isOpen, on
         const winnerUrl = getImageUrl(winner);
 
         // 2. Start Animation Loop (Randomly picking from ALL movies)
+
+        // IMMEDIATE: Set a random movie right now so the modal has something to show
+        setDisplayedMovie(movies[Math.floor(Math.random() * movies.length)]);
+
         animationRef.current = setInterval(() => {
             const randomIdx = Math.floor(Math.random() * movies.length);
             setDisplayedMovie(movies[randomIdx]);
@@ -80,15 +84,13 @@ export const RandomMoviePicker: React.FC<RandomMoviePickerProps> = ({ isOpen, on
 
     // Auto-pick on open
     useEffect(() => {
-        if (isOpen && !displayedMovie) {
-            // Only auto-pick if we don't have one already (or always?)
-            // User expects a fresh pick on open usually.
+        if (isOpen && movies && movies.length > 0 && !displayedMovie) {
             pickRandom();
         }
         return () => {
             if (animationRef.current) clearInterval(animationRef.current);
         };
-    }, [isOpen]);
+    }, [isOpen, movies]);
 
     const handleWatch = () => {
         if (!displayedMovie) return;
