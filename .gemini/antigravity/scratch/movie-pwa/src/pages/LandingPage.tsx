@@ -14,13 +14,19 @@ const LandingPage: React.FC = () => {
     const navigate = useNavigate();
     const { setFormat } = useCollection();
     const { data: allMovies } = useAllMovies();
+    const { data: allMovies } = useAllMovies();
     const [isRandomOpen, setIsRandomOpen] = useState(false);
-    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+    // Initialize as mobile-first to prevent "desktop columns" glitch on phones
+    const [isMobile, setIsMobile] = useState(true);
 
     useEffect(() => {
-        const handleResize = () => setIsMobile(window.innerWidth < 768);
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
+        const checkMobile = () => setIsMobile(window.innerWidth < 768);
+
+        // Check immediately
+        checkMobile();
+
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
     }, []);
 
     // State to control exit animation
@@ -38,7 +44,7 @@ const LandingPage: React.FC = () => {
     };
 
     return (
-        <div className="relative w-full h-screen overflow-hidden bg-black flex flex-col md:flex-row">
+        <div className="relative w-full h-[100dvh] overflow-hidden bg-black flex flex-col md:flex-row">
 
             <RandomMoviePicker
                 isOpen={isRandomOpen}
