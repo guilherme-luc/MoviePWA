@@ -1,11 +1,27 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { X, RefreshCw, Play, Dice5 } from 'lucide-react';
-import type { Movie } from '../../types';
+import vhsLogo from '../../assets/vhs-logo.png';
+import dvdLogo from '../../assets/dvd-logo.png';
 
-interface RandomMoviePickerProps {
-    isOpen: boolean;
-    onClose: () => void;
-    movies: Movie[]; // Pool of movies to pick from
+// ... (in component)
+
+{/* Title Info */ }
+<div className="text-center mb-8 space-y-3 flex flex-col items-center">
+    <h2 className="text-2xl font-bold text-white leading-tight">
+        {displayedMovie.title}
+    </h2>
+
+    <div className="flex items-center gap-3">
+        {/* Format Logo */}
+        {(displayedMovie.format === 'VHS') ? (
+            <img src={vhsLogo} alt="VHS" className="h-4 md:h-5 opacity-90 drop-shadow-[0_0_5px_rgba(245,158,11,0.5)]" />
+        ) : (
+            <img src={dvdLogo} alt="DVD" className="h-4 md:h-5 opacity-90 drop-shadow-[0_0_5px_rgba(59,130,246,0.5)]" />
+        )}
+        <span className="text-neutral-500 text-sm">• {displayedMovie.year}</span>
+    </div>
+</div>
+isOpen: boolean;
+onClose: () => void;
+movies: Movie[]; // Pool of movies to pick from
 }
 
 export const RandomMoviePicker: React.FC<RandomMoviePickerProps> = ({ isOpen, onClose, movies }) => {

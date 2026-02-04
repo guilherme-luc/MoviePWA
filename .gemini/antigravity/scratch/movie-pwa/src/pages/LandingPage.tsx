@@ -32,8 +32,7 @@ const LandingPage: React.FC = () => {
             <div
                 className={`
                     relative w-full md:w-1/2 h-1/2 md:h-full cursor-pointer overflow-hidden transition-all duration-700 ease-in-out
-                    ${hoveredSide === 'right' ? 'md:w-2/5 opacity-60 grayscale' : 'md:w-1/2'}
-                    ${hoveredSide === 'left' ? 'md:w-3/5 z-20' : ''}
+                    md:w-1/2
                     border-b-4 md:border-b-0 md:border-r-4 border-black box-border group
                 `}
                 onMouseEnter={() => setHoveredSide('left')}
@@ -98,8 +97,7 @@ const LandingPage: React.FC = () => {
             <div
                 className={`
                     relative w-full md:w-1/2 h-1/2 md:h-full cursor-pointer overflow-hidden transition-all duration-700 ease-in-out
-                    ${hoveredSide === 'left' ? 'md:w-2/5 opacity-60 grayscale' : 'md:w-1/2'}
-                    ${hoveredSide === 'right' ? 'md:w-3/5 z-20' : ''}
+                    md:w-1/2
                     bg-neutral-900 group
                 `}
                 onMouseEnter={() => setHoveredSide('right')}
@@ -146,14 +144,9 @@ const LandingPage: React.FC = () => {
             {/* SPLITTER LINE */}
             <div className="absolute top-1/2 left-0 right-0 h-1 md:top-0 md:bottom-0 md:left-1/2 md:w-1 bg-black z-30 pointer-events-none shadow-[0_0_20px_rgba(0,0,0,1)]" />
 
-            {/* GLOBAL OVERLAY TEXT (Moved slightly up to avoid button overlap) */}
-            <div className={`absolute top-[42%] md:top-[40%] left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 pointer-events-none transition-opacity duration-300 ${hoveredSide ? 'opacity-0' : 'opacity-100'}`}>
-                <div className="bg-black/80 backdrop-blur-md px-6 py-2 rounded-full border border-white/10 text-white font-bold text-sm tracking-widest uppercase shadow-2xl">
-                    Selecione o Formato
-                </div>
-            </div>
-
         </div>
+
+        </div >
     );
 };
 
