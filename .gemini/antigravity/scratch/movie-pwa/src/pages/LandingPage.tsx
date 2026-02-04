@@ -71,24 +71,26 @@ const LandingPage: React.FC = () => {
             </div>
 
             {/* CENTRAL RANDOMIZER BUTTON */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 pointer-events-auto">
-                <button
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        setIsRandomOpen(true);
-                    }}
-                    className="
+            {!isRandomOpen && (
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 pointer-events-auto animate-in fade-in zoom-in duration-300">
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setIsRandomOpen(true);
+                        }}
+                        className="
                         group flex flex-col items-center justify-center gap-2 
                         bg-neutral-900 hover:bg-neutral-800 
                         p-6 rounded-full border-4 border-white/10 hover:border-primary-500/50 
                         hover:scale-110 active:scale-95 transition-all duration-300 
                         shadow-[0_0_30px_rgba(0,0,0,0.8)] hover:shadow-primary-500/20
                     "
-                    title="Sortear entre TODAS as coleções"
-                >
-                    <Dice5 size={32} className="text-neutral-400 group-hover:text-primary-400 group-hover:rotate-180 transition-all duration-500" />
-                </button>
-            </div>
+                        title="Sortear entre TODAS as coleções"
+                    >
+                        <Dice5 size={32} className="text-neutral-400 group-hover:text-primary-400 group-hover:rotate-180 transition-all duration-500" />
+                    </button>
+                </div>
+            )}
 
             {/* RIGHT SIDE - DVD (Modern/Digital) */}
             <div

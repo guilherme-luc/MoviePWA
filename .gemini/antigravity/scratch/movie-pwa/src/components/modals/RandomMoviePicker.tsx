@@ -1,10 +1,68 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { X, RefreshCw, Play, Dice5 } from 'lucide-react';
-import type { Movie } from '../../types';
-import vhsLogo from '../../assets/vhs-logo.png';
-import dvdLogo from '../../assets/dvd-logo.png';
+import { useNavigate } from 'react-router-dom';
+import { useCollection } from '../providers/CollectionProvider';
+// ... imports
 
-interface RandomMoviePickerProps {
+export const RandomMoviePicker: React.FC<RandomMoviePickerProps> = ({ isOpen, onClose, movies }) => {
+    // ... state
+    const navigate = useNavigate();
+    const { setFormat } = useCollection();
+
+    // ... (keep existing logic)
+
+    const handleWatch = () => {
+        if (!displayedMovie) return;
+
+        // 1. Set the correct format context
+        if (displayedMovie.format) {
+            setFormat(displayedMovie.format as 'DVD' | 'VHS');
+        }
+
+        // 2. Navigate to the app
+        navigate('/app');
+
+        // Optional: Could append query param ?highlight={id} to auto-open
+    };
+
+    // ...
+
+    {/* Title Info */ }
+    <div className="text-center mb-8 space-y-3 flex flex-col items-center">
+        <h2 className="text-2xl font-bold text-white leading-tight">
+            {displayedMovie.title}
+        </h2>
+
+        <div className="flex items-center gap-3 bg-black/40 px-3 py-1.5 rounded-full border border-white/5">
+            {/* Format Logo - Brighter and Clearer */}
+            {(displayedMovie.format === 'VHS') ? (
+                <img src={vhsLogo} alt="VHS" className="h-5 md:h-6 drop-shadow-[0_0_8px_rgba(245,158,11,0.8)]" />
+            ) : (
+                <img src={dvdLogo} alt="DVD" className="h-5 md:h-6 drop-shadow-[0_0_8px_rgba(59,130,246,0.8)]" />
+            )}
+            <span className="text-neutral-400 text-sm font-medium tracking-wide border-l border-white/20 pl-3">
+                {displayedMovie.year}
+            </span>
+        </div>
+    </div>
+
+    {/* Actions */ }
+    <div className="flex w-full gap-3">
+        <button
+            onClick={pickRandom}
+            disabled={isAnimating}
+            className="flex-1 bg-neutral-800 hover:bg-neutral-700 text-white py-3 rounded-xl font-medium transition-colors flex items-center justify-center gap-2 group"
+        >
+            <RefreshCw size={20} className={`group-hover:rotate-180 transition-transform duration-500 ${isAnimating ? 'animate-spin' : ''}`} />
+            Tentar Outro
+        </button>
+
+        <button
+            onClick={handleWatch}
+            className="flex-1 bg-primary-600 hover:bg-primary-500 text-white py-3 rounded-xl font-bold shadow-lg shadow-primary-500/20 transition-transform active:scale-95 flex items-center justify-center gap-2"
+        >
+            <Play size={20} fill="currentColor" />
+            Assistir
+        </button>
+    </div>
     isOpen: boolean;
     onClose: () => void;
     movies: Movie[]; // Pool of movies to pick from
