@@ -194,9 +194,9 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
     };
 
     // TMDB Search Results
-    const handlePlayTrailer = () => {
-        if (trailerId) setIsTrailerOpen(true);
-    };
+    const [tmdbResults, setTmdbResults] = useState<any[]>([]);
+
+    // const handlePlayTrailer = () => { ... } // Removed duplicate
 
     const importFromLink = async () => {
         if (!linkInput) return;
@@ -229,6 +229,7 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                 // Try to set genre if not set
                 if (details.genres && details.genres.length > 0) {
                     const firstGenre = details.genres[0].name;
+                    // Direct set if match
                     setGenre(firstGenre);
                 }
 
