@@ -201,12 +201,15 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
     const importFromLink = async () => {
         if (!linkInput) return;
 
-        // Extract ID from URL or use raw input if it's just numbers
-        const idMatch = linkInput.match(/(?:movie\/|^)(\d+)/);
-        const id = idMatch ? idMatch[1] : linkInput;
+        const cleanInput = linkInput.trim();
+        // Regex to find ID:
+        // 1. Matches "movie/12345" (URL path)
+        // 2. Matches digits at start/end (Raw ID)
+        const idMatch = cleanInput.match(/(?:movie\/|^)(\d+)/) || cleanInput.match(/\/(\d+)(?:-|$)/);
+        const id = idMatch ? idMatch[1] : (cleanInput.match(/^\d+$/) ? cleanInput : null);
 
         if (!id || isNaN(Number(id))) {
-            alert("ID ou Link inválido");
+            alert(`Não consegui identificar o ID do filme no link: "${cleanInput}". \nTente colar apenas o número ID (ex: 550).`);
             return;
         }
 
