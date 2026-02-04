@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, Search, Wand2, Star, Lock, Unlock, Upload, ImageIcon, Loader2, Trash2, Play, Music, Share2 } from 'lucide-react';
+import { X, Save, Search, Wand2, Star, Lock, Unlock, Upload, ImageIcon, Loader2, Trash2, Play, Music, Share2, Link2, Download } from 'lucide-react';
 import type { Movie } from '../../types';
 import { GoogleSheetsService } from '../../services/GoogleSheetsService';
 
@@ -70,6 +70,10 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
     const [trailerId, setTrailerId] = useState<string | null>(null);
     const [isTrailerOpen, setIsTrailerOpen] = useState(false);
     const [isLoadingTrailer, setIsLoadingTrailer] = useState(false);
+
+    // Link Import State
+    const [isLinkMode, setIsLinkMode] = useState(false);
+    const [linkInput, setLinkInput] = useState('');
 
     // Share Modal
     const [isShareOpen, setIsShareOpen] = useState(false);
@@ -598,28 +602,76 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                                         )}
                                     </div>
                                     <div className="flex gap-2">
-                                        <input
-                                            type="text"
-                                            value={title}
-                                            onChange={(e) => setTitle(e.target.value)}
-                                            onBlur={() => {
-                                                // Don't auto-fetch on blur anymore to avoid annoying behavior
-                                                // let user click search manually
-                                            }}
-                                            className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500 ${isShowcaseMode ? 'cursor-default' : ''}`}
-                                            placeholder="Nome do Filme"
-                                            required
-                                            readOnly={isShowcaseMode}
-                                        />
-                                        {!isShowcaseMode && (
-                                            <button
-                                                type="button"
-                                                onClick={() => fetchTmdbData(title, year)}
-                                                disabled={isSearching}
-                                                className="p-2 bg-primary-600/20 text-primary-400 rounded-lg hover:bg-primary-600/30 transition-colors"
-                                            >
-                                                {isSearching ? <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" /> : <Search size={20} />}
-                                            </button>
+                                        {isLinkMode ? (
+                                            /* LINK IMPORT MODE */
+                                            <>
+                                                <input
+                                                    type="text"
+                                                    value={linkInput}
+                                                    onChange={(e) => setLinkInput(e.target.value)}
+                                                    className="w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500 placeholder:text-neutral-500"
+                                                    placeholder="Cole o link TMDB ou ID..."
+                                                    autoFocus
+                                                    onKeyDown={(e) => e.key === 'Enter' && importFromLink()}
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={importFromLink}
+                                                    className="p-2 bg-green-600/20 text-green-400 rounded-lg hover:bg-green-600/30 transition-colors"
+                                                    title="Confirmar Importação"
+                                                >
+                                                    <Download size={20} />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setIsLinkMode(false)}
+                                                    className="p-2 bg-neutral-700/50 text-neutral-400 rounded-lg hover:bg-neutral-700 transition-colors"
+                                                    title="Cancelar"
+                                                >
+                                                    <X size={20} />
+                                                </button>
+                                            </>
+                                        ) : (
+                                            /* STANDARD SEARCH MODE */
+                                            <>
+                                                <input
+                                                    type="text"
+                                                    value={title}
+                                                    onChange={(e) => setTitle(e.target.value)}
+                                                    onBlur={() => {
+                                                        // Don't auto-fetch on blur anymore to avoid annoying behavior
+                                                        // let user click search manually
+                                                    }}
+                                                    className={`w-full bg-neutral-800 border-none rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary-500 ${isShowcaseMode ? 'cursor-default' : ''}`}
+                                                    placeholder="Nome do Filme"
+                                                    required
+                                                    readOnly={isShowcaseMode}
+                                                />
+                                                {!isShowcaseMode && (
+                                                    <>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => fetchTmdbData(title, year)}
+                                                            disabled={isSearching}
+                                                            className="p-2 bg-primary-600/20 text-primary-400 rounded-lg hover:bg-primary-600/30 transition-colors"
+                                                            title="Buscar por Título"
+                                                        >
+                                                            {isSearching ? <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" /> : <Search size={20} />}
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setIsLinkMode(true);
+                                                                setLinkInput('');
+                                                            }}
+                                                            className="p-2 bg-neutral-700/50 text-neutral-400 rounded-lg hover:bg-neutral-700 hover:text-white transition-colors"
+                                                            title="Importar por Link TMDB"
+                                                        >
+                                                            <Link2 size={20} />
+                                                        </button>
+                                                    </>
+                                                )}
+                                            </>
                                         )}
                                     </div>
 
