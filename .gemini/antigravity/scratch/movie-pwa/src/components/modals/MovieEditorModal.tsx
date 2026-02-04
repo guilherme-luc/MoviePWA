@@ -744,8 +744,13 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                                                             )}
                                                         </div>
                                                         <div>
-                                                            <div className="font-bold text-white text-sm">{m.title}</div>
-                                                            <div className="text-xs text-neutral-400">{m.release_date?.substring(0, 4)} • ⭐ {m.vote_average?.toFixed(1)}</div>
+                                                            <div className="font-bold text-white text-sm flex items-center gap-2">
+                                                                {m.title || m.name}
+                                                                {m.media_type === 'tv' && <span className="px-1 py-0.5 rounded bg-purple-500/20 text-purple-400 text-[10px] uppercase">TV</span>}
+                                                            </div>
+                                                            <div className="text-xs text-neutral-400">
+                                                                {(m.release_date || m.first_air_date)?.substring(0, 4)} • ⭐ {m.vote_average?.toFixed(1)}
+                                                            </div>
                                                         </div>
                                                     </button>
                                                 ))}
