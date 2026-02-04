@@ -42,7 +42,7 @@ export const HomePage: React.FC = () => {
         // Count only movies of this format in this genre
         const count = allMovies?.filter(m => m.genre === g.genre).length || 0;
         return { ...g, count };
-    }).filter(g => g.count > 0);
+    });
 
     const totalMovies = allMovies?.length || 0;
 
