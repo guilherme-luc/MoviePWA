@@ -14,7 +14,6 @@ const LandingPage: React.FC = () => {
     const navigate = useNavigate();
     const { setFormat } = useCollection();
     const { data: allMovies } = useAllMovies();
-    const { data: allMovies } = useAllMovies();
     const [isRandomOpen, setIsRandomOpen] = useState(false);
     // Initialize as mobile-first to prevent "desktop columns" glitch on phones
     const [isMobile, setIsMobile] = useState(true);
