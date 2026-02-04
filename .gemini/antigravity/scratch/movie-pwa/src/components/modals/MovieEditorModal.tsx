@@ -194,7 +194,54 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
     };
 
     // TMDB Search Results
-    const [tmdbResults, setTmdbResults] = useState<any[]>([]);
+    const handlePlayTrailer = () => {
+        if (trailerId) setIsTrailerOpen(true);
+    };
+
+    const importFromLink = async () => {
+        if (!linkInput) return;
+
+        // Extract ID from URL or use raw input if it's just numbers
+        const idMatch = linkInput.match(/(?:movie\/|^)(\d+)/);
+        const id = idMatch ? idMatch[1] : linkInput;
+
+        if (!id || isNaN(Number(id))) {
+            alert("ID ou Link inválido");
+            return;
+        }
+
+        setIsSearching(true);
+        try {
+            const apiKey = import.meta.env.VITE_TMDB_API_KEY || localStorage.getItem('tmdb_api_key');
+            if (apiKey) {
+                // Enrich will fetch most data
+                await enrichMovieData(id, apiKey);
+
+                // Manually fetch details to ensure Title/Year are set if enrich didn't cover it
+                const detailsUrl = `https://api.themoviedb.org/3/movie/${id}?api_key=${apiKey}&language=pt-BR`;
+                const detailsRes = await fetch(detailsUrl);
+                const details = await detailsRes.json();
+
+                if (details.title) setTitle(details.title);
+                if (details.release_date) setYear(details.release_date.substring(0, 4));
+                setTmdbId(details.id.toString());
+
+                // Try to set genre if not set
+                if (details.genres && details.genres.length > 0) {
+                    const firstGenre = details.genres[0].name;
+                    setGenre(firstGenre);
+                }
+
+                setIsLinkMode(false);
+                setLinkInput('');
+            }
+        } catch (e) {
+            console.error("Import Error", e);
+            alert("Erro ao importar do TMDB");
+        } finally {
+            setIsSearching(false);
+        }
+    };
 
     const fetchTmdbData = async (queryTitle: string, queryYear?: string) => {
         if (!queryTitle) return;
