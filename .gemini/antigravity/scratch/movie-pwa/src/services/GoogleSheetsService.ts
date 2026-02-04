@@ -373,10 +373,22 @@ export class GoogleSheetsService {
     public async addMovie(movie: Movie): Promise<void> {
         if (!this.isInitialized) await this.initClient();
         return this.requestWithRetry(async () => {
-            const values = [this.movieToRow(movie)];
-            await gapi.client.sheets.spreadsheets.values.append({
+            // 1. Find the next empty row by checking Title column (B)
+            // We use B because Barcode (A) can be empty, but Title is required.
+            const response = await gapi.client.sheets.spreadsheets.values.get({
                 spreadsheetId: this.SPREADSHEET_ID,
-                range: `'${movie.genre}'!A:V`,
+                range: `'${movie.genre}'!B:B`
+            });
+            const rowCount = response.result.values?.length || 0;
+            const nextRow = rowCount + 1; // 1-based index, +1 for next empty row
+
+            // 2. Prepare values (guaranteed 22 columns)
+            const values = [this.movieToRow(movie)];
+
+            // 3. Update the specific row
+            await gapi.client.sheets.spreadsheets.values.update({
+                spreadsheetId: this.SPREADSHEET_ID,
+                range: `'${movie.genre}'!A${nextRow}:V${nextRow}`,
                 valueInputOption: 'USER_ENTERED',
                 resource: { values }
             });
