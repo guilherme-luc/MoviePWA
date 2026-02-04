@@ -40,14 +40,14 @@ const LandingPage: React.FC = () => {
             >
                 {/* Background - VHS GIF */}
                 <div className="absolute inset-0 z-0">
-                    <img src={vhsGif} alt="Background" className="w-full h-full object-cover opacity-40 mix-blend-luminosity" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/50" />
+                    <img src={vhsGif} alt="Background" className="w-full h-full object-cover object-left opacity-80" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/40" />
                 </div>
 
                 {/* Content */}
                 <div className="relative z-20 h-full flex flex-col items-center justify-center p-8 text-amber-500 font-mono tracking-widest uppercase">
 
-                    <div className="mb-8 transform group-hover:scale-105 transition-transform duration-500 w-full max-w-sm md:max-w-md">
+                    <div className="mb-8 transform group-hover:scale-105 transition-transform duration-500 w-full max-w-sm md:max-w-md flex items-center justify-center h-32 md:h-40">
                         <img
                             src={vhsLogo}
                             alt="VHS Logo"
@@ -60,11 +60,11 @@ const LandingPage: React.FC = () => {
                     </p>
 
                     <button className="flex items-center gap-3 px-8 py-3 border-2 border-amber-500 bg-amber-500/10 hover:bg-amber-500 hover:text-black transition-all font-bold group-hover:animate-pulse">
-                        IMPORTAR FITA <ArrowRight size={18} />
+                        IMPORTAR FITAS <ArrowRight size={18} />
                     </button>
 
                     {/* VCR OSD */}
-                    <div className="absolute top-8 left-8 text-xl opacity-60 pointer-events-none font-bold">
+                    <div className="absolute top-8 left-8 text-xl opacity-60 pointer-events-none font-bold text-white shadow-black drop-shadow-md">
                         PLAY ►
                     </div>
                 </div>
@@ -110,7 +110,7 @@ const LandingPage: React.FC = () => {
                 {/* Content */}
                 <div className="relative z-20 h-full flex flex-col items-center justify-center p-8 text-white font-sans">
 
-                    <div className="mb-8 relative transform group-hover:scale-105 transition-transform duration-500 w-full max-w-xs md:max-w-sm flex items-center justify-center">
+                    <div className="mb-8 relative transform group-hover:scale-105 transition-transform duration-500 w-full max-w-xs md:max-w-sm flex items-center justify-center h-32 md:h-40">
                         {/* Organic Glow */}
                         <div className="absolute w-[80%] h-[60%] bg-white/20 blur-[50px] rounded-full z-0" />
 
@@ -121,12 +121,12 @@ const LandingPage: React.FC = () => {
                         />
                     </div>
 
-                    <p className="text-sm md:text-base text-neutral-400 mb-8 font-light tracking-[0.2em] uppercase">
+                    <p className="text-sm md:text-base text-neutral-400 mb-8 font-light tracking-[0.2em] uppercase border-t border-b border-transparent py-2">
                         Coleção Digital
                     </p>
 
                     <button className="flex items-center gap-3 px-8 py-3 bg-white/10 hover:bg-white text-white hover:text-black rounded-full backdrop-blur-md transition-all font-bold shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:shadow-[0_0_30px_rgba(255,255,255,0.3)]">
-                        ACESSAR DISCO <ArrowRight size={18} />
+                        ACESSAR DISCOS <ArrowRight size={18} />
                     </button>
 
                     {/* Modern Metadata */}
