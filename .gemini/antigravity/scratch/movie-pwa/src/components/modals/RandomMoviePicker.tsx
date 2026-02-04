@@ -18,8 +18,6 @@ export const RandomMoviePicker: React.FC<RandomMoviePickerProps> = ({ isOpen, on
     const [displayedMovie, setDisplayedMovie] = useState<Movie | null>(null);
     const [isAnimating, setIsAnimating] = useState(false);
 
-    // Cache "decoy" images to ensure smooth animation
-    const [decoyPool, setDecoyPool] = useState<Movie[]>([]);
     const animationRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     // Helper to get image URL
@@ -40,30 +38,7 @@ export const RandomMoviePicker: React.FC<RandomMoviePickerProps> = ({ isOpen, on
         });
     };
 
-    // Initialize Decoy Pool on Mount (or when movies change)
-    useEffect(() => {
-        if (!movies || movies.length === 0) return;
-
-        const loadDecoys = async () => {
-            // Pick 10 random movies to serve as "smooth animation frames"
-            const pool: Movie[] = [];
-            const candidates = [...movies].sort(() => 0.5 - Math.random()).slice(0, 15);
-
-            for (const m of candidates) {
-                const url = getImageUrl(m);
-                if (url) {
-                    // Fire and forget preload, or wait? 
-                    // Let's simplified preload: just creating the object triggers browser cache
-                    const img = new Image();
-                    img.src = url;
-                    pool.push(m);
-                }
-            }
-            setDecoyPool(pool);
-        };
-
-        loadDecoys();
-    }, [movies]);
+    // Initialize (No Decoy Pool needed anymore)
 
     const pickRandom = async () => {
         if (!movies || movies.length === 0) return;
@@ -76,30 +51,24 @@ export const RandomMoviePicker: React.FC<RandomMoviePickerProps> = ({ isOpen, on
         const winner = movies[randomIndex];
         const winnerUrl = getImageUrl(winner);
 
-        // 2. Start Animation Loop (using Decoys)
-        let loopCounter = 0;
-        const availableDecoys = decoyPool.length > 0 ? decoyPool : movies.slice(0, 10); // Fallback
-
+        // 2. Start Animation Loop (Randomly picking from ALL movies)
         animationRef.current = setInterval(() => {
-            // Show a decoy
-            const decoy = availableDecoys[loopCounter % availableDecoys.length];
-            setDisplayedMovie(decoy);
-            loopCounter++;
-        }, 120); // Slightly slower than 100ms for better perception
+            const randomIdx = Math.floor(Math.random() * movies.length);
+            setDisplayedMovie(movies[randomIdx]);
+        }, 120);
 
         // 3. Preload Winner in Background
         if (winnerUrl) {
             try {
                 await preloadImage(winnerUrl);
             } catch (e) {
-                console.warn("Failed to preload winner image", e);
+                // Ignore
             }
         } else {
-            // Artificial delay if no image to load, just for suspense
             await new Promise(r => setTimeout(r, 1000));
         }
 
-        // 4. Ensure minimum spin time (e.g. 1.5s total) for effect
+        // 4. Ensure minimum spin time
         const minTime = new Promise(r => setTimeout(r, 1200));
         await minTime;
 
