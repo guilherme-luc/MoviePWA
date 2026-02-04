@@ -86,11 +86,14 @@ const LandingPage: React.FC = () => {
                 {/* Content */}
                 <div className="relative z-20 h-full flex flex-col items-center justify-center p-8 text-white font-sans">
 
-                    <div className="mb-8 transform group-hover:scale-105 transition-transform duration-500 w-full max-w-xs md:max-w-sm">
+                    <div className="mb-8 relative transform group-hover:scale-105 transition-transform duration-500 w-full max-w-xs md:max-w-sm flex items-center justify-center">
+                        {/* Organic Glow (Replaces Drop Shadow to avoid square artifacts) */}
+                        <div className="absolute w-[80%] h-[60%] bg-blue-600/50 blur-[50px] rounded-full z-0" />
+
                         <img
                             src={dvdLogo}
                             alt="DVD Logo"
-                            className="w-full h-auto relative z-10 drop-shadow-[0_0_30px_rgba(59,130,246,0.5)] opacity-100 mix-blend-screen"
+                            className="w-full h-auto relative z-10 opacity-100 mix-blend-screen"
                         />
                     </div>
 
