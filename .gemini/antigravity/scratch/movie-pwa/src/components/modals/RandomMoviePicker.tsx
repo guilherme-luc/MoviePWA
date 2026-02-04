@@ -183,27 +183,26 @@ export const RandomMoviePicker: React.FC<RandomMoviePickerProps> = ({ isOpen, on
                         )}
 
                         {/* Genre Badge */}
-                        <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
-                            <div className="bg-black/60 backdrop-blur-md px-2 py-1 rounded text-xs text-white font-medium border border-white/10">
-                                {displayedMovie.genre}
-                            </div>
-                            <div className={`
-                                px-2 py-0.5 rounded text-[10px] font-bold border
-                                ${displayedMovie.format === 'VHS'
-                                    ? 'bg-amber-900/80 border-amber-500/50 text-amber-200'
-                                    : 'bg-blue-900/80 border-blue-500/50 text-blue-200'}
-                            `}>
-                                {displayedMovie.format || 'DVD'}
-                            </div>
+                        <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md px-2 py-1 rounded text-xs text-white font-medium border border-white/10">
+                            {displayedMovie.genre}
                         </div>
                     </div>
 
                     {/* Title Info */}
-                    <div className="text-center mb-8 space-y-1">
+                    <div className="text-center mb-8 space-y-3 flex flex-col items-center">
                         <h2 className="text-2xl font-bold text-white leading-tight">
                             {displayedMovie.title}
                         </h2>
-                        <p className="text-neutral-400 text-lg">{displayedMovie.year}</p>
+
+                        <div className="flex items-center gap-3">
+                            {/* Format Logo */}
+                            {(displayedMovie.format === 'VHS') ? (
+                                <img src={vhsLogo} alt="VHS" className="h-4 md:h-5 opacity-90 drop-shadow-[0_0_5px_rgba(245,158,11,0.5)]" />
+                            ) : (
+                                <img src={dvdLogo} alt="DVD" className="h-4 md:h-5 opacity-90 drop-shadow-[0_0_5px_rgba(59,130,246,0.5)]" />
+                            )}
+                            <span className="text-neutral-500 text-sm">• {displayedMovie.year}</span>
+                        </div>
                     </div>
 
                     {/* Actions */}
