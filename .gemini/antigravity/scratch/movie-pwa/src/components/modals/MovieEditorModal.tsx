@@ -250,26 +250,24 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
     const fetchTmdbData = async (queryTitle: string, queryYear?: string) => {
         if (!queryTitle) return;
         setIsSearching(true);
-        setTmdbResults([]); // Clear previous
+        // setTmdbResults([]); // Don't clear immediately to avoid flash during typing
         try {
             const apiKey = import.meta.env.VITE_TMDB_API_KEY || localStorage.getItem('tmdb_api_key');
-            if (!apiKey) {
-                console.warn("API Key do TMDB não configurada.");
-                return;
-            }
+            if (!apiKey) return;
 
             const query = encodeURIComponent(queryTitle);
-            const yearParam = queryYear ? `&year=${queryYear}` : '';
-            const searchUrl = `https://api.themoviedb.org/3/search/movie?api_key=${apiKey}&query=${query}${yearParam}&language=pt-BR&include_adult=false`;
+            // Year filter only works for Movies in multi-search mostly.
+            const searchUrl = `https://api.themoviedb.org/3/search/multi?api_key=${apiKey}&query=${query}&language=pt-BR&include_adult=false`;
 
             const res = await fetch(searchUrl);
             const data = await res.json();
 
             if (data.results && data.results.length > 0) {
-                // Store results for user selection instead of auto-picking
-                setTmdbResults(data.results.slice(0, 5)); // Show top 5
+                // Filter: only movie and tv (no person)
+                const filtered = data.results.filter((r: any) => r.media_type === 'movie' || r.media_type === 'tv');
+                setTmdbResults(filtered.slice(0, 5));
             } else {
-                alert("Nenhum filme encontrado no TMDB.");
+                setTmdbResults([]);
             }
         } catch (error) {
             console.error("TMDB Fetch Error", error);
@@ -354,14 +352,18 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
         try {
             const apiKey = import.meta.env.VITE_TMDB_API_KEY || localStorage.getItem('tmdb_api_key');
 
-            // Set Basic Info immediately
-            setTitle(movie.title);
-            setYear(movie.release_date ? movie.release_date.substring(0, 4) : '');
+            // Normalize fields
+            const titleVal = movie.title || movie.name;
+            const dateVal = movie.release_date || movie.first_air_date;
+
+            setTitle(titleVal);
+            setYear(dateVal ? dateVal.substring(0, 4) : '');
             setTmdbId(movie.id.toString());
             setSynopsis(movie.overview);
 
-            // Trigger full enrichment
-            await enrichMovieData(movie.id.toString(), apiKey!);
+            // Trigger full enrichment with correct type
+            const type = movie.media_type || 'movie';
+            await enrichMovieData(movie.id.toString(), apiKey!, type);
 
         } catch (error) {
             console.error("Selection Error", error);
