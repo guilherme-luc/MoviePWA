@@ -599,6 +599,11 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                                             </button>
                                         )}
                                     </div>
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <div className={`px-2 py-1 rounded text-xs font-mono font-bold border ${format === 'VHS' ? 'bg-amber-900/40 text-amber-500 border-amber-500/50' : 'bg-blue-900/40 text-blue-400 border-blue-500/50'}`}>
+                                            {format} Mode
+                                        </div>
+                                    </div>
                                     <div className="flex gap-2">
                                         <input
                                             type="text"
