@@ -11,7 +11,6 @@ const LandingPage: React.FC = () => {
     const navigate = useNavigate();
     const { setFormat } = useCollection();
     const { data: allMovies } = useAllMovies(); // Fetch all movies (no filter)
-    const [hoveredSide, setHoveredSide] = useState<'left' | 'right' | null>(null);
     const [isRandomOpen, setIsRandomOpen] = useState(false);
 
     const handleSelect = (format: 'DVD' | 'VHS') => {
@@ -35,8 +34,6 @@ const LandingPage: React.FC = () => {
                     md:w-1/2
                     border-b-4 md:border-b-0 md:border-r-4 border-black box-border group
                 `}
-                onMouseEnter={() => setHoveredSide('left')}
-                onMouseLeave={() => setHoveredSide(null)}
                 onClick={() => handleSelect('VHS')}
             >
                 {/* Background with scanlines and noise */}
@@ -100,8 +97,6 @@ const LandingPage: React.FC = () => {
                     md:w-1/2
                     bg-neutral-900 group
                 `}
-                onMouseEnter={() => setHoveredSide('right')}
-                onMouseLeave={() => setHoveredSide(null)}
                 onClick={() => handleSelect('DVD')}
             >
                 {/* Background - Sleek Glassmorphism */}
