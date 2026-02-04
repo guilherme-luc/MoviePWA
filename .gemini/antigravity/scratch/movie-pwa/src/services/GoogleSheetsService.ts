@@ -146,8 +146,8 @@ export class GoogleSheetsService {
         return new Promise((resolve) => {
             this.authResolver = resolve;
             if (this.tokenClient) {
-                // Request a new token with consent prompt
-                this.tokenClient.requestAccessToken({ prompt: 'consent' });
+                // Request a new token without forcing consent if already granted
+                this.tokenClient.requestAccessToken({});
             } else {
                 console.error("Token Client not initialized");
                 resolve();
