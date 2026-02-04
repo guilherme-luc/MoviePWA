@@ -5,6 +5,8 @@ import { useCollection } from '../providers/CollectionProvider';
 import { useAllMovies } from '../hooks/useAllMovies';
 import vhsLogo from '../assets/vhs-logo.png';
 import dvdLogo from '../assets/dvd-logo.png';
+import vhsGif from '../assets/VHS.gif';
+import dvdGif from '../assets/DVD.gif';
 import { RandomMoviePicker } from '../components/modals/RandomMoviePicker';
 
 const LandingPage: React.FC = () => {
@@ -36,26 +38,24 @@ const LandingPage: React.FC = () => {
                 `}
                 onClick={() => handleSelect('VHS')}
             >
-                {/* Background with scanlines and noise */}
-                <div className="absolute inset-0 bg-neutral-900 z-0">
-                    <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMjAwIDIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZmlsdGVyIGlkPSJub2lzZUZpbHRlciI+PGZlVHVyYnVsZW5jZSB0eXBlPSJmcmFjdGFsTm9pc2UiIGJhc2VGcmVxdWVuY3k9IjAuNjUiIG51bU9jdGF2ZXM9IjMiIHN0aXRjaFRpbGVzPSJzdGl0Y2giLz48L2ZpbHRlcj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWx0ZXI9InVybCgjbm9pc2VGaWx0ZXIpIiBvcGFjaXR5PSIwLjUiLz48L3N2Zz4=')] opacity-20 brightness-150 contrast-150 mix-blend-overlay animate-noise" />
-                    <div className="absolute inset-0 bg-gradient-to-br from-amber-700/40 via-orange-900/40 to-black mix-blend-multiply" />
-                    {/* Scanlines effect */}
-                    <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0)_50%,rgba(0,0,0,0.5)_50%)] bg-[length:100%_4px] pointer-events-none opacity-30 z-10" />
+                {/* Background - VHS GIF */}
+                <div className="absolute inset-0 z-0">
+                    <img src={vhsGif} alt="Background" className="w-full h-full object-cover opacity-40 mix-blend-luminosity" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/50" />
                 </div>
 
                 {/* Content */}
                 <div className="relative z-20 h-full flex flex-col items-center justify-center p-8 text-amber-500 font-mono tracking-widest uppercase">
 
-                    <div className="mb-8 transform group-hover:scale-105 transition-transform duration-500 w-full max-w-xs md:max-w-sm">
+                    <div className="mb-8 transform group-hover:scale-105 transition-transform duration-500 w-full max-w-sm md:max-w-md">
                         <img
                             src={vhsLogo}
                             alt="VHS Logo"
-                            className="w-full h-auto drop-shadow-[0_0_15px_rgba(245,158,11,0.5)] opacity-90 group-hover:opacity-100 transition-opacity"
+                            className="w-full h-auto drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] brightness-0 invert opacity-90 group-hover:opacity-100 transition-opacity"
                         />
                     </div>
 
-                    <p className="text-sm md:text-base opacity-80 mb-8 border-t border-b border-amber-500/50 py-2 w-48 text-center typewriter">
+                    <p className="text-sm md:text-base opacity-80 mb-8 border-t border-b border-amber-500/50 py-2 w-48 text-center typewriter text-amber-200">
                         COLEÇÃO ANALÓGICA
                     </p>
 
@@ -101,24 +101,23 @@ const LandingPage: React.FC = () => {
                 `}
                 onClick={() => handleSelect('DVD')}
             >
-                {/* Background - Sleek Glassmorphism */}
+                {/* Background - DVD GIF */}
                 <div className="absolute inset-0 z-0">
-                    <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 via-neutral-900 to-black" />
-                    <div className="absolute -top-1/2 -right-1/2 w-full h-full bg-primary-500/10 rounded-full blur-[100px] animate-pulse" />
-                    <div className="absolute bottom-0 left-0 w-full h-full bg-gradient-to-t from-primary-900/20 to-transparent" />
+                    <img src={dvdGif} alt="Background" className="w-full h-full object-cover opacity-50 contrast-125" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/50" />
                 </div>
 
                 {/* Content */}
                 <div className="relative z-20 h-full flex flex-col items-center justify-center p-8 text-white font-sans">
 
                     <div className="mb-8 relative transform group-hover:scale-105 transition-transform duration-500 w-full max-w-xs md:max-w-sm flex items-center justify-center">
-                        {/* Organic Glow (Replaces Drop Shadow to avoid square artifacts) */}
-                        <div className="absolute w-[80%] h-[60%] bg-blue-600/50 blur-[50px] rounded-full z-0" />
+                        {/* Organic Glow */}
+                        <div className="absolute w-[80%] h-[60%] bg-white/20 blur-[50px] rounded-full z-0" />
 
                         <img
                             src={dvdLogo}
                             alt="DVD Logo"
-                            className="w-full h-auto relative z-10 opacity-100 mix-blend-screen"
+                            className="w-full h-auto relative z-10 brightness-0 invert"
                         />
                     </div>
 

@@ -200,9 +200,9 @@ export const RandomMoviePicker: React.FC<RandomMoviePickerProps> = ({ isOpen, on
                         <div className="flex items-center gap-3 bg-black/40 px-3 py-1.5 rounded-full border border-white/5">
                             {/* Format Logo - Brighter and Clearer */}
                             {(displayedMovie.format === 'VHS') ? (
-                                <img src={vhsLogo} alt="VHS" className="h-5 md:h-6 drop-shadow-[0_0_8px_rgba(245,158,11,0.8)]" />
+                                <img src={vhsLogo} alt="VHS" className="h-6 md:h-8 drop-shadow-[0_0_8px_rgba(255,255,255,0.3)] brightness-0 invert" />
                             ) : (
-                                <img src={dvdLogo} alt="DVD" className="h-5 md:h-6 drop-shadow-[0_0_8px_rgba(59,130,246,0.8)]" />
+                                <img src={dvdLogo} alt="DVD" className="h-5 md:h-6 drop-shadow-[0_0_8px_rgba(255,255,255,0.3)] brightness-0 invert" />
                             )}
                             <span className="text-neutral-400 text-sm font-medium tracking-wide border-l border-white/20 pl-3">
                                 {displayedMovie.year}
