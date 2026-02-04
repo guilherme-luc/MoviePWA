@@ -288,7 +288,7 @@ export class GoogleSheetsService {
                 const genres = await this.getGenres();
                 if (genres.length === 0) return [];
 
-                const ranges = genres.map(genre => `'${genre}'!A2:U`);
+                const ranges = genres.map(genre => `'${genre}'!A2:V`);
                 const response = await gapi.client.sheets.spreadsheets.values.batchGet({
                     spreadsheetId: this.SPREADSHEET_ID,
                     ranges: ranges
