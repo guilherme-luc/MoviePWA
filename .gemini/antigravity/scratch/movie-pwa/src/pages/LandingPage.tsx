@@ -90,7 +90,7 @@ const LandingPage: React.FC = () => {
                         <img
                             src={dvdLogo}
                             alt="DVD Logo"
-                            className="w-full h-auto drop-shadow-[0_0_20px_rgba(99,102,241,0.5)]"
+                            className="w-full h-auto relative z-10 drop-shadow-[0_0_30px_rgba(59,130,246,0.5)] opacity-100 mix-blend-screen"
                         />
                     </div>
 
