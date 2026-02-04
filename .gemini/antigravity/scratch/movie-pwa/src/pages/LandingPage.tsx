@@ -141,10 +141,8 @@ const LandingPage: React.FC = () => {
                 </div>
             </div>
 
-            {/* SPLITTER LINE */}
-            <div className="absolute top-1/2 left-0 right-0 h-1 md:top-0 md:bottom-0 md:left-1/2 md:w-1 bg-black z-30 pointer-events-none shadow-[0_0_20px_rgba(0,0,0,1)]" />
-
-            );
+        </div>
+    );
 };
 
-            export default LandingPage;
+export default LandingPage;

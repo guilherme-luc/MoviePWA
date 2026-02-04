@@ -1,27 +1,13 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { X, RefreshCw, Play, Dice5 } from 'lucide-react';
+import type { Movie } from '../../types';
 import vhsLogo from '../../assets/vhs-logo.png';
 import dvdLogo from '../../assets/dvd-logo.png';
 
-// ... (in component)
-
-{/* Title Info */ }
-<div className="text-center mb-8 space-y-3 flex flex-col items-center">
-    <h2 className="text-2xl font-bold text-white leading-tight">
-        {displayedMovie.title}
-    </h2>
-
-    <div className="flex items-center gap-3">
-        {/* Format Logo */}
-        {(displayedMovie.format === 'VHS') ? (
-            <img src={vhsLogo} alt="VHS" className="h-4 md:h-5 opacity-90 drop-shadow-[0_0_5px_rgba(245,158,11,0.5)]" />
-        ) : (
-            <img src={dvdLogo} alt="DVD" className="h-4 md:h-5 opacity-90 drop-shadow-[0_0_5px_rgba(59,130,246,0.5)]" />
-        )}
-        <span className="text-neutral-500 text-sm">• {displayedMovie.year}</span>
-    </div>
-</div>
-isOpen: boolean;
-onClose: () => void;
-movies: Movie[]; // Pool of movies to pick from
+interface RandomMoviePickerProps {
+    isOpen: boolean;
+    onClose: () => void;
+    movies: Movie[]; // Pool of movies to pick from
 }
 
 export const RandomMoviePicker: React.FC<RandomMoviePickerProps> = ({ isOpen, onClose, movies }) => {
@@ -110,11 +96,6 @@ export const RandomMoviePicker: React.FC<RandomMoviePickerProps> = ({ isOpen, on
         }
 
         // 4. Ensure minimum spin time (e.g. 1.5s total) for effect
-        // We calculate how much time passed since start? 
-        // Or just `await` a minimum promise alongside the preload.
-        // Let's keeping it simple: The `await preloadImage` naturally takes time. 
-        // If it's cached, it's instant. If instant, we might want a minimum delay.
-
         const minTime = new Promise(r => setTimeout(r, 1200));
         await minTime;
 
@@ -141,7 +122,10 @@ export const RandomMoviePicker: React.FC<RandomMoviePickerProps> = ({ isOpen, on
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             {/* Backdrop */}
-            <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
+            <div
+                className="absolute inset-0 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300"
+                onClick={onClose}
+            />
 
             {/* Modal */}
             <div className="relative z-10 w-full max-w-sm bg-neutral-900 border border-primary-500/30 rounded-3xl shadow-[0_0_50px_rgba(79,70,229,0.2)] overflow-hidden flex flex-col items-center animate-in zoom-in-95 duration-300">
