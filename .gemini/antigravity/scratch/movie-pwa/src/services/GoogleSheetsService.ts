@@ -602,12 +602,47 @@ export class GoogleSheetsService {
                     console.error(`Invalid headers in sheet: ${sheets[i].title}`, headers);
                     return false;
                 }
+                // Check if 'Format' (Column V) is present. If only up to U, it's missing.
+                if (!headers || headers.length < 22 || headers[21] !== 'Format') { // 22 columns (A-V)
+                    console.warn(`Sheet ${sheets[i].title} is missing Format column. Attempting to fix...`);
+                    await this.migrateSheetFormatColumn(sheets[i].title);
+                }
             }
             return true;
-        } catch (e) {
-            console.error("Validation failed", e);
+        } catch (error) {
+            console.error("Sheet validation/migration failed", error);
             return false;
         }
+    }
+
+    private async migrateSheetFormatColumn(sheetTitle: string): Promise<void> {
+        // 1. Add Header "Format" to V1
+        await gapi.client.sheets.spreadsheets.values.update({
+            spreadsheetId: this.SPREADSHEET_ID,
+            range: `'${sheetTitle}'!V1`,
+            valueInputOption: 'USER_ENTERED',
+            resource: { values: [['Format']] }
+        });
+
+        // 2. Fill 'DVD' for all existing rows (from Row 2 to Last Row)
+        // First, assume a safe max range or check row count. simpler: fill V2:V1000 with DVD if empty?
+        // Better: Read Column A to know how many rows.
+        const response = await gapi.client.sheets.spreadsheets.values.get({
+            spreadsheetId: this.SPREADSHEET_ID,
+            range: `'${sheetTitle}'!A2:A`
+        });
+        const rowCount = response.result.values?.length || 0;
+
+        if (rowCount > 0) {
+            const formats = Array(rowCount).fill(['DVD']);
+            await gapi.client.sheets.spreadsheets.values.update({
+                spreadsheetId: this.SPREADSHEET_ID,
+                range: `'${sheetTitle}'!V2:V${rowCount + 1}`,
+                valueInputOption: 'USER_ENTERED',
+                resource: { values: formats }
+            });
+        }
+        console.log(`Migrated sheet ${sheetTitle}: Added Format column.`);
     }
 
     private areHeadersValid(headers: string[]): boolean {
