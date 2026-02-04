@@ -198,6 +198,22 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
 
     // const handlePlayTrailer = () => { ... } // Removed duplicate
 
+    // Real-time Search Effect
+    useEffect(() => {
+        // Don't search if link mode, showcase mode, or title is empty/short
+        if (isLinkMode || isShowcaseMode || !title || title.length < 3) {
+            if (!title) setTmdbResults([]);
+            return;
+        }
+
+        // 200ms debounce for "instant" feel but avoiding complete API spam
+        const timer = setTimeout(() => {
+            fetchTmdbData(title);
+        }, 200);
+
+        return () => clearTimeout(timer);
+    }, [title, isLinkMode, isShowcaseMode]);
+
     const importFromLink = async () => {
         if (!linkInput) return;
 
