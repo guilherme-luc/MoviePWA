@@ -688,7 +688,7 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                                                     <>
                                                         <button
                                                             type="button"
-                                                            onClick={() => fetchTmdbData(title, year)}
+                                                            onClick={() => fetchTmdbData(title)}
                                                             disabled={isSearching}
                                                             className="p-2 bg-primary-600/20 text-primary-400 rounded-lg hover:bg-primary-600/30 transition-colors"
                                                             title="Buscar por Título"
