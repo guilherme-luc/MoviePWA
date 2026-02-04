@@ -266,25 +266,71 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
     const fetchTmdbData = async (queryTitle: string) => {
         if (!queryTitle) return;
         setIsSearching(true);
-        // setTmdbResults([]); // Don't clear immediately to avoid flash during typing
         try {
             const apiKey = import.meta.env.VITE_TMDB_API_KEY || localStorage.getItem('tmdb_api_key');
             if (!apiKey) return;
 
-            const query = encodeURIComponent(queryTitle);
-            // Year filter only works for Movies in multi-search mostly.
-            const searchUrl = `https://api.themoviedb.org/3/search/multi?api_key=${apiKey}&query=${query}&language=pt-BR&include_adult=false`;
+            // 1. Smart Parse: Check for Year in query (e.g., "Matrix 1999")
+            const yearMatch = queryTitle.match(/\b(19|20)\d{2}\b/);
+            const extractedYear = yearMatch ? yearMatch[0] : null;
+            const cleanTitle = extractedYear ? queryTitle.replace(extractedYear, '').trim() : queryTitle;
 
-            const res = await fetch(searchUrl);
-            const data = await res.json();
+            let results: any[] = [];
 
-            if (data.results && data.results.length > 0) {
-                // Filter: only movie and tv (no person)
-                const filtered = data.results.filter((r: any) => r.media_type === 'movie' || r.media_type === 'tv');
-                setTmdbResults(filtered.slice(0, 5));
+            if (extractedYear) {
+                // Strategy A: Specific Year Search (Movie + TV)
+                // We run parallel searches for better accuracy when year is provided
+                const movieUrl = `https://api.themoviedb.org/3/search/movie?api_key=${apiKey}&query=${encodeURIComponent(cleanTitle)}&year=${extractedYear}&language=pt-BR&include_adult=false`;
+                const tvUrl = `https://api.themoviedb.org/3/search/tv?api_key=${apiKey}&query=${encodeURIComponent(cleanTitle)}&first_air_date_year=${extractedYear}&language=pt-BR&include_adult=false`;
+
+                const [resMovie, resTv] = await Promise.all([fetch(movieUrl), fetch(tvUrl)]);
+                const [dataMovie, dataTv] = await Promise.all([resMovie.json(), resTv.json()]);
+
+                const movies = dataMovie.results || [];
+                const tvs = dataTv.results || [];
+
+                // Combine and tag
+                results = [
+                    ...movies.map((m: any) => ({ ...m, media_type: 'movie' })),
+                    ...tvs.map((t: any) => ({ ...t, media_type: 'tv' }))
+                ];
+
             } else {
-                setTmdbResults([]);
+                // Strategy B: General Multi Search (Default)
+                const searchUrl = `https://api.themoviedb.org/3/search/multi?api_key=${apiKey}&query=${encodeURIComponent(queryTitle)}&language=pt-BR&include_adult=false`;
+                const res = await fetch(searchUrl);
+                const data = await res.json();
+
+                if (data.results) {
+                    // Logic: If result is a PERSON, extract their "known_for" movies
+                    const people = data.results.filter((r: any) => r.media_type === 'person');
+                    const media = data.results.filter((r: any) => r.media_type === 'movie' || r.media_type === 'tv');
+
+                    let knownForResults: any[] = [];
+                    if (people.length > 0) {
+                        people.forEach((p: any) => {
+                            if (p.known_for) {
+                                // Add person's name to the movie to show context
+                                const credits = p.known_for.map((k: any) => ({
+                                    ...k,
+                                    smart_context: `Via ${p.name}` // Custom tag for UI
+                                }));
+                                knownForResults = [...knownForResults, ...credits];
+                            }
+                        });
+                    }
+
+                    results = [...media, ...knownForResults];
+                }
             }
+
+            // Deduplicate by ID
+            const uniqueResults = Array.from(new Map(results.map(item => [item.id, item])).values());
+
+            // Filter out garbage (no title/poster sometimes)
+            const validResults = uniqueResults.filter(r => (r.title || r.name));
+
+            setTmdbResults(validResults.slice(0, 7)); // Increased limit slightly
         } catch (error) {
             console.error("TMDB Fetch Error", error);
         } finally {
@@ -750,8 +796,15 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                                                                 {m.title || m.name}
                                                                 {m.media_type === 'tv' && <span className="px-1 py-0.5 rounded bg-purple-500/20 text-purple-400 text-[10px] uppercase">TV</span>}
                                                             </div>
-                                                            <div className="text-xs text-neutral-400">
-                                                                {(m.release_date || m.first_air_date)?.substring(0, 4)} • ⭐ {m.vote_average?.toFixed(1)}
+                                                            <div className="text-xs text-neutral-400 flex flex-wrap gap-2 items-center">
+                                                                <span>{(m.release_date || m.first_air_date)?.substring(0, 4)}</span>
+                                                                <span>•</span>
+                                                                <span>⭐ {m.vote_average?.toFixed(1)}</span>
+                                                                {m.smart_context && (
+                                                                    <span className="text-primary-400 bg-primary-500/10 px-1 rounded border border-primary-500/20 text-[10px]">
+                                                                        {m.smart_context}
+                                                                    </span>
+                                                                )}
                                                             </div>
                                                         </div>
                                                     </button>
