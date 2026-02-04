@@ -128,10 +128,10 @@ const LandingPage: React.FC = () => {
                 {!isRandomOpen && !exitingFormat && (
                     <motion.div
                         key="randomizer"
-                        initial={{ scale: 0, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0, opacity: 0 }}
-                        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 pointer-events-auto"
+                        initial={{ x: "-50%", y: "-50%", scale: 0, opacity: 0 }}
+                        animate={{ x: "-50%", y: "-50%", scale: 1, opacity: 1 }}
+                        exit={{ x: "-50%", y: "-50%", scale: 0, opacity: 0 }}
+                        className="absolute top-1/2 left-1/2 z-50 pointer-events-auto"
                     >
                         <button
                             onClick={(e) => {
