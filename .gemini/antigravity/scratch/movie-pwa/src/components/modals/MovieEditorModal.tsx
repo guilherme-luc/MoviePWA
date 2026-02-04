@@ -156,14 +156,12 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
     };
 
     const resetForm = () => {
+        console.log("Resetting form. Initial Format:", initialFormat);
         setBarcode('');
         setTitle('');
         setYear('');
         setGenre(initialGenre || '');
-        setImageType('tmdb');
-        setImageValue('');
-        setBackdropType('tmdb');
-        setBackdropValue('');
+        setFormat(initialFormat || 'DVD'); // Ensure this uses the prop
         setSynopsis('');
         setRating('');
         setDuration('');
@@ -172,14 +170,18 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
         setTmdbId('');
         setUserRating('');
         setWatched(false);
+        setImageType('tmdb');
+        setImageValue('');
+        setBackdropType('tmdb');
+        setBackdropValue('');
         setTags([]);
         setFranchise('');
         setSoundtrackUrl('');
         setRottenTomatoesRating('');
         setMetacriticRating('');
         setIsMetadataLocked(false);
+        setTrailerId(null);
     };
-
     const handleRatingChange = (val: string) => {
         setUserRating(val);
         const num = parseFloat(val);
@@ -384,6 +386,7 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
             return;
         }
         setIsLoading(true);
+        console.log("Saving movie with format:", format);
 
         const movieData: Movie = {
             barcode,
