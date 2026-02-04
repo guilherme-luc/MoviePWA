@@ -156,7 +156,6 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
     };
 
     const resetForm = () => {
-        console.log("Resetting form. Initial Format:", initialFormat);
         setBarcode('');
         setTitle('');
         setYear('');
@@ -386,7 +385,6 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
             return;
         }
         setIsLoading(true);
-        console.log("Saving movie with format:", format);
 
         const movieData: Movie = {
             barcode,
@@ -598,11 +596,6 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                                                 Ver Trailer
                                             </button>
                                         )}
-                                    </div>
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <div className={`px-2 py-1 rounded text-xs font-mono font-bold border ${format === 'VHS' ? 'bg-amber-900/40 text-amber-500 border-amber-500/50' : 'bg-blue-900/40 text-blue-400 border-blue-500/50'}`}>
-                                            {format} Mode
-                                        </div>
                                     </div>
                                     <div className="flex gap-2">
                                         <input
