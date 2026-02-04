@@ -523,6 +523,17 @@ export class GoogleSheetsService {
 
     public async createGenre(genreName: string): Promise<void> {
         if (!this.isInitialized) await this.initClient();
+
+        // 1. Check if sheet already exists
+        const sheets = await this.getSheetsMetadata();
+        const exists = sheets.some(s => s.title.toLowerCase() === genreName.toLowerCase());
+
+        if (exists) {
+            console.log(`Genre "${genreName}" already exists. Skipping creation.`);
+            return;
+        }
+
+        // 2. Create if not exists
         await gapi.client.sheets.spreadsheets.batchUpdate({
             spreadsheetId: this.SPREADSHEET_ID,
             resource: { requests: [{ addSheet: { properties: { title: genreName } } }] }
@@ -530,7 +541,7 @@ export class GoogleSheetsService {
         const values = [this.EXPECTED_HEADERS];
         await gapi.client.sheets.spreadsheets.values.update({
             spreadsheetId: this.SPREADSHEET_ID,
-            range: `'${genreName}'!A1:U1`, // Updated range to U1
+            range: `'${genreName}'!A1:U1`,
             valueInputOption: 'USER_ENTERED',
             resource: { values }
         });

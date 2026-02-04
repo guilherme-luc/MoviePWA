@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Disc, CassetteTape, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { useCollection } from '../providers/CollectionProvider';
+import vhsLogo from '../assets/vhs-logo.png';
+import dvdLogo from '../assets/dvd-logo.png';
 
 const LandingPage: React.FC = () => {
     const navigate = useNavigate();
@@ -38,13 +40,15 @@ const LandingPage: React.FC = () => {
 
                 {/* Content */}
                 <div className="relative z-20 h-full flex flex-col items-center justify-center p-8 text-amber-500 font-mono tracking-widest uppercase">
-                    <div className="mb-6 transform group-hover:scale-110 transition-transform duration-500 rotate-[-2deg]">
-                        <CassetteTape size={120} strokeWidth={1} className="drop-shadow-[0_0_15px_rgba(245,158,11,0.5)]" />
+
+                    <div className="mb-8 transform group-hover:scale-105 transition-transform duration-500 w-full max-w-xs md:max-w-sm">
+                        <img
+                            src={vhsLogo}
+                            alt="VHS Logo"
+                            className="w-full h-auto drop-shadow-[0_0_15px_rgba(245,158,11,0.5)] opacity-90 group-hover:opacity-100 transition-opacity"
+                        />
                     </div>
 
-                    <h1 className="text-6xl md:text-8xl font-black mb-2 glitch-text drop-shadow-[4px_4px_0_rgba(180,83,9,0.5)]" data-text="VHS">
-                        VHS
-                    </h1>
                     <p className="text-sm md:text-base opacity-80 mb-8 border-t border-b border-amber-500/50 py-2 w-48 text-center typewriter">
                         COLEÇÃO ANALÓGICA
                     </p>
@@ -81,13 +85,15 @@ const LandingPage: React.FC = () => {
 
                 {/* Content */}
                 <div className="relative z-20 h-full flex flex-col items-center justify-center p-8 text-white font-sans">
-                    <div className="mb-6 transform group-hover:scale-110 transition-transform duration-500 group-hover:rotate-6">
-                        <Disc size={120} strokeWidth={1} className="text-primary-400 drop-shadow-[0_0_20px_rgba(99,102,241,0.5)]" />
+
+                    <div className="mb-8 transform group-hover:scale-105 transition-transform duration-500 w-full max-w-xs md:max-w-sm">
+                        <img
+                            src={dvdLogo}
+                            alt="DVD Logo"
+                            className="w-full h-auto drop-shadow-[0_0_20px_rgba(99,102,241,0.5)]"
+                        />
                     </div>
 
-                    <h1 className="text-6xl md:text-8xl font-black mb-2 bg-gradient-to-r from-white to-primary-300 bg-clip-text text-transparent tracking-tighter">
-                        DVD
-                    </h1>
                     <p className="text-sm md:text-base text-neutral-400 mb-8 font-light tracking-[0.2em] uppercase">
                         Coleção Digital
                     </p>
