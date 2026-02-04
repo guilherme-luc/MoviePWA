@@ -345,10 +345,10 @@ export class GoogleSheetsService {
 
     private movieToRow(movie: Movie): string[] {
         return [
-            movie.barcode,
-            movie.title,
-            movie.year,
-            movie.genre,
+            movie.barcode || '',
+            movie.title || '',
+            movie.year || '',
+            movie.genre || '',
             movie.imageType || '',
             movie.imageValue || '',
             movie.synopsis || '',
@@ -366,7 +366,7 @@ export class GoogleSheetsService {
             movie.soundtrackUrl || '',
             movie.rottenTomatoesRating || '',
             movie.metacriticRating || '',
-            movie.format || 'DVD' // Column V
+            movie.format || 'DVD'
         ];
     }
 
