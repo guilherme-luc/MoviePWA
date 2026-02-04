@@ -1,14 +1,18 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Dice5 } from 'lucide-react';
 import { useCollection } from '../providers/CollectionProvider';
+import { useAllMovies } from '../hooks/useAllMovies';
 import vhsLogo from '../assets/vhs-logo.png';
 import dvdLogo from '../assets/dvd-logo.png';
+import { RandomMoviePicker } from '../components/modals/RandomMoviePicker';
 
 const LandingPage: React.FC = () => {
     const navigate = useNavigate();
     const { setFormat } = useCollection();
+    const { data: allMovies } = useAllMovies(); // Fetch all movies (no filter)
     const [hoveredSide, setHoveredSide] = useState<'left' | 'right' | null>(null);
+    const [isRandomOpen, setIsRandomOpen] = useState(false);
 
     const handleSelect = (format: 'DVD' | 'VHS') => {
         setFormat(format);
@@ -17,6 +21,12 @@ const LandingPage: React.FC = () => {
 
     return (
         <div className="relative w-full h-screen overflow-hidden bg-black flex flex-col md:flex-row">
+
+            <RandomMoviePicker
+                isOpen={isRandomOpen}
+                onClose={() => setIsRandomOpen(false)}
+                movies={allMovies || []}
+            />
 
             {/* LEFT SIDE - VHS (Retro/Analog) */}
             <div
@@ -62,6 +72,26 @@ const LandingPage: React.FC = () => {
                         PLAY ►
                     </div>
                 </div>
+            </div>
+
+            {/* CENTRAL RANDOMIZER BUTTON */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 pointer-events-auto">
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setIsRandomOpen(true);
+                    }}
+                    className="
+                        group flex flex-col items-center justify-center gap-2 
+                        bg-neutral-900 hover:bg-neutral-800 
+                        p-6 rounded-full border-4 border-white/10 hover:border-primary-500/50 
+                        hover:scale-110 active:scale-95 transition-all duration-300 
+                        shadow-[0_0_30px_rgba(0,0,0,0.8)] hover:shadow-primary-500/20
+                    "
+                    title="Sortear entre TODAS as coleções"
+                >
+                    <Dice5 size={32} className="text-neutral-400 group-hover:text-primary-400 group-hover:rotate-180 transition-all duration-500" />
+                </button>
             </div>
 
             {/* RIGHT SIDE - DVD (Modern/Digital) */}
@@ -116,8 +146,8 @@ const LandingPage: React.FC = () => {
             {/* SPLITTER LINE */}
             <div className="absolute top-1/2 left-0 right-0 h-1 md:top-0 md:bottom-0 md:left-1/2 md:w-1 bg-black z-30 pointer-events-none shadow-[0_0_20px_rgba(0,0,0,1)]" />
 
-            {/* GLOBAL OVERLAY TEXT */}
-            <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 pointer-events-none transition-opacity duration-300 ${hoveredSide ? 'opacity-0' : 'opacity-100'}`}>
+            {/* GLOBAL OVERLAY TEXT (Moved slightly up to avoid button overlap) */}
+            <div className={`absolute top-[42%] md:top-[40%] left-1/2 -translate-x-1/2 -translate-y-1/2 z-40 pointer-events-none transition-opacity duration-300 ${hoveredSide ? 'opacity-0' : 'opacity-100'}`}>
                 <div className="bg-black/80 backdrop-blur-md px-6 py-2 rounded-full border border-white/10 text-white font-bold text-sm tracking-widest uppercase shadow-2xl">
                     Selecione o Formato
                 </div>
