@@ -19,13 +19,18 @@ const LandingPage: React.FC = () => {
     const [isMobile, setIsMobile] = useState(true);
 
     useEffect(() => {
-        const checkMobile = () => setIsMobile(window.innerWidth < 768);
+        // Use matchMedia to sync exactly with Tailwind's 'md' breakpoint (768px)
+        const mediaQuery = window.matchMedia('(max-width: 767px)');
 
-        // Check immediately
-        checkMobile();
+        const handleChange = (e: MediaQueryListEvent | MediaQueryList) => {
+            setIsMobile(e.matches);
+        };
 
-        window.addEventListener('resize', checkMobile);
-        return () => window.removeEventListener('resize', checkMobile);
+        // Initial check
+        handleChange(mediaQuery);
+
+        mediaQuery.addEventListener('change', handleChange);
+        return () => mediaQuery.removeEventListener('change', handleChange);
     }, []);
 
     // State to control exit animation
@@ -54,10 +59,11 @@ const LandingPage: React.FC = () => {
             {/* LEFT SIDE - VHS (Retro/Analog) */}
             <motion.div
                 className={`
-                    relative h-1/2 md:h-full cursor-pointer overflow-hidden
+                    relative cursor-pointer overflow-hidden
                     border-b-4 md:border-b-0 md:border-r-4 border-black box-border group
+                    w-full h-1/2 md:w-1/2 md:h-full
                 `}
-                initial={isMobile ? { height: "50%", width: "100%" } : { width: "50%", height: "100%" }}
+                // We leave initial undefined so CSS takes precedence on mount to avoid FOUC
                 animate={isMobile ? {
                     height: exitingFormat === 'VHS' ? "100%" : exitingFormat === 'DVD' ? "0%" : "50%",
                     opacity: exitingFormat === 'DVD' ? 0 : 1
@@ -150,10 +156,10 @@ const LandingPage: React.FC = () => {
             {/* RIGHT SIDE - DVD (Modern/Digital) */}
             <motion.div
                 className={`
-                    relative h-1/2 md:h-full cursor-pointer overflow-hidden
+                    relative cursor-pointer overflow-hidden
                     bg-neutral-900 group
+                    w-full h-1/2 md:w-1/2 md:h-full
                 `}
-                initial={isMobile ? { height: "50%", width: "100%" } : { width: "50%", height: "100%" }}
                 animate={isMobile ? {
                     height: exitingFormat === 'DVD' ? "100%" : exitingFormat === 'VHS' ? "0%" : "50%",
                     opacity: exitingFormat === 'VHS' ? 0 : 1
