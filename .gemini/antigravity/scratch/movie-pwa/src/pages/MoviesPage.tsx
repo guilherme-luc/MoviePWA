@@ -292,15 +292,14 @@ export const MoviesPage: React.FC = () => {
         <div className="flex flex-col h-full animate-in slide-in-from-right duration-300">
             <MovieEditorModal
                 isOpen={isEditorOpen}
-                onClose={() => setIsEditorOpen(false)}
+                onClose={() => {
+                    setIsEditorOpen(false);
+                    setSelectedMovie(undefined);
+                }}
                 movieToEdit={selectedMovie}
                 initialGenre={decodedGenre}
                 initialFormat={format || 'DVD'}
-                onSearch={(term) => {
-                    setSearch(term);
-                    setLastViewedMovie(selectedMovie); // Save current movie to history
-                    setIsEditorOpen(false);
-                }}
+                onSearch={setSearch}
             />
 
             {/* Selection Header */}

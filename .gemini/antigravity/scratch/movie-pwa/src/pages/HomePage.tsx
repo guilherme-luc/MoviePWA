@@ -64,6 +64,7 @@ export const HomePage: React.FC = () => {
                 isOpen={isEditOpen}
                 onClose={() => setIsEditOpen(false)}
                 movieToEdit={editMovie}
+                initialFormat={format || 'DVD'}
             />
             {/* Smart Suggestions */}
             <SmartSuggestionModal
