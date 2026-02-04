@@ -1,3 +1,4 @@
+import { ReactNode } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import LandingPage from './pages/LandingPage';
 import { HomePage } from './pages/HomePage';
@@ -6,7 +7,7 @@ import { AppShell } from './components/layout/AppShell';
 import { useCollection } from './providers/CollectionProvider';
 
 // Guard to prevent accessing app without selecting a format
-const RequireFormat = ({ children }: { children: JSX.Element }) => {
+const RequireFormat = ({ children }: { children: ReactNode }) => {
     const { format } = useCollection();
     const location = useLocation();
 
