@@ -235,7 +235,7 @@ export class GoogleSheetsService {
             try {
                 const response = await gapi.client.sheets.spreadsheets.values.get({
                     spreadsheetId: this.SPREADSHEET_ID,
-                    range: `'${genre}'!A2:Q`, // Extended range
+                    range: `'${genre}'!A2:V`, // Extended range to include Format (V)
                 });
                 if (response.result.values) {
                     const rows = response.result.values;
