@@ -1,9 +1,9 @@
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import LandingPage from '../pages/LandingPage';
-import { HomePage } from '../pages/HomePage';
-import { MoviesPage } from '../pages/MoviesPage';
-import { AppShell } from '../components/layout/AppShell';
-import { useCollection } from '../providers/CollectionProvider';
+import LandingPage from './pages/LandingPage';
+import { HomePage } from './pages/HomePage';
+import { MoviesPage } from './pages/MoviesPage';
+import { AppShell } from './components/layout/AppShell';
+import { useCollection } from './providers/CollectionProvider';
 
 // Guard to prevent accessing app without selecting a format
 const RequireFormat = ({ children }: { children: JSX.Element }) => {

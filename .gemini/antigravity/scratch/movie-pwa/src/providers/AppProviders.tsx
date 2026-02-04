@@ -23,7 +23,11 @@ const queryClient = new QueryClient({
 export function AppProviders({ children }: { children: React.ReactNode }) {
     return (
         <QueryClientProvider client={queryClient}>
-            {children}
+            <ShowcaseProvider>
+                <CollectionProvider>
+                    {children}
+                </CollectionProvider>
+            </ShowcaseProvider>
             <ReactQueryDevtools initialIsOpen={false} />
         </QueryClientProvider>
     );
