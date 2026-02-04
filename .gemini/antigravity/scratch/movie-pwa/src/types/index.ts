@@ -25,6 +25,7 @@ export interface Movie {
     soundtrackUrl?: string; // [NEW] Phase 7: Spotify Link
     rottenTomatoesRating?: string; // [NEW] Phase 7: RT Score
     metacriticRating?: string; // [NEW] Phase 7: Metascore
+    format?: 'DVD' | 'VHS'; // [NEW] Phase 8: Media Format Support
 
     // Metadata for internal use
     _rowIndex?: number;

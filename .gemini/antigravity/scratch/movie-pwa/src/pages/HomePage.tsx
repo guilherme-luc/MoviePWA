@@ -13,11 +13,13 @@ import { Skeleton } from '../components/ui/Skeleton';
 import { getGenreGradient, getGenreIcon } from '../utils/genreUtils';
 
 import { useShowcase } from '../providers/ShowcaseProvider';
+import { useCollection } from '../providers/CollectionProvider';
 
 export const HomePage: React.FC = () => {
     const { isShowcaseMode } = useShowcase();
-    const { data: genres, isLoading, isError } = useGenres();
-    const { data: allMovies } = useAllMovies();
+    const { format, isVHS } = useCollection();
+    const { data: allGenres, isLoading, isError } = useGenres();
+    const { data: rawMovies } = useAllMovies();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isRandomOpen, setIsRandomOpen] = useState(false);
     const [isSmartOpen, setIsSmartOpen] = useState(false);
@@ -28,7 +30,21 @@ export const HomePage: React.FC = () => {
     const [editMovie, setEditMovie] = useState<Movie | undefined>(undefined);
     const [isEditOpen, setIsEditOpen] = useState(false);
 
-    const totalMovies = genres?.reduce((acc, curr) => acc + curr.count, 0) || 0;
+    // Filter by Format
+    const allMovies = rawMovies?.filter(m => {
+        // Legacy support: if format is missing, assume DVD
+        const movieFormat = m.format || 'DVD';
+        return movieFormat === format;
+    });
+
+    // Filter Genres based on filtered movies
+    const genres = allGenres?.map(g => {
+        // Count only movies of this format in this genre
+        const count = allMovies?.filter(m => m.genre === g.genre).length || 0;
+        return { ...g, count };
+    }).filter(g => g.count > 0);
+
+    const totalMovies = allMovies?.length || 0;
 
     const filteredMovies = allMovies?.filter(m =>
         m.title.toLowerCase().includes(search.toLowerCase())
@@ -184,11 +200,16 @@ export const HomePage: React.FC = () => {
 
             {/* Action Bar */}
             <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-white">Coleções</h3>
+                <h3 className={`text-lg font-semibold ${isVHS ? 'text-amber-500 font-mono tracking-widest uppercase' : 'text-white'}`}>
+                    {isVHS ? '> Coleções' : 'Coleções'}
+                </h3>
                 {!isShowcaseMode && (
                     <button
                         onClick={() => setIsModalOpen(true)}
-                        className="bg-neutral-800 hover:bg-neutral-700 text-primary-400 px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1 transition-colors"
+                        className={`
+                            ${isVHS ? 'bg-amber-900/40 text-amber-500 hover:bg-amber-900/60' : 'bg-neutral-800 text-primary-400 hover:bg-neutral-700'} 
+                            px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1 transition-colors
+                        `}
                     >
                         <Plus size={16} />
                         <span>Novo Gênero</span>

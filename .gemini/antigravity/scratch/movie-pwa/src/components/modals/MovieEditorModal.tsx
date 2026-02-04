@@ -17,6 +17,7 @@ interface MovieEditorModalProps {
     onClose: () => void;
     movieToEdit?: Movie;
     initialGenre?: string;
+    initialFormat?: 'DVD' | 'VHS';
     onSearch?: (term: string) => void;
 }
 
@@ -60,12 +61,11 @@ const compressImage = (file: File): Promise<string> => {
     });
 };
 
-export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onClose, movieToEdit, initialGenre, onSearch }) => {
+export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onClose, movieToEdit, initialGenre, initialFormat, onSearch }) => {
     const { isShowcaseMode } = useShowcase();
     const queryClient = useQueryClient();
     const [isLoading, setIsLoading] = useState(false);
     const [genres, setGenres] = useState<string[]>([]);
-
     // Trailer State
     const [trailerId, setTrailerId] = useState<string | null>(null);
     const [isTrailerOpen, setIsTrailerOpen] = useState(false);
@@ -79,6 +79,7 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
     const [title, setTitle] = useState('');
     const [year, setYear] = useState('');
     const [genre, setGenre] = useState(initialGenre || '');
+    const [format, setFormat] = useState<'DVD' | 'VHS'>(initialFormat || 'DVD');
 
     // Metadata (Read-Onlyish)
     const [synopsis, setSynopsis] = useState('');
@@ -121,40 +122,57 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                 setTitle(movieToEdit.title);
                 setYear(movieToEdit.year);
                 setGenre(movieToEdit.genre);
-                setImageType(movieToEdit.imageType || 'tmdb');
-                setImageValue(movieToEdit.imageValue || '');
-
-                setBackdropType(movieToEdit.backdropType || 'tmdb');
-                setBackdropValue(movieToEdit.backdropValue || '');
-
-                // Metadata
+                setFormat(movieToEdit.format || 'DVD'); // Load format
                 setSynopsis(movieToEdit.synopsis || '');
                 setRating(movieToEdit.rating || '');
                 setDuration(movieToEdit.duration || '');
                 setDirector(movieToEdit.director || '');
-                setCast(movieToEdit.cast || '');
                 setTmdbId(movieToEdit.tmdbId || '');
-
-                // User Data
-                setUserRating(movieToEdit.userRating || '');
-
+                setCast(movieToEdit.cast || '');
+                setUserRating(String(movieToEdit.userRating || '')); // NUMBER -> STRING
                 setWatched(movieToEdit.watched || false);
+                setImageType(movieToEdit.imageType || 'tmdb');
+                setImageValue(movieToEdit.imageValue || '');
+                setBackdropType(movieToEdit.backdropType || 'tmdb');
+                setBackdropValue(movieToEdit.backdropValue || '');
                 setTags(movieToEdit.tags || []);
+                // New Fields Phase 7
                 setFranchise(movieToEdit.franchise || '');
                 setSoundtrackUrl(movieToEdit.soundtrackUrl || '');
                 setRottenTomatoesRating(movieToEdit.rottenTomatoesRating || '');
                 setMetacriticRating(movieToEdit.metacriticRating || '');
 
-
                 // Lock metadata if it looks like it came from TMDB
                 setIsMetadataLocked(!!movieToEdit.tmdbId || !!movieToEdit.synopsis);
             } else {
-                resetForm();
-                if (initialGenre) setGenre(initialGenre);
+                // Reset for new entry
+                setBarcode('');
+                setTitle('');
+                setYear('');
+                setGenre(initialGenre || '');
+                setFormat(initialFormat || 'DVD'); // Reset to initial format
+                setSynopsis('');
+                setRating('');
+                setDuration('');
+                setDirector('');
+                setTmdbId('');
+                setCast('');
+                setUserRating('');
+                setWatched(false);
+                setImageType('tmdb');
+                setImageValue('');
+                setBackdropType('tmdb');
+                setBackdropValue('');
+                setTags([]);
+                setFranchise('');
+                setSoundtrackUrl('');
+                setRottenTomatoesRating('');
+                setMetacriticRating('');
+                setTrailerId(null);
                 setIsMetadataLocked(false); // New movie starts unlocked
             }
         }
-    }, [isOpen, movieToEdit, initialGenre]);
+    }, [isOpen, movieToEdit, initialGenre, initialFormat]);
 
     const loadGenres = async () => {
         const g = await GoogleSheetsService.getInstance().getGenres();
@@ -396,6 +414,7 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
             title,
             year,
             genre,
+            format, // Save Format
             imageType,
             imageValue,
             backdropType,

@@ -261,6 +261,7 @@ export class GoogleSheetsService {
                         soundtrackUrl: row[18] || undefined,
                         rottenTomatoesRating: row[19] || undefined,
                         metacriticRating: row[20] || undefined,
+                        format: (row[21] as 'DVD' | 'VHS' | undefined) || 'DVD',
                         _rowIndex: index + 2,
                         _sheetTitle: genre
                     }));
@@ -322,6 +323,7 @@ export class GoogleSheetsService {
                             soundtrackUrl: row[18] || undefined,
                             rottenTomatoesRating: row[19] || undefined,
                             metacriticRating: row[20] || undefined,
+                            format: (row[21] as 'DVD' | 'VHS' | undefined) || 'DVD', // Default to DVD for backwards compatibility
                             _rowIndex: idx + 2,
                             _sheetTitle: genre
                         }));
@@ -363,7 +365,8 @@ export class GoogleSheetsService {
             movie.franchise || '',
             movie.soundtrackUrl || '',
             movie.rottenTomatoesRating || '',
-            movie.metacriticRating || ''
+            movie.metacriticRating || '',
+            movie.format || 'DVD' // Column V
         ];
     }
 
@@ -567,14 +570,15 @@ export class GoogleSheetsService {
 
 
     // H: Rating, I: Duration, J: Director, K: TMDB_ID, L: Cast, M: UserRating, N: Watched, O: BackdropType, P: BackdropVal, Q: Tags, R: Franchise, S: Soundtrack, T: RottenTomatoes, U: Metacritic
-    private readonly EXPECTED_HEADERS = ['Barcode', 'Title', 'Year', 'Genre', 'ImageType', 'ImageValue', 'Synopsis', 'Rating', 'Duration', 'Director', 'TMDB_ID', 'Cast', 'UserRating', 'Watched', 'BackdropType', 'BackdropValue', 'Tags', 'Franchise', 'Soundtrack', 'RottenTomatoes', 'Metacritic'];
+    // V: Format (DVD|VHS)
+    private readonly EXPECTED_HEADERS = ['Barcode', 'Title', 'Year', 'Genre', 'ImageType', 'ImageValue', 'Synopsis', 'Rating', 'Duration', 'Director', 'TMDB_ID', 'Cast', 'UserRating', 'Watched', 'BackdropType', 'BackdropValue', 'Tags', 'Franchise', 'Soundtrack', 'RottenTomatoes', 'Metacritic', 'Format'];
 
     public async validateSheetStructure(): Promise<boolean> {
         if (!this.isInitialized) await this.initClient();
         try {
             const sheets = await this.getSheetsMetadata();
             if (sheets.length === 0) return false;
-            const ranges = sheets.map(s => `'${s.title}'!A1:N1`); // Check up to N
+            const ranges = sheets.map(s => `'${s.title}'!A1:V1`); // Check up to V
             const response = await gapi.client.sheets.spreadsheets.values.batchGet({
                 spreadsheetId: this.SPREADSHEET_ID,
                 ranges: ranges
@@ -597,8 +601,7 @@ export class GoogleSheetsService {
 
     private areHeadersValid(headers: string[]): boolean {
         if (headers.length < 6) return false;
-        // Lenient check for migration: if it has at least 6 and first 6 match, valid enough 
-        // to load, but we might want to prompt upgrade if missing N.
+        // Lenient check: must match first few, but we expanded to V so we check existence
         return (
             headers[0] === this.EXPECTED_HEADERS[0] &&
             headers[1] === this.EXPECTED_HEADERS[1]

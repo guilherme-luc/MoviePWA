@@ -8,18 +8,27 @@ import { GoogleSheetsService } from '../services/GoogleSheetsService';
 import type { Movie } from '../types';
 import { MovieCardSkeleton } from '../components/movies/MovieCardSkeleton';
 import { MovieCard } from '../components/movies/MovieCard';
+
 import { PullToRefresh } from '../components/ui/PullToRefresh';
 
 import { useShowcase } from '../providers/ShowcaseProvider';
+import { useCollection } from '../providers/CollectionProvider';
 
 export const MoviesPage: React.FC = () => {
     const { isShowcaseMode } = useShowcase();
+    const { format } = useCollection();
     const { genre } = useParams<{ genre: string }>();
     const decodedGenre = decodeURIComponent(genre || '');
     const queryClient = useQueryClient();
     const navigate = useNavigate();
 
-    const { data: movies, isLoading, isError } = useMovies(decodedGenre);
+    const { data: allMovies, isLoading, isError } = useMovies(decodedGenre);
+
+    // Filter by Format
+    const movies = useMemo(() => {
+        return allMovies?.filter(m => (m.format || 'DVD') === format);
+    }, [allMovies, format]);
+
     const [search, setSearch] = useState('');
 
     const [isEditorOpen, setIsEditorOpen] = useState(false);
@@ -286,6 +295,7 @@ export const MoviesPage: React.FC = () => {
                 onClose={() => setIsEditorOpen(false)}
                 movieToEdit={selectedMovie}
                 initialGenre={decodedGenre}
+                initialFormat={format || 'DVD'}
                 onSearch={(term) => {
                     setSearch(term);
                     setLastViewedMovie(selectedMovie); // Save current movie to history
@@ -357,8 +367,8 @@ export const MoviesPage: React.FC = () => {
                         <button
                             onClick={() => setViewMode('all')}
                             className={`flex-1 py-2 px-3 text-xs font-semibold rounded-lg transition-all ${viewMode === 'all'
-                                    ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/30'
-                                    : 'text-neutral-400 hover:text-neutral-200 hover:bg-white/5'
+                                ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/30'
+                                : 'text-neutral-400 hover:text-neutral-200 hover:bg-white/5'
                                 }`}
                         >
                             Todos
@@ -366,8 +376,8 @@ export const MoviesPage: React.FC = () => {
                         <button
                             onClick={() => setViewMode('watched')}
                             className={`flex-1 py-2 px-3 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1 ${viewMode === 'watched'
-                                    ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/30'
-                                    : 'text-neutral-400 hover:text-neutral-200 hover:bg-white/5'
+                                ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/30'
+                                : 'text-neutral-400 hover:text-neutral-200 hover:bg-white/5'
                                 }`}
                         >
                             <Eye size={12} />
@@ -376,8 +386,8 @@ export const MoviesPage: React.FC = () => {
                         <button
                             onClick={() => setViewMode('watchlist')}
                             className={`flex-1 py-2 px-3 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1 ${viewMode === 'watchlist'
-                                    ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/30'
-                                    : 'text-neutral-400 hover:text-neutral-200 hover:bg-white/5'
+                                ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/30'
+                                : 'text-neutral-400 hover:text-neutral-200 hover:bg-white/5'
                                 }`}
                         >
                             <Star size={12} />
