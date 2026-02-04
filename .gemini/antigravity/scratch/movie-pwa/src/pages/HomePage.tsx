@@ -250,7 +250,7 @@ export const HomePage: React.FC = () => {
                     {genres?.map((g) => (
                         <Link
                             key={g.genre}
-                            to={`/genre/${encodeURIComponent(g.genre)}`}
+                            to={`genre/${encodeURIComponent(g.genre)}`}
                             className="glass-panel p-4 rounded-xl flex items-center justify-between hover:bg-neutral-800/80 transition-all active:scale-[0.98] group"
                         >
                             <div className="flex items-center gap-3">
