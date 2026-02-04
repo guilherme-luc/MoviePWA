@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Dice5 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -15,6 +15,13 @@ const LandingPage: React.FC = () => {
     const { setFormat } = useCollection();
     const { data: allMovies } = useAllMovies();
     const [isRandomOpen, setIsRandomOpen] = useState(false);
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     // State to control exit animation
     const [exitingFormat, setExitingFormat] = useState<'VHS' | 'DVD' | null>(null);
@@ -45,8 +52,11 @@ const LandingPage: React.FC = () => {
                     relative h-1/2 md:h-full cursor-pointer overflow-hidden
                     border-b-4 md:border-b-0 md:border-r-4 border-black box-border group
                 `}
-                initial={{ width: "50%" }}
-                animate={{
+                initial={isMobile ? { height: "50%", width: "100%" } : { width: "50%", height: "100%" }}
+                animate={isMobile ? {
+                    height: exitingFormat === 'VHS' ? "100%" : exitingFormat === 'DVD' ? "0%" : "50%",
+                    opacity: exitingFormat === 'DVD' ? 0 : 1
+                } : {
                     width: exitingFormat === 'VHS' ? "100%" : exitingFormat === 'DVD' ? "0%" : "50%",
                     opacity: exitingFormat === 'DVD' ? 0 : 1
                 }}
@@ -138,8 +148,11 @@ const LandingPage: React.FC = () => {
                     relative h-1/2 md:h-full cursor-pointer overflow-hidden
                     bg-neutral-900 group
                 `}
-                initial={{ width: "50%" }}
-                animate={{
+                initial={isMobile ? { height: "50%", width: "100%" } : { width: "50%", height: "100%" }}
+                animate={isMobile ? {
+                    height: exitingFormat === 'DVD' ? "100%" : exitingFormat === 'VHS' ? "0%" : "50%",
+                    opacity: exitingFormat === 'VHS' ? 0 : 1
+                } : {
                     width: exitingFormat === 'DVD' ? "100%" : exitingFormat === 'VHS' ? "0%" : "50%",
                     opacity: exitingFormat === 'VHS' ? 0 : 1
                 }}
