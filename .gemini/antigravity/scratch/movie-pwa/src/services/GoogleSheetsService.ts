@@ -376,7 +376,7 @@ export class GoogleSheetsService {
             const values = [this.movieToRow(movie)];
             await gapi.client.sheets.spreadsheets.values.append({
                 spreadsheetId: this.SPREADSHEET_ID,
-                range: `'${movie.genre}'!A:U`, // Updated range to U
+                range: `'${movie.genre}'!A:V`,
                 valueInputOption: 'USER_ENTERED',
                 resource: { values }
             });
@@ -463,7 +463,7 @@ export class GoogleSheetsService {
         if (!movie._rowIndex || !movie._sheetTitle) throw new Error("Metadata missing for update");
 
         return this.requestWithRetry(async () => {
-            const range = `'${movie._sheetTitle}'!A${movie._rowIndex}:U${movie._rowIndex}`;
+            const range = `'${movie._sheetTitle}'!A${movie._rowIndex}:V${movie._rowIndex}`;
             const values = [this.movieToRow(movie)];
 
             await gapi.client.sheets.spreadsheets.values.update({
@@ -541,7 +541,7 @@ export class GoogleSheetsService {
         const values = [this.EXPECTED_HEADERS];
         await gapi.client.sheets.spreadsheets.values.update({
             spreadsheetId: this.SPREADSHEET_ID,
-            range: `'${genreName}'!A1:U1`,
+            range: `'${genreName}'!A1:V1`,
             valueInputOption: 'USER_ENTERED',
             resource: { values }
         });
