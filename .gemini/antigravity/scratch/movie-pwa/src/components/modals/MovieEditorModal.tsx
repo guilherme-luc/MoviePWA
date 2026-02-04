@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, Save, Search, Wand2, Star, Lock, Unlock, Upload, ImageIcon, Loader2, Trash2, Play, Music, Share2, Link2, Download } from 'lucide-react';
 import type { Movie } from '../../types';
 import { GoogleSheetsService } from '../../services/GoogleSheetsService';
@@ -198,11 +198,20 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
 
     // const handlePlayTrailer = () => { ... } // Removed duplicate
 
+    // Ref to prevent re-search loops when selecting a movie
+    const isSelectionRef = useRef(false);
+
     // Real-time Search Effect
     useEffect(() => {
-        // Don't search if link mode, showcase mode, or title is empty/short
+        // Don't search if link mode, showcase mode, title is empty/short
         if (isLinkMode || isShowcaseMode || !title || title.length < 3) {
             if (!title) setTmdbResults([]);
+            return;
+        }
+
+        // If this change was caused by a user selection, ignore it
+        if (isSelectionRef.current) {
+            isSelectionRef.current = false;
             return;
         }
 
@@ -394,7 +403,10 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
 
 
     const selectTmdbMovie = async (movie: any) => {
+        // Signal validation to ignore the next title change (prevent re-search)
+        isSelectionRef.current = true;
         setTmdbResults([]);
+
         try {
             const apiKey = import.meta.env.VITE_TMDB_API_KEY || localStorage.getItem('tmdb_api_key');
 
