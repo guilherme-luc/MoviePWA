@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Dice5 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useCollection } from '../providers/CollectionProvider';
 import { useAllMovies } from '../hooks/useAllMovies';
 import vhsLogo from '../assets/vhs-logo.png';
@@ -12,12 +13,21 @@ import { RandomMoviePicker } from '../components/modals/RandomMoviePicker';
 const LandingPage: React.FC = () => {
     const navigate = useNavigate();
     const { setFormat } = useCollection();
-    const { data: allMovies } = useAllMovies(); // Fetch all movies (no filter)
+    const { data: allMovies } = useAllMovies();
     const [isRandomOpen, setIsRandomOpen] = useState(false);
 
+    // State to control exit animation
+    const [exitingFormat, setExitingFormat] = useState<'VHS' | 'DVD' | null>(null);
+
     const handleSelect = (format: 'DVD' | 'VHS') => {
+        if (exitingFormat) return; // Prevent double clicks
+        setExitingFormat(format);
         setFormat(format);
-        navigate('/app');
+
+        // Wait for animation before navigating
+        setTimeout(() => {
+            navigate('/app');
+        }, 1500);
     };
 
     return (
@@ -30,13 +40,19 @@ const LandingPage: React.FC = () => {
             />
 
             {/* LEFT SIDE - VHS (Retro/Analog) */}
-            <div
+            <motion.div
                 className={`
-                    relative w-full md:w-1/2 h-1/2 md:h-full cursor-pointer overflow-hidden transition-all duration-700 ease-in-out
-                    md:w-1/2
+                    relative h-1/2 md:h-full cursor-pointer overflow-hidden
                     border-b-4 md:border-b-0 md:border-r-4 border-black box-border group
                 `}
+                initial={{ width: "50%" }}
+                animate={{
+                    width: exitingFormat === 'VHS' ? "100%" : exitingFormat === 'DVD' ? "0%" : "50%",
+                    opacity: exitingFormat === 'DVD' ? 0 : 1
+                }}
+                transition={{ duration: 0.8, ease: "easeInOut" }}
                 onClick={() => handleSelect('VHS')}
+                style={{ zIndex: exitingFormat === 'VHS' ? 50 : 1 }}
             >
                 {/* Background - VHS GIF */}
                 <div className="absolute inset-0 z-0">
@@ -45,7 +61,11 @@ const LandingPage: React.FC = () => {
                 </div>
 
                 {/* Content */}
-                <div className="relative z-20 h-full flex flex-col items-center justify-center p-8 text-amber-500 font-mono tracking-widest uppercase">
+                <motion.div
+                    className="relative z-20 h-full flex flex-col items-center justify-center p-8 text-amber-500 font-mono tracking-widest uppercase"
+                    animate={exitingFormat === 'VHS' ? { scale: 1.2, opacity: 0, y: 50 } : {}}
+                    transition={{ duration: 1, delay: 0.2 }}
+                >
 
                     <div className="mb-8 transform group-hover:scale-105 transition-transform duration-500 w-full max-w-sm md:max-w-md flex items-center justify-center h-32 md:h-40">
                         <img
@@ -67,12 +87,29 @@ const LandingPage: React.FC = () => {
                     <div className="absolute top-8 left-8 text-xl opacity-60 pointer-events-none font-bold text-white shadow-black drop-shadow-md">
                         PLAY ►
                     </div>
-                </div>
-            </div>
+                </motion.div>
 
-            {/* CENTRAL RANDOMIZER BUTTON */}
-            {!isRandomOpen && (
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 pointer-events-auto animate-in fade-in zoom-in duration-300">
+                {/* Simulated "Tape Inserting" Overlay Effect */}
+                {exitingFormat === 'VHS' && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.5, delay: 0.8 }}
+                        className="absolute inset-0 bg-black z-50 flex items-center justify-center"
+                    >
+                        <div className="text-amber-500 font-mono animate-pulse text-2xl">LOADING TAPE...</div>
+                    </motion.div>
+                )}
+            </motion.div>
+
+            {/* CENTRAL RANDOMIZER BUTTON (Hidden during transitions) */}
+            {!isRandomOpen && !exitingFormat && (
+                <motion.div
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0, opacity: 0 }}
+                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 pointer-events-auto"
+                >
                     <button
                         onClick={(e) => {
                             e.stopPropagation();
@@ -89,17 +126,23 @@ const LandingPage: React.FC = () => {
                     >
                         <Dice5 size={32} className="text-neutral-400 group-hover:text-primary-400 group-hover:rotate-180 transition-all duration-500" />
                     </button>
-                </div>
+                </motion.div>
             )}
 
             {/* RIGHT SIDE - DVD (Modern/Digital) */}
-            <div
+            <motion.div
                 className={`
-                    relative w-full md:w-1/2 h-1/2 md:h-full cursor-pointer overflow-hidden transition-all duration-700 ease-in-out
-                    md:w-1/2
+                    relative h-1/2 md:h-full cursor-pointer overflow-hidden
                     bg-neutral-900 group
                 `}
+                initial={{ width: "50%" }}
+                animate={{
+                    width: exitingFormat === 'DVD' ? "100%" : exitingFormat === 'VHS' ? "0%" : "50%",
+                    opacity: exitingFormat === 'VHS' ? 0 : 1
+                }}
+                transition={{ duration: 0.8, ease: "easeInOut" }}
                 onClick={() => handleSelect('DVD')}
+                style={{ zIndex: exitingFormat === 'DVD' ? 50 : 1 }}
             >
                 {/* Background - DVD GIF */}
                 <div className="absolute inset-0 z-0">
@@ -108,16 +151,30 @@ const LandingPage: React.FC = () => {
                 </div>
 
                 {/* Content */}
-                <div className="relative z-20 h-full flex flex-col items-center justify-center p-8 text-white font-sans">
+                <motion.div
+                    className="relative z-20 h-full flex flex-col items-center justify-center p-8 text-white font-sans"
+                    // No default exit animation for container, specific logic for logo below
+                    animate={exitingFormat === 'DVD' ? { opacity: 0 } : {}}
+                    transition={{ delay: 0.5, duration: 0.5 }}
+                >
 
                     <div className="mb-8 relative transform group-hover:scale-105 transition-transform duration-500 w-full max-w-xs md:max-w-sm flex items-center justify-center h-32 md:h-40">
                         {/* Organic Glow */}
                         <div className="absolute w-[80%] h-[60%] bg-white/20 blur-[50px] rounded-full z-0" />
 
-                        <img
+                        <motion.img
                             src={dvdLogo}
                             alt="DVD Logo"
                             className="w-full h-auto relative z-10 brightness-0 invert"
+                            animate={exitingFormat === 'DVD' ? {
+                                rotate: 360,
+                                scale: 20,
+                                opacity: 0
+                            } : {}}
+                            transition={{
+                                duration: 1.5,
+                                ease: "anticipate" // Slowly starts, then zooms fast
+                            }}
                         />
                     </div>
 
@@ -134,8 +191,18 @@ const LandingPage: React.FC = () => {
                         <span>DOLBY DIGITAL</span>
                         <span>WIDESCREEN</span>
                     </div>
-                </div>
-            </div>
+                </motion.div>
+
+                {/* Flash White effect for Digital transition */}
+                {exitingFormat === 'DVD' && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.3, delay: 1.2 }}
+                        className="absolute inset-0 bg-white z-50 pointer-events-none mix-blend-overlay"
+                    />
+                )}
+            </motion.div>
 
         </div>
     );
