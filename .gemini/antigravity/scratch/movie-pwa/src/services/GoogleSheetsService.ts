@@ -112,6 +112,7 @@ export class GoogleSheetsService {
         this._accessToken = null;
         if (window.gapi.client) window.gapi.client.setToken(null);
         localStorage.removeItem('gst_logged_in');
+        localStorage.removeItem('gst_access_token');
 
         this._dvdSpreadsheetId = null;
         this._vhsSpreadsheetId = null;
