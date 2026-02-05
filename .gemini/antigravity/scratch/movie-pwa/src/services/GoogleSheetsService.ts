@@ -56,6 +56,12 @@ export class GoogleSheetsService {
                             }
                             this._accessToken = response.access_token;
                             if (window.gapi.client) window.gapi.client.setToken(response);
+
+                            // Persist Token (1 hour usually)
+                            const expiresIn = response.expires_in || 3599;
+                            const expirationTime = Date.now() + (expiresIn * 1000);
+                            localStorage.setItem('gst_access_token', response.access_token);
+                            localStorage.setItem('gst_expires_at', expirationTime.toString());
                             localStorage.setItem('gst_logged_in', 'true');
 
                             await this.provisionUserSheets();
@@ -67,6 +73,17 @@ export class GoogleSheetsService {
                             }
                         },
                     });
+
+                    // Restore Session if valid
+                    const storedToken = localStorage.getItem('gst_access_token');
+                    const storedExpiry = localStorage.getItem('gst_expires_at');
+                    if (storedToken && storedExpiry) {
+                        if (Date.now() < parseInt(storedExpiry) - 60000) { // 1 min buffer
+                            console.log("Restoring active session...");
+                            this._accessToken = storedToken;
+                            window.gapi.client.setToken({ access_token: storedToken });
+                        }
+                    }
 
                     this.isInitialized = true;
                     resolve();
@@ -101,7 +118,7 @@ export class GoogleSheetsService {
     public async signIn(): Promise<void> {
         return new Promise((resolve) => {
             this.pendingSignInResolve = resolve;
-            this.tokenClient.requestAccessToken({ prompt: 'consent' });
+            this.tokenClient.requestAccessToken({});
         });
     }
 

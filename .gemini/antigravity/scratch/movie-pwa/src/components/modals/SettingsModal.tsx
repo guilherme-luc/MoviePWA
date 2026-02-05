@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Save, Key, Paintbrush, Share2, LogIn, Database, FileJson, FileSpreadsheet } from 'lucide-react';
+import { X, Save, Key, Paintbrush, Share2, LogIn, Database, FileJson, FileSpreadsheet, LogOut } from 'lucide-react';
 import { useTheme } from '../../providers/ThemeProvider';
 import { useShowcase } from '../../providers/ShowcaseProvider';
 import { useAllMovies } from '../../hooks/useAllMovies';
@@ -141,6 +141,29 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                         <p className="text-[10px] text-neutral-400 mt-2 text-center">
                             Salve seus dados localmente. O JSON é ideal para backup, o CSV para Excel.
                         </p>
+                    </div>
+                )}
+
+                {/* Account Section */}
+                {!isShowcaseMode && (
+                    <div className="mt-6 pt-6 border-t border-white/10">
+                        <label className="block text-sm font-medium text-neutral-300 mb-3 flex items-center gap-2">
+                            <LogOut size={16} />
+                            Conta
+                        </label>
+                        <button
+                            onClick={async () => {
+                                if (confirm("Desconectar sua conta Google? Você precisará entrar novamente para acessar seus filmes.")) {
+                                    const { GoogleSheetsService } = await import('../../services/GoogleSheetsService');
+                                    await GoogleSheetsService.getInstance().signOut();
+                                    window.location.href = '/'; // Force reload to landing
+                                }
+                            }}
+                            className="w-full py-3 bg-red-900/20 hover:bg-red-900/40 text-red-200 border border-red-500/30 rounded-xl font-bold transition-all flex items-center justify-center gap-2"
+                        >
+                            <LogOut size={18} />
+                            Sair / Desconectar
+                        </button>
                     </div>
                 )}
 

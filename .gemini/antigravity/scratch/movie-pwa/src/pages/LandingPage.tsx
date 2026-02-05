@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Dice5 } from 'lucide-react';
+import { ArrowRight, Dice5, LogOut } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
 import { useCollection } from '../providers/CollectionProvider';
-import { useAllMovies } from '../hooks/useAllMovies';
+import { GoogleSheetsService } from '../services/GoogleSheetsService';
 import vhsLogo from '../assets/vhs-logo.png';
 import dvdLogo from '../assets/dvd-logo.png';
 import vhsGif from '../assets/VHS.gif';
@@ -13,7 +14,21 @@ import { RandomMoviePicker } from '../components/modals/RandomMoviePicker';
 const LandingPage: React.FC = () => {
     const navigate = useNavigate();
     const { setFormat } = useCollection();
-    const { data: allMovies } = useAllMovies();
+
+    // Fetch both collections for the "Universal Randomizer"
+    const { data: dvdMovies } = useQuery({
+        queryKey: ['all_movies', 'DVD'],
+        queryFn: () => GoogleSheetsService.getInstance().getAllMovies('DVD'),
+        staleTime: 1000 * 60 * 5
+    });
+    const { data: vhsMovies } = useQuery({
+        queryKey: ['all_movies', 'VHS'],
+        queryFn: () => GoogleSheetsService.getInstance().getAllMovies('VHS'),
+        staleTime: 1000 * 60 * 5
+    });
+
+    const allMovies = [...(dvdMovies || []), ...(vhsMovies || [])];
+
     const [isRandomOpen, setIsRandomOpen] = useState(false);
     // Initialize as mobile-first to prevent "desktop columns" glitch on phones
     const [isMobile, setIsMobile] = useState(true);
@@ -49,6 +64,21 @@ const LandingPage: React.FC = () => {
 
     return (
         <div className="relative w-full h-[100dvh] overflow-hidden bg-black flex flex-col md:flex-row">
+
+            {/* Logout Button */}
+            <button
+                onClick={async () => {
+                    if (confirm("Desconectar conta Google?")) {
+                        const { GoogleSheetsService } = await import('../services/GoogleSheetsService');
+                        await GoogleSheetsService.getInstance().signOut();
+                        window.location.reload();
+                    }
+                }}
+                className="absolute top-4 left-4 md:left-auto md:right-4 z-[60] text-neutral-500 hover:text-red-400 transition-colors p-2"
+                title="Sair"
+            >
+                <LogOut size={24} />
+            </button>
 
             <RandomMoviePicker
                 isOpen={isRandomOpen}
