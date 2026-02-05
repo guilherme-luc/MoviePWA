@@ -7,12 +7,19 @@ export class GoogleSheetsService {
     public isGuest = false; // [NEW] Guest Mode flag
 
     // These should be configured via environment variables
+    // These should be configured via environment variables
     private readonly CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
     private readonly API_KEY = import.meta.env.VITE_GOOGLE_API_KEY || '';
-    private readonly SPREADSHEET_ID = import.meta.env.VITE_GOOGLE_SHEET_ID || '';
 
-    private readonly SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
-    private readonly DISCOVERY_DOCS = ['https://sheets.googleapis.com/$discovery/rest?version=v4'];
+    // Dynamic Spreadsheet ID (User Specific)
+    private _spreadsheetId: string | null = localStorage.getItem('user_spreadsheet_id');
+
+    // Scopes: Spreadsheets (Data) + Drive.File (Create/Find file)
+    private readonly SCOPES = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file';
+    private readonly DISCOVERY_DOCS = [
+        'https://sheets.googleapis.com/$discovery/rest?version=v4',
+        'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'
+    ];
 
     // GIS Token Client
     private tokenClient: any;
@@ -143,7 +150,7 @@ export class GoogleSheetsService {
 
     public async signIn(): Promise<void> {
         if (!this.isInitialized) await this.initClient();
-        return new Promise((resolve) => {
+        await new Promise<void>((resolve) => {
             this.authResolver = resolve;
             if (this.tokenClient) {
                 // Request a new token without forcing consent if already granted
@@ -153,11 +160,16 @@ export class GoogleSheetsService {
                 resolve();
             }
         });
+
+        // After sign-in, ensure we have a sheet
+        if (this.isSignedIn) {
+            await this.provisionUserSheet();
+        }
     }
 
     private async refreshToken(): Promise<void> {
         if (!this.isInitialized) await this.initClient();
-        return new Promise((resolve) => {
+        await new Promise<void>((resolve) => {
             this.authResolver = resolve;
             if (this.tokenClient) {
                 // Try silent refresh first
@@ -166,6 +178,72 @@ export class GoogleSheetsService {
                 resolve();
             }
         });
+        // After refresh, ensure we have a sheet (if not already)
+        if (this.isSignedIn && !this._spreadsheetId) {
+            await this.provisionUserSheet();
+        }
+    }
+
+    /**
+     * Finds or Creates the "MoviePWA Collection" spreadsheet for the user.
+     */
+    public async provisionUserSheet(): Promise<void> {
+        if (!this.isSignedIn) return;
+
+        try {
+            console.log("Provisioning User Sheet...");
+
+            // 1. Search for existing sheet
+            // @ts-ignore
+            const searchResponse = await gapi.client.drive.files.list({
+                q: "name = 'MoviePWA Collection' and mimeType = 'application/vnd.google-apps.spreadsheet' and trashed = false",
+                fields: 'files(id, name)',
+                spaces: 'drive'
+            });
+
+            const files = searchResponse.result.files;
+
+            if (files && files.length > 0) {
+                // Found it! Use the first one.
+                this._spreadsheetId = files[0].id;
+                console.log("Found existing spreadsheet:", this._spreadsheetId);
+            } else {
+                // 2. Not found, Create it!
+                console.log("Creating new spreadsheet...");
+                const createResponse = await gapi.client.sheets.spreadsheets.create({
+                    properties: {
+                        title: "MoviePWA Collection"
+                    },
+                    sheets: [
+                        { properties: { title: "Geral" } } // Default first tab
+                    ]
+                });
+
+                this._spreadsheetId = createResponse.result.spreadsheetId;
+                console.log("Created new spreadsheet:", this._spreadsheetId);
+
+                // 3. Initialize Headers in "Geral"
+                if (this._spreadsheetId) {
+                    const values = [this.EXPECTED_HEADERS];
+                    await gapi.client.sheets.spreadsheets.values.update({
+                        spreadsheetId: this._spreadsheetId,
+                        range: `'Geral'!A1:V1`,
+                        valueInputOption: 'USER_ENTERED',
+                        resource: { values }
+                    });
+                }
+            }
+
+            // Persist ID
+            if (this._spreadsheetId) {
+                localStorage.setItem('user_spreadsheet_id', this._spreadsheetId);
+            }
+
+        } catch (error) {
+            console.error("Failed to provision user sheet", error);
+            // Fallback? or throw?
+            throw error;
+        }
     }
 
     private async requestWithRetry<T>(operation: () => Promise<T>): Promise<T> {
@@ -229,12 +307,22 @@ export class GoogleSheetsService {
 
     // --- CRUD Methods ---
 
+    private get spreadsheetId(): string {
+        if (this._spreadsheetId) return this._spreadsheetId;
+        // Fallback for "Guest Mode" or "Demo" if we had one, but strict for now
+        // Maybe return the legacy env var if user hasn't migrated?
+        const legacy = import.meta.env.VITE_GOOGLE_SHEET_ID;
+        if (legacy) return legacy;
+
+        throw new Error("No Spreadsheet ID found. Please Sign In.");
+    }
+
     public async getMoviesByGenre(genre: string): Promise<Movie[]> {
         if (!this.isInitialized) await this.initClient();
         return this.requestWithRetry(async () => {
             try {
                 const response = await gapi.client.sheets.spreadsheets.values.get({
-                    spreadsheetId: this.SPREADSHEET_ID,
+                    spreadsheetId: this.spreadsheetId,
                     range: `'${genre}'!A2:V`, // Extended range to include Format (V)
                 });
                 if (response.result.values) {
