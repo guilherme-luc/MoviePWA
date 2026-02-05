@@ -129,7 +129,9 @@ export class GoogleSheetsService {
             console.log("Provisioning User Sheets...");
 
             // 1. Provision DVD Sheet (Legacy or New)
-            this._dvdSpreadsheetId = await this.ensureSheetExists("MoviePWA DVD Collection");
+            // If we have a legacy ID loaded in constructor, try to use it first
+            this._dvdSpreadsheetId = await this.ensureSheetExists("MoviePWA DVD Collection", this._dvdSpreadsheetId);
+
             if (this._dvdSpreadsheetId) {
                 localStorage.setItem('user_dvd_spreadsheet_id', this._dvdSpreadsheetId);
                 // Backwards compatibility for now
@@ -137,7 +139,8 @@ export class GoogleSheetsService {
             }
 
             // 2. Provision VHS Sheet
-            this._vhsSpreadsheetId = await this.ensureSheetExists("MoviePWA VHS Collection");
+            // No legacy ID for VHS
+            this._vhsSpreadsheetId = await this.ensureSheetExists("MoviePWA VHS Collection", this._vhsSpreadsheetId);
             if (this._vhsSpreadsheetId) {
                 localStorage.setItem('user_vhs_spreadsheet_id', this._vhsSpreadsheetId);
             }
@@ -148,7 +151,22 @@ export class GoogleSheetsService {
         }
     }
 
-    private async ensureSheetExists(fileName: string): Promise<string> {
+    private async ensureSheetExists(fileName: string, authorizedId: string | null = null): Promise<string> {
+        // 0. Check known ID first if provided
+        if (authorizedId) {
+            try {
+                const response = await gapi.client.sheets.spreadsheets.get({ spreadsheetId: authorizedId });
+                if (response.status === 200) {
+                    console.log(`Verified existing spreadsheet [${authorizedId}] for ${fileName}`);
+                    // Optional: Rename it to match standard if needed? 
+                    // No, user might keep their own name.
+                    return authorizedId;
+                }
+            } catch (e) {
+                console.warn(`Stored ID [${authorizedId}] is invalid or inaccessible. Searching by name...`);
+            }
+        }
+
         // 1. Search
         // @ts-ignore
         const searchResponse = await gapi.client.drive.files.list({
