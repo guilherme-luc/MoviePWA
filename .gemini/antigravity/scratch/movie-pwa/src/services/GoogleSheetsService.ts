@@ -128,9 +128,32 @@ export class GoogleSheetsService {
         try {
             console.log("Provisioning User Sheets...");
 
-            // 1. Provision DVD Sheet (Legacy or New)
-            // If we have a legacy ID loaded in constructor, try to use it first
-            this._dvdSpreadsheetId = await this.ensureSheetExists("MoviePWA DVD Collection", this._dvdSpreadsheetId);
+            // 1. Provision DVD Sheet
+            // First, try the stored ID
+            let candidateId = this._dvdSpreadsheetId;
+
+            // If we have a candidate, check if it's a "ghost" (empty/newly created by accident)
+            let isGhost = false;
+            if (candidateId) {
+                isGhost = await this.isSpreadsheetEmpty(candidateId);
+                if (isGhost) {
+                    console.warn(`Stored DVD Sheet [${candidateId}] appears empty/ghost. Attempting to match legacy files...`);
+                }
+            }
+
+            // If it's null OR it's a ghost, we try to find a better one
+            if (!candidateId || isGhost) {
+                const legacyCandidate = await this.findLegacySpreadsheet();
+                if (legacyCandidate) {
+                    console.log(`Recovered correct Legacy Sheet: [${legacyCandidate.id}] ${legacyCandidate.name}`);
+                    candidateId = legacyCandidate.id;
+                    // If we found a candidate, we should verify it again? 
+                    // findLegacySpreadsheet already verifies !isEmpty, so we are good.
+                }
+            }
+
+            // Finally, ensure existence (creates new if absolutely nothing found)
+            this._dvdSpreadsheetId = await this.ensureSheetExists("MoviePWA DVD Collection", candidateId);
 
             if (this._dvdSpreadsheetId) {
                 localStorage.setItem('user_dvd_spreadsheet_id', this._dvdSpreadsheetId);
@@ -149,6 +172,75 @@ export class GoogleSheetsService {
             console.error("Failed to provision user sheets", error);
             throw error;
         }
+    }
+
+    private async isSpreadsheetEmpty(spreadsheetId: string): Promise<boolean> {
+        try {
+            const response = await gapi.client.sheets.spreadsheets.get({
+                spreadsheetId,
+                fields: 'sheets.properties.title'
+            });
+            const sheets = response.result.sheets;
+            // Recognized as empty if it ONLY has "Welcome", "Sheet1", "Página1", and NO genre sheets
+            // A real collection has many sheets.
+            if (!sheets || sheets.length === 0) return true;
+            if (sheets.length > 3) return false; // Likely populated
+
+            const titles = sheets.map((s: any) => s.properties.title);
+            const hasRealData = titles.some((t: string) =>
+                !['Welcome', 'Sheet1', 'Página1', 'Page1'].includes(t) && t.length > 2
+            );
+            return !hasRealData;
+        } catch (e) {
+            console.warn(`Could not check if sheet ${spreadsheetId} is empty`, e);
+            return true; // Treat error as empty/invalid -> triggers search
+        }
+    }
+
+    private async findLegacySpreadsheet(): Promise<{ id: string, name: string } | null> {
+        // Search for likely filenames
+        const legacyNames = [
+            "Movie Collection",
+            "Movie Database",
+            "Minha Coleção de Filmes",
+            "Coleção de Filmes",
+            "MoviePWA Database",
+            "My Movies"
+        ];
+
+        try {
+            // Construct query: (name contains 'A' or name contains 'B' ...) and mimeType = spreadsheet
+            const nameQuery = legacyNames.map(n => `name contains '${n}'`).join(' or ');
+            const q = `(${nameQuery}) and mimeType = 'application/vnd.google-apps.spreadsheet' and trashed = false`;
+
+            // @ts-ignore
+            const response = await gapi.client.drive.files.list({
+                q,
+                fields: 'files(id, name, createdTime)',
+                orderBy: 'createdTime desc',
+                pageSize: 10
+            });
+
+            const files = response.result.files;
+            if (files && files.length > 0) {
+                // Check candidates for data
+                for (const file of files) {
+                    if (file.name === "MoviePWA DVD Collection" && await this.isSpreadsheetEmpty(file.id!)) {
+                        continue; // Skip the new empty ones we just created
+                    }
+                    if (file.name === "MoviePWA VHS Collection") continue; // Skip VHS
+
+                    // Found a candidate that matches name and isnt the empty default
+                    const isEmpty = await this.isSpreadsheetEmpty(file.id!);
+                    if (!isEmpty) {
+                        return { id: file.id!, name: file.name! };
+                    }
+                }
+            }
+        } catch (e) {
+            console.error("Error searching for legacy spreadsheets", e);
+        }
+        return null;
     }
 
     private async ensureSheetExists(fileName: string, authorizedId: string | null = null): Promise<string> {
