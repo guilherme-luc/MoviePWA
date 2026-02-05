@@ -665,14 +665,6 @@ export class GoogleSheetsService {
         console.log(`Migrated sheet ${sheetTitle}: Added Format column.`);
     }
 
-    private areHeadersValid(headers: string[]): boolean {
-        if (headers.length < 6) return false;
-        // Lenient check: must match first few, but we expanded to V so we check existence
-        return (
-            headers[0] === this.EXPECTED_HEADERS[0] &&
-            headers[1] === this.EXPECTED_HEADERS[1]
-        );
-    }
 
     // Unlikely to be used now that we have split files, but kept for legacy upgrade if needed
     public async upgradeSheetStructure(format: 'DVD' | 'VHS'): Promise<void> {
