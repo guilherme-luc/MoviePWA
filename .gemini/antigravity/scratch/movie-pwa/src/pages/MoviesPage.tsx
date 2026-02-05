@@ -182,7 +182,7 @@ export const MoviesPage: React.FC = () => {
         try {
             // Sequential delete for safety
             for (const movie of sortedToDelete) {
-                await GoogleSheetsService.getInstance().deleteMovie(movie);
+                await GoogleSheetsService.getInstance().deleteMovie(movie, movie.format || 'DVD');
             }
             await queryClient.invalidateQueries({ queryKey: ['movies'] });
             exitSelectionMode();
@@ -276,7 +276,7 @@ export const MoviesPage: React.FC = () => {
 
             if (updates.length >= BATCH_SIZE || i === missingImages.length - 1) {
                 if (updates.length > 0) {
-                    await GoogleSheetsService.getInstance().batchUpdateImages(updates);
+                    await GoogleSheetsService.getInstance().batchUpdateImages(updates, format || 'DVD');
                     await queryClient.invalidateQueries({ queryKey: ['movies'] });
                     updates.length = 0;
                 }

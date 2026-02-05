@@ -155,7 +155,7 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
     }, [isOpen, movieToEdit, initialGenre, initialFormat]);
 
     const loadGenres = async () => {
-        const g = await GoogleSheetsService.getInstance().getGenres();
+        const g = await GoogleSheetsService.getInstance().getGenres(initialFormat || 'DVD');
         setGenres(g);
     };
 
@@ -537,12 +537,12 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
             if (movieToEdit) {
                 // If genre changed, use moveMovie logic
                 if (movieToEdit.genre !== genre) {
-                    await GoogleSheetsService.getInstance().moveMovie(movieData, movieToEdit.genre);
+                    await GoogleSheetsService.getInstance().moveMovie(movieData, genre, movieData.format || 'DVD');
                 } else {
-                    await GoogleSheetsService.getInstance().updateMovie(movieData);
+                    await GoogleSheetsService.getInstance().updateMovie(movieData, movieData.format || 'DVD');
                 }
             } else {
-                await GoogleSheetsService.getInstance().addMovie(movieData);
+                await GoogleSheetsService.getInstance().addMovie(movieData, movieData.format || 'DVD');
             }
             await queryClient.invalidateQueries({ queryKey: ['movies'] });
             await queryClient.invalidateQueries({ queryKey: ['genres'] });
@@ -1154,7 +1154,7 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                             onClick={() => {
                                 if (confirm("Tem certeza que deseja excluir este filme permanentemente?")) {
                                     setIsLoading(true);
-                                    GoogleSheetsService.getInstance().deleteMovie(movieToEdit)
+                                    GoogleSheetsService.getInstance().deleteMovie(movieToEdit, movieToEdit.format || 'DVD')
                                         .then(() => {
                                             queryClient.invalidateQueries({ queryKey: ['movies'] });
                                             queryClient.invalidateQueries({ queryKey: ['all_movies'] });

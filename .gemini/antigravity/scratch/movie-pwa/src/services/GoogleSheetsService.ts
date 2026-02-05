@@ -1,595 +1,347 @@
-import { gapi } from 'gapi-script';
 import type { Movie } from '../types';
 
+declare global {
+    interface Window {
+        gapi: any;
+        google: any;
+    }
+}
+
+const gapi = window.gapi;
+
 export class GoogleSheetsService {
-    private static instance: GoogleSheetsService;
+    private _dvdSpreadsheetId: string | null = null;
+    private _vhsSpreadsheetId: string | null = null;
     private isInitialized = false;
-    public isGuest = false; // [NEW] Guest Mode flag
 
-    // These should be configured via environment variables
-    // These should be configured via environment variables
-    private readonly CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
-    private readonly API_KEY = import.meta.env.VITE_GOOGLE_API_KEY || '';
-
-    // Dynamic Spreadsheet ID (User Specific)
-    private _spreadsheetId: string | null = localStorage.getItem('user_spreadsheet_id');
-
-    // Scopes: Spreadsheets (Data) + Drive.File (Create/Find file)
-    private readonly SCOPES = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file';
-    private readonly DISCOVERY_DOCS = [
-        'https://sheets.googleapis.com/$discovery/rest?version=v4',
-        'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'
-    ];
-
-    // GIS Token Client
-    private tokenClient: any;
-    private accessToken: string | null = null;
-    private authStateListeners: ((isSignedIn: boolean) => void)[] = [];
-    private authResolver: ((value: void | PromiseLike<void>) => void) | null = null;
-
-    private constructor() { }
-
-    public static getInstance(): GoogleSheetsService {
-        if (!GoogleSheetsService.instance) {
-            GoogleSheetsService.instance = new GoogleSheetsService();
-        }
-        return GoogleSheetsService.instance;
+    private getSpreadsheetId(format: 'DVD' | 'VHS'): string {
+        const id = format === 'VHS' ? this._vhsSpreadsheetId : this._dvdSpreadsheetId;
+        if (!id) throw new Error(`Spreadsheet ID for ${format} not found. Ensure client is initialized.`);
+        return id;
     }
 
-    public enableGuestMode() {
-        this.isGuest = true;
-        this.isInitialized = true; // Skip normal init flow partially
-        // Still need GAPI loaded though
-    }
-
-    /**
-     * Initialize the Google API Client & GIS Token Client.
-     */
-    public async initClient(): Promise<void> {
-        // If already initialized and NOT guest (or guest and gapi loaded), return
-        if (this.isInitialized && (typeof gapi !== 'undefined' && gapi.client)) return;
-
-        return new Promise((resolve, reject) => {
-            // 1. Load GAPI (for Sheets API)
-            // @ts-ignore
-            if (typeof gapi === 'undefined') {
-                console.error("GAPI not loaded");
-                reject("GAPI script missing");
-                return;
-            }
-
-            gapi.load('client', async () => {
-                try {
-                    await gapi.client.init({
-                        apiKey: this.API_KEY,
-                        discoveryDocs: this.DISCOVERY_DOCS,
-                    });
-
-                    // If Guest, we stop here (no Auth needed)
-                    if (this.isGuest) {
-                        this.isInitialized = true;
-                        resolve();
-                        return;
-                    }
-
-                    // 2. Initialize GIS Token Client (for Auth)
-                    // @ts-ignore
-                    if (typeof google !== 'undefined' && google.accounts) {
-                        // @ts-ignore
-                        this.tokenClient = google.accounts.oauth2.initTokenClient({
-                            client_id: this.CLIENT_ID,
-                            scope: this.SCOPES + ' email profile',
-                            callback: (response: any) => this.handleAuthCallback(response),
-                        });
-                    } else {
-                        console.error("Google Identity Services script not loaded");
-                    }
-
-                    // 3. Attempt to restore token from localStorage
-                    const stored = localStorage.getItem('google_access_token');
-                    if (stored) {
-                        try {
-                            const { token, expiresAt } = JSON.parse(stored);
-                            if (Date.now() < expiresAt) {
-                                // Restore session
-                                this.accessToken = token;
-                                gapi.client.setToken({ access_token: token });
-                                console.log("Session restored from storage");
-                            } else {
-                                localStorage.removeItem('google_access_token'); // Expired
-                            }
-                        } catch (e) {
-                            localStorage.removeItem('google_access_token'); // Invalid
-                        }
-                    }
-
-                    this.isInitialized = true;
-                    resolve();
-                } catch (error) {
-                    console.error("Error initializing Google Sheets API", error);
-                    reject(error);
-                }
-            });
-        });
-    }
-
-    private handleAuthCallback(response: any) {
-        if (response.error !== undefined) {
-            console.error("Auth Error", response);
-            if (this.authResolver) {
-                this.authResolver(); // Resolve anyway to unblock
-                this.authResolver = null;
-            }
-            throw (response);
-        }
-        this.accessToken = response.access_token;
-
-        // Persist token
-        const expiresIn = response.expires_in || 3599; // Default 1 hour
-        const expiresAt = Date.now() + (expiresIn * 1000);
-        localStorage.setItem('google_access_token', JSON.stringify({
-            token: response.access_token,
-            expiresAt
-        }));
-
-        // Bind the token to gapi
-        // @ts-ignore
-        gapi.client.setToken(response);
-        this.notifyListeners(true);
-
-        // Resolve pending promise if any (for refresh flow)
-        if (this.authResolver) {
-            this.authResolver();
-            this.authResolver = null;
-        }
+    constructor() {
+        this._dvdSpreadsheetId = localStorage.getItem('user_dvd_spreadsheet_id') || localStorage.getItem('user_spreadsheet_id'); // Legacy support
+        this._vhsSpreadsheetId = localStorage.getItem('user_vhs_spreadsheet_id');
     }
 
     public get isSignedIn(): boolean {
-        return !!this.accessToken;
+        return gapi.auth2.getAuthInstance().isSignedIn.get();
+    }
+
+    public async initClient(): Promise<void> {
+        if (this.isInitialized) return;
+
+        return new Promise((resolve, reject) => {
+            const initGapi = () => {
+                gapi.client.init({
+                    apiKey: import.meta.env.VITE_GOOGLE_API_KEY,
+                    clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+                    discoveryDocs: [
+                        "https://sheets.googleapis.com/$discovery/rest?version=v4",
+                        "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"
+                    ],
+                    scope: "https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file",
+                }).then(() => {
+                    this.isInitialized = true;
+                    // Listen for auth changes to re-provision if needed
+                    gapi.auth2.getAuthInstance().isSignedIn.listen((isSignedIn: boolean) => {
+                        if (isSignedIn) this.provisionUserSheets();
+                    });
+
+                    if (this.isSignedIn) {
+                        this.provisionUserSheets().then(resolve).catch(reject);
+                    } else {
+                        resolve();
+                    }
+                }).catch((error: any) => {
+                    console.error("Error initializing Google Sheets API", error);
+                    reject(error);
+                });
+            };
+
+            if (gapi.client) {
+                initGapi();
+            } else {
+                gapi.load('client:auth2', initGapi);
+            }
+        });
     }
 
     public async signIn(): Promise<void> {
-        if (!this.isInitialized) await this.initClient();
-        await new Promise<void>((resolve) => {
-            this.authResolver = resolve;
-            if (this.tokenClient) {
-                // Request a new token without forcing consent if already granted
-                this.tokenClient.requestAccessToken({});
-            } else {
-                console.error("Token Client not initialized");
-                resolve();
-            }
-        });
-
-        // After sign-in, ensure we have a sheet
-        if (this.isSignedIn) {
-            await this.provisionUserSheet();
-        }
-    }
-
-    private async refreshToken(): Promise<void> {
-        if (!this.isInitialized) await this.initClient();
-        await new Promise<void>((resolve) => {
-            this.authResolver = resolve;
-            if (this.tokenClient) {
-                // Try silent refresh first
-                this.tokenClient.requestAccessToken({ prompt: '' });
-            } else {
-                resolve();
-            }
-        });
-        // After refresh, ensure we have a sheet (if not already)
-        if (this.isSignedIn && !this._spreadsheetId) {
-            await this.provisionUserSheet();
-        }
-    }
-
-    /**
-     * Finds or Creates the "MoviePWA Collection" spreadsheet for the user.
-     */
-    public async provisionUserSheet(): Promise<void> {
-        if (!this.isSignedIn) return;
-
-        try {
-            console.log("Provisioning User Sheet...");
-
-            // 1. Search for existing sheet
-            // @ts-ignore
-            const searchResponse = await gapi.client.drive.files.list({
-                q: "name = 'MoviePWA Collection' and mimeType = 'application/vnd.google-apps.spreadsheet' and trashed = false",
-                fields: 'files(id, name)',
-                spaces: 'drive'
-            });
-
-            const files = searchResponse.result.files;
-
-            if (files && files.length > 0) {
-                // Found it! Use the first one.
-                this._spreadsheetId = files[0].id || null;
-                console.log("Found existing spreadsheet:", this._spreadsheetId);
-            } else {
-                // 2. Not found, Create it!
-                console.log("Creating new spreadsheet...");
-                const createResponse = await gapi.client.sheets.spreadsheets.create({
-                    resource: {
-                        properties: {
-                            title: "MoviePWA Collection"
-                        },
-                        sheets: [
-                            { properties: { title: "Geral" } } // Default first tab
-                        ]
-                    }
-                });
-
-                this._spreadsheetId = createResponse.result.spreadsheetId || null;
-                console.log("Created new spreadsheet:", this._spreadsheetId);
-
-                // 3. Initialize Headers in "Geral"
-                if (this._spreadsheetId) {
-                    const values = [this.EXPECTED_HEADERS];
-                    await gapi.client.sheets.spreadsheets.values.update({
-                        spreadsheetId: this._spreadsheetId,
-                        range: `'Geral'!A1:V1`,
-                        valueInputOption: 'USER_ENTERED',
-                        resource: { values }
-                    });
-                }
-            }
-
-            // Persist ID
-            if (this._spreadsheetId) {
-                localStorage.setItem('user_spreadsheet_id', this._spreadsheetId);
-            }
-
-        } catch (error) {
-            console.error("Failed to provision user sheet", error);
-            // Fallback? or throw?
-            throw error;
-        }
-    }
-
-    private async requestWithRetry<T>(operation: () => Promise<T>): Promise<T> {
-        try {
-            return await operation();
-        } catch (error: any) {
-            // Check for 401 Unauthorized
-            if (error?.status === 401 || error?.result?.error?.code === 401) {
-                console.warn("401 Unauthorized detected. Attempting token refresh...");
-                try {
-                    await this.refreshToken();
-                    console.log("Token refreshed. Retrying operation...");
-                    return await operation();
-                } catch (refreshError) {
-                    console.error("Token refresh failed", refreshError);
-                    // Force logout or notify user
-                    this.signOut();
-                    throw refreshError;
-                }
-            }
-            throw error;
-        }
+        await gapi.auth2.getAuthInstance().signIn();
+        await this.provisionUserSheets();
     }
 
     public async signOut(): Promise<void> {
-        if (!this.isInitialized) return;
-        const token = gapi.client.getToken();
-        if (token !== null) {
-            // @ts-ignore
-            google.accounts.oauth2.revoke(token.access_token, () => {
-                gapi.client.setToken(null);
-                this.accessToken = null;
-                localStorage.removeItem('google_access_token');
-                this.notifyListeners(false);
-            });
-        }
+        await gapi.auth2.getAuthInstance().signOut();
+        this._dvdSpreadsheetId = null;
+        this._vhsSpreadsheetId = null;
+        localStorage.removeItem('user_spreadsheet_id'); // Clear legacy
+        localStorage.removeItem('user_dvd_spreadsheet_id');
+        localStorage.removeItem('user_vhs_spreadsheet_id');
     }
 
-    public onAuthStateChanged(callback: (isSignedIn: boolean) => void): void {
-        this.authStateListeners.push(callback);
-        // Immediate callback with current state
-        if (this.isInitialized) {
-            callback(this.isSignedIn);
-        }
-    }
-
-    private notifyListeners(isSignedIn: boolean) {
-        this.authStateListeners.forEach(l => l(isSignedIn));
-    }
-
-    public async refreshSession(): Promise<void> {
-        // In GIS, we just request a new token quietly if possible, or trigger sign in
-        // For simplicity in this PWA, we'll let operations fail and user re-login, 
-        // or we could proactively ask for token
+    public async provisionUserSheets(): Promise<void> {
         if (!this.isSignedIn) return;
-        // Optionally verify validity
+
+        try {
+            console.log("Provisioning User Sheets...");
+
+            // 1. Provision DVD Sheet (Legacy or New)
+            this._dvdSpreadsheetId = await this.ensureSheetExists("MoviePWA DVD Collection");
+            if (this._dvdSpreadsheetId) {
+                localStorage.setItem('user_dvd_spreadsheet_id', this._dvdSpreadsheetId);
+                // Backwards compatibility for now
+                localStorage.setItem('user_spreadsheet_id', this._dvdSpreadsheetId);
+            }
+
+            // 2. Provision VHS Sheet
+            this._vhsSpreadsheetId = await this.ensureSheetExists("MoviePWA VHS Collection");
+            if (this._vhsSpreadsheetId) {
+                localStorage.setItem('user_vhs_spreadsheet_id', this._vhsSpreadsheetId);
+            }
+
+        } catch (error) {
+            console.error("Failed to provision user sheets", error);
+            throw error;
+        }
     }
 
+    private async ensureSheetExists(fileName: string): Promise<string> {
+        // 1. Search
+        // @ts-ignore
+        const searchResponse = await gapi.client.drive.files.list({
+            q: `name = '${fileName}' and mimeType = 'application/vnd.google-apps.spreadsheet' and trashed = false`,
+            fields: 'files(id, name)',
+            spaces: 'drive'
+        });
 
-    // --- CRUD Methods ---
+        const files = searchResponse.result.files;
 
-    // --- CRUD Methods ---
-
-    private get spreadsheetId(): string {
-        if (this._spreadsheetId) return this._spreadsheetId;
-        // Fallback for "Guest Mode" or "Demo" if we had one, but strict for now
-        // Maybe return the legacy env var if user hasn't migrated?
-        const legacy = import.meta.env.VITE_GOOGLE_SHEET_ID;
-        if (legacy) return legacy;
-
-        throw new Error("No Spreadsheet ID found. Please Sign In.");
-    }
-
-    public async getMoviesByGenre(genre: string): Promise<Movie[]> {
-        if (!this.isInitialized) await this.initClient();
-        return this.requestWithRetry(async () => {
-            try {
-                const response = await gapi.client.sheets.spreadsheets.values.get({
-                    spreadsheetId: this.spreadsheetId,
-                    range: `'${genre}'!A2:V`, // Extended range to include Format (V)
-                });
-                if (response.result.values) {
-                    const rows = response.result.values;
-                    const movies = rows.map((row, index) => ({
-                        barcode: row[0] || '',
-                        title: row[1] || '',
-                        year: row[2] || '',
-                        genre: row[3] || genre,
-                        imageType: (row[4] as 'tmdb' | 'base64' | undefined) || undefined,
-                        imageValue: row[5] || undefined,
-                        synopsis: row[6] || undefined,
-                        rating: row[7] || undefined,
-                        duration: row[8] || undefined,
-                        director: row[9] || undefined,
-                        tmdbId: row[10] || undefined,
-                        cast: row[11] || undefined,
-                        userRating: row[12] || undefined,
-                        watched: row[13] === 'TRUE', // Parse boolean
-                        backdropType: (row[14] as 'tmdb' | 'base64' | undefined) || undefined,
-                        backdropValue: row[15] || undefined,
-                        tags: row[16] ? row[16].split(',').map((t: string) => t.trim()).filter(Boolean) : [], // Parse Tags
-                        franchise: row[17] || undefined,
-                        soundtrackUrl: row[18] || undefined,
-                        rottenTomatoesRating: row[19] || undefined,
-                        metacriticRating: row[20] || undefined,
-                        format: (row[21] as 'DVD' | 'VHS' | undefined) || 'DVD',
-                        _rowIndex: index + 2,
-                        _sheetTitle: genre
-                    }));
-
-                    // Robust Sort
-                    return movies.sort((a, b) => {
-                        const normA = a.title.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "");
-                        const normB = b.title.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "");
-                        return normA.localeCompare(normB);
-                    });
+        if (files && files.length > 0) {
+            console.log(`Found existing spreadsheet for ${fileName}:`, files[0].id);
+            return files[0].id!;
+        } else {
+            // 2. Create
+            console.log(`Creating new spreadsheet: ${fileName}...`);
+            const createResponse = await gapi.client.sheets.spreadsheets.create({
+                resource: {
+                    properties: { title: fileName },
+                    sheets: [{ properties: { title: "Welcome" } }] // Default placeholder
                 }
-                return [];
-            } catch (error) {
-                console.error(`Failed to fetch movies for genre ${genre}`, error);
-                throw error;
-            }
-        });
-    }
-
-    public async getAllMovies(): Promise<Movie[]> {
-        if (!this.isInitialized) await this.initClient();
-        return this.requestWithRetry(async () => {
-            try {
-                const genres = await this.getGenres();
-                if (genres.length === 0) return [];
-
-                const ranges = genres.map(genre => `'${genre}'!A2:V`);
-                const response = await gapi.client.sheets.spreadsheets.values.batchGet({
-                    spreadsheetId: this.spreadsheetId,
-                    ranges: ranges
-                });
-
-                const valueRanges = response.result.valueRanges;
-                if (!valueRanges) return [];
-
-                const allMovies: Movie[] = [];
-                valueRanges.forEach((range, index) => {
-                    const genre = genres[index];
-                    if (range.values) {
-                        const movies = range.values.map((row, idx) => ({
-                            barcode: row[0] || '',
-                            title: row[1] || '',
-                            year: row[2] || '',
-                            genre: row[3] || genre,
-                            imageType: (row[4] as 'tmdb' | 'base64' | undefined) || undefined,
-                            imageValue: row[5] || undefined,
-                            synopsis: row[6] || undefined,
-                            rating: row[7] || undefined,
-                            duration: row[8] || undefined,
-                            director: row[9] || undefined,
-                            tmdbId: row[10] || undefined,
-                            cast: row[11] || undefined,
-                            userRating: row[12] || undefined,
-                            watched: row[13] === 'TRUE',
-                            backdropType: (row[14] as 'tmdb' | 'base64' | undefined) || undefined,
-                            backdropValue: row[15] || undefined,
-                            tags: row[16] ? row[16].split(',').map((t: string) => t.trim()).filter(Boolean) : [],
-                            franchise: row[17] || undefined,
-                            soundtrackUrl: row[18] || undefined,
-                            rottenTomatoesRating: row[19] || undefined,
-                            metacriticRating: row[20] || undefined,
-                            format: (row[21] as 'DVD' | 'VHS' | undefined) || 'DVD', // Default to DVD for backwards compatibility
-                            _rowIndex: idx + 2,
-                            _sheetTitle: genre
-                        }));
-                        allMovies.push(...movies);
-                    }
-                });
-
-                return allMovies.sort((a, b) => {
-                    const normA = a.title.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "");
-                    const normB = b.title.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "");
-                    return normA.localeCompare(normB);
-                });
-            } catch (error) {
-                console.error("Failed to fetch all movies", error);
-                throw error;
-            }
-        });
-    }
-
-    private movieToRow(movie: Movie): string[] {
-        return [
-            movie.barcode || '',
-            movie.title || '',
-            movie.year || '',
-            movie.genre || '',
-            movie.imageType || '',
-            movie.imageValue || '',
-            movie.synopsis || '',
-            movie.rating || '',
-            movie.duration || '',
-            movie.director || '',
-            movie.tmdbId || '',
-            movie.cast || '',
-            movie.userRating || '',
-            movie.watched ? 'TRUE' : 'FALSE',
-            movie.backdropType || '',
-            movie.backdropValue || '',
-            movie.tags ? movie.tags.join(', ') : '',
-            movie.franchise || '',
-            movie.soundtrackUrl || '',
-            movie.rottenTomatoesRating || '',
-            movie.metacriticRating || '',
-            movie.format || 'DVD'
-        ];
-    }
-
-    public async addMovie(movie: Movie): Promise<void> {
-        if (!this.isInitialized) await this.initClient();
-        return this.requestWithRetry(async () => {
-            // 1. Find the next empty row by checking Title column (B)
-            // We use B because Barcode (A) can be empty, but Title is required.
-            const response = await gapi.client.sheets.spreadsheets.values.get({
-                spreadsheetId: this.spreadsheetId,
-                range: `'${movie.genre}'!B:B`
             });
-            const rowCount = response.result.values?.length || 0;
-            const nextRow = rowCount + 1; // 1-based index, +1 for next empty row
 
-            // 2. Prepare values (guaranteed 22 columns)
+            const newId = createResponse.result.spreadsheetId;
+            if (!newId) throw new Error("Failed to create spreadsheet");
+
+            console.log(`Created new spreadsheet ${fileName}:`, newId);
+            return newId;
+        }
+    }
+
+    // --- CRUD ---
+
+    public async addMovie(movie: Movie, format: 'DVD' | 'VHS'): Promise<void> {
+        if (!this.isInitialized) await this.initClient();
+
+        return this.requestWithRetry(async () => {
+            const spreadsheetId = this.getSpreadsheetId(format);
+
+            // 1. Check if genre sheet exists in the target file
+            const sheets = await this.getSheetsMetadata(format);
+            const genreSheet = sheets.find(s => s.title === movie.genre);
+
+            if (!genreSheet) {
+                await this.createGenre(movie.genre, format);
+            }
+
+            // 2. Append row
             const values = [this.movieToRow(movie)];
-
-            // 3. Update the specific row
-            await gapi.client.sheets.spreadsheets.values.update({
-                spreadsheetId: this.spreadsheetId,
-                range: `'${movie.genre}'!A${nextRow}:V${nextRow}`,
+            await gapi.client.sheets.spreadsheets.values.append({
+                spreadsheetId,
+                range: `'${movie.genre}'!A:A`,
                 valueInputOption: 'USER_ENTERED',
+                insertDataOption: 'INSERT_ROWS',
                 resource: { values }
             });
 
-            await this.sortSheet(movie.genre);
+            await this.sortSheet(movie.genre, format);
         });
     }
 
-    public async batchUpdateImages(updates: { movie: Movie, imageType: 'tmdb' | 'base64', imageValue: string, backdropType?: 'tmdb' | 'base64', backdropValue?: string }[]): Promise<void> {
+    public async getAllMovies(format: 'DVD' | 'VHS'): Promise<Movie[]> {
         if (!this.isInitialized) await this.initClient();
-        if (updates.length === 0) return;
 
         return this.requestWithRetry(async () => {
-            const data: any[] = [];
-            updates.forEach(update => {
-                const { movie, imageType, imageValue, backdropType, backdropValue } = update;
-                if (!movie._rowIndex || !movie._sheetTitle) return;
+            const spreadsheetId = this.getSpreadsheetId(format);
+            const sheets = await this.getSheetsMetadata(format);
 
-                // Update Poster (E:F)
-                const rangePoster = `'${movie._sheetTitle}'!E${movie._rowIndex}:F${movie._rowIndex}`;
-                data.push({ range: rangePoster, values: [[imageType, imageValue]] });
+            // Filter out "Welcome" placeholder
+            const genreSheets = sheets.filter(s => s.title !== 'Welcome');
+            if (genreSheets.length === 0) return [];
 
-                // Update Backdrop (O:P) if provided
-                if (backdropValue) {
-                    const rangeBackdrop = `'${movie._sheetTitle}'!O${movie._rowIndex}:P${movie._rowIndex}`;
-                    data.push({ range: rangeBackdrop, values: [[backdropType || 'tmdb', backdropValue]] });
-                }
+            const ranges = genreSheets.map(s => `'${s.title}'!A2:V`);
+            const response = await gapi.client.sheets.spreadsheets.values.batchGet({
+                spreadsheetId,
+                ranges
             });
 
-            if (data.length === 0) return;
+            const valueRanges = response.result.valueRanges;
+            let allMovies: Movie[] = [];
 
-            await gapi.client.sheets.spreadsheets.values.batchUpdate({
-                spreadsheetId: this.spreadsheetId,
-                resource: { valueInputOption: 'USER_ENTERED', data }
-            });
+            if (valueRanges) {
+                valueRanges.forEach((range: any, index: number) => {
+                    const rows = range.values;
+                    if (rows && rows.length > 0) {
+                        const sheetTitle = genreSheets[index].title;
+                        const movies = rows.map((row: any[], i: number) => this.rowToMovie(row, i + 2, sheetTitle)); // i + 2 because row 1 is header
+                        allMovies = [...allMovies, ...movies];
+                    }
+                });
+            }
+
+            return allMovies;
         });
     }
 
-    public async batchUpdateMetadata(updates: { movie: Movie, data: Partial<Movie> }[]): Promise<void> {
+    // --- Helper Methods updated for 'format' ---
+
+    public async createGenre(genreName: string, format: 'DVD' | 'VHS'): Promise<void> {
         if (!this.isInitialized) await this.initClient();
-        if (updates.length === 0) return;
+        const spreadsheetId = this.getSpreadsheetId(format);
 
-        return this.requestWithRetry(async () => {
-            const data: any[] = [];
-            updates.forEach(u => {
-                const { movie, data: updates } = u;
-                if (!movie._rowIndex || !movie._sheetTitle) return;
+        const sheets = await this.getSheetsMetadata(format);
+        const exists = sheets.some(s => s.title.toLowerCase() === genreName.toLowerCase());
 
-                // Range 1: Core Metadata (G:L)
-                const range1 = `'${movie._sheetTitle}'!G${movie._rowIndex!}:L${movie._rowIndex!}`;
-                const values1 = [[
-                    updates.synopsis || movie.synopsis || '',
-                    updates.rating || movie.rating || '',
-                    updates.duration || movie.duration || '',
-                    updates.director || movie.director || '',
-                    updates.tmdbId || movie.tmdbId || '',
-                    updates.cast || movie.cast || ''
-                ]];
-                data.push({ range: range1, values: values1 });
+        if (exists) {
+            console.log(`Genre "${genreName}" already exists in ${format}. Skipping.`);
+            return;
+        }
 
-                // Range 2: Extended Metadata (R:U)
-                // R: Franchise, S: Soundtrack, T: RottenTomatoes, U: Metacritic
-                const range2 = `'${movie._sheetTitle}'!R${movie._rowIndex!}:U${movie._rowIndex!}`;
-                const values2 = [[
-                    updates.franchise || movie.franchise || '',
-                    updates.soundtrackUrl || movie.soundtrackUrl || '',
-                    updates.rottenTomatoesRating || movie.rottenTomatoesRating || '',
-                    updates.metacriticRating || movie.metacriticRating || ''
-                ]];
-                data.push({ range: range2, values: values2 });
-            });
+        await gapi.client.sheets.spreadsheets.batchUpdate({
+            spreadsheetId,
+            resource: { requests: [{ addSheet: { properties: { title: genreName } } }] }
+        });
 
-            if (data.length === 0) return;
+        const values = [this.EXPECTED_HEADERS];
+        await gapi.client.sheets.spreadsheets.values.update({
+            spreadsheetId,
+            range: `'${genreName}'!A1:V1`,
+            valueInputOption: 'USER_ENTERED',
+            resource: { values }
+        });
 
-            await gapi.client.sheets.spreadsheets.values.batchUpdate({
-                spreadsheetId: this.spreadsheetId,
-                resource: { valueInputOption: 'USER_ENTERED', data }
-            });
+        // Optimization: If "Welcome" sheet exists and is empty/unused, from now on we delete it.
+        const welcomeSheet = sheets.find(s => s.title === 'Welcome');
+        if (welcomeSheet && sheets.length === 1) {
+            // We just added one, so old length was 1. Now it is effectively 2.
+            // Delete 'Welcome' now.
+            await this.deleteSheet(welcomeSheet.sheetId, spreadsheetId);
+        }
+    }
+
+    public async deleteGenre(genreName: string, format: 'DVD' | 'VHS'): Promise<void> {
+        if (!this.isInitialized) await this.initClient();
+        const spreadsheetId = this.getSpreadsheetId(format);
+        const sheets = await this.getSheetsMetadata(format);
+        const sheet = sheets.find(s => s.title === genreName);
+
+        if (!sheet) throw new Error(`Genre ${genreName} not found in ${format}`);
+
+        await this.deleteSheet(sheet.sheetId, spreadsheetId);
+    }
+
+    public async renameGenre(oldName: string, newName: string, format: 'DVD' | 'VHS'): Promise<void> {
+        if (!this.isInitialized) await this.initClient();
+        const spreadsheetId = this.getSpreadsheetId(format);
+        const sheets = await this.getSheetsMetadata(format);
+        const sheet = sheets.find(s => s.title === oldName);
+
+        if (!sheet) throw new Error(`Genre ${oldName} not found in ${format}`);
+
+        await gapi.client.sheets.spreadsheets.batchUpdate({
+            spreadsheetId,
+            resource: {
+                requests: [{
+                    updateSheetProperties: {
+                        properties: {
+                            sheetId: sheet.sheetId,
+                            title: newName
+                        },
+                        fields: "title"
+                    }
+                }]
+            }
         });
     }
 
-    public async updateMovie(movie: Movie): Promise<void> {
+    private async deleteSheet(sheetId: number, spreadsheetId: string): Promise<void> {
+        await gapi.client.sheets.spreadsheets.batchUpdate({
+            spreadsheetId,
+            resource: {
+                requests: [{ deleteSheet: { sheetId } }]
+            }
+        });
+    }
+
+    private async getSheetsMetadata(format: 'DVD' | 'VHS'): Promise<{ title: string, sheetId: number }[]> {
+        const spreadsheetId = this.getSpreadsheetId(format);
+        const response = await gapi.client.sheets.spreadsheets.get({ spreadsheetId });
+        return response.result.sheets?.map((s: any) => ({
+            title: s.properties?.title || '',
+            sheetId: s.properties?.sheetId || 0
+        })) || [];
+    }
+
+    public async getGenres(format: 'DVD' | 'VHS'): Promise<string[]> {
+        console.log(`Getting genres for ${format}...`);
         if (!this.isInitialized) await this.initClient();
-        if (!movie._rowIndex || !movie._sheetTitle) throw new Error("Metadata missing for update");
+        try {
+            const meta = await this.getSheetsMetadata(format);
+            return meta.filter(s => s.title !== 'Welcome').map(s => s.title);
+        } catch (error) {
+            console.error(`Error getting genres for ${format}`, error);
+            return [];
+        }
+    }
+
+    // --- Update Methods (Batch & Single) ---
+
+    public async updateMovie(movie: Movie, format: 'DVD' | 'VHS'): Promise<void> {
+        if (!this.isInitialized) await this.initClient();
+        const spreadsheetId = this.getSpreadsheetId(format);
 
         return this.requestWithRetry(async () => {
-            const range = `'${movie._sheetTitle}'!A${movie._rowIndex}:V${movie._rowIndex}`;
+            if (!movie._rowIndex || !movie._sheetTitle) throw new Error("Metadata missing for update");
+
+            // Re-calculate row content
             const values = [this.movieToRow(movie)];
+            const range = `'${movie._sheetTitle}'!A${movie._rowIndex}:V${movie._rowIndex}`;
 
             await gapi.client.sheets.spreadsheets.values.update({
-                spreadsheetId: this.spreadsheetId,
+                spreadsheetId,
                 range,
                 valueInputOption: 'USER_ENTERED',
                 resource: { values }
             });
+            // We might want to sort if title changed, but doing it every update is heavy.
         });
     }
 
-    public async deleteMovie(movie: Movie): Promise<void> {
+    public async deleteMovie(movie: Movie, format: 'DVD' | 'VHS'): Promise<void> {
         if (!this.isInitialized) await this.initClient();
-        if (!movie._rowIndex || !movie._sheetTitle) throw new Error("Metadata missing for delete");
+        const spreadsheetId = this.getSpreadsheetId(format);
 
         return this.requestWithRetry(async () => {
-            const sheet = (await this.getSheetsMetadata()).find(s => s.title === movie._sheetTitle);
+            const sheet = (await this.getSheetsMetadata(format)).find(s => s.title === movie._sheetTitle);
             if (!sheet) throw new Error(`Sheet ${movie._sheetTitle} not found`);
 
             const startIndex = movie._rowIndex! - 1;
             const endIndex = startIndex + 1;
 
             await gapi.client.sheets.spreadsheets.batchUpdate({
-                spreadsheetId: this.spreadsheetId,
+                spreadsheetId,
                 resource: {
                     requests: [{
                         deleteDimension: {
@@ -606,62 +358,136 @@ export class GoogleSheetsService {
         });
     }
 
-    public async moveMovie(movie: Movie, oldGenre: string): Promise<void> {
-        await this.addMovie(movie);
-        try {
-            if (!movie._rowIndex) throw new Error("Cannot move movie without original rowIndex");
-            const oldMovieMock: Movie = {
-                ...movie,
-                genre: oldGenre,
-                _sheetTitle: oldGenre,
-                _rowIndex: movie._rowIndex
-            };
-            await this.deleteMovie(oldMovieMock);
-        } catch (error) {
-            console.error("Failed to delete old movie after move", error);
-            throw error;
-        }
-    }
-
-    public async createGenre(genreName: string): Promise<void> {
+    public async moveMovie(movie: Movie, newGenre: string, format: 'DVD' | 'VHS'): Promise<void> {
         if (!this.isInitialized) await this.initClient();
 
-        // 1. Check if sheet already exists
-        const sheets = await this.getSheetsMetadata();
-        const exists = sheets.some(s => s.title.toLowerCase() === genreName.toLowerCase());
+        // 1. Add to new genre
+        const newMovie = { ...movie, genre: newGenre };
+        await this.addMovie(newMovie, format);
 
-        if (exists) {
-            console.log(`Genre "${genreName}" already exists. Skipping creation.`);
-            return;
-        }
+        // 2. Delete from old genre
+        await this.deleteMovie(movie, format);
+    }
 
-        // 2. Create if not exists
+    // --- Batch Updates (Images/Metadata) ---
+    // These need to handle movies potentially from different formats if we ever mix them in UI,
+    // but typically UI shows one format at a time. 
+    // For safety, we should pass format or derive it. 
+    // Assuming UI passes homogeneous lists for now.
+
+    public async batchUpdateImages(updates: { movie: Movie, imageType: 'tmdb' | 'base64', imageValue: string, backdropType?: 'tmdb' | 'base64', backdropValue?: string }[], format: 'DVD' | 'VHS'): Promise<void> {
+        if (updates.length === 0) return;
+        if (!this.isInitialized) await this.initClient();
+        const spreadsheetId = this.getSpreadsheetId(format);
+
+        return this.requestWithRetry(async () => {
+            const data: any[] = [];
+            updates.forEach(update => {
+                const { movie, imageType, imageValue, backdropType, backdropValue } = update;
+                if (!movie._rowIndex || !movie._sheetTitle) return;
+
+                const rangePoster = `'${movie._sheetTitle}'!E${movie._rowIndex}:F${movie._rowIndex}`;
+                data.push({ range: rangePoster, values: [[imageType, imageValue]] });
+
+                if (backdropValue) {
+                    const rangeBackdrop = `'${movie._sheetTitle}'!O${movie._rowIndex}:P${movie._rowIndex}`;
+                    data.push({ range: rangeBackdrop, values: [[backdropType || 'tmdb', backdropValue]] });
+                }
+            });
+
+            if (data.length === 0) return;
+
+            await gapi.client.sheets.spreadsheets.values.batchUpdate({
+                spreadsheetId,
+                resource: { valueInputOption: 'USER_ENTERED', data }
+            });
+        });
+    }
+
+    public async batchUpdateMetadata(updates: { movie: Movie, data: Partial<Movie> }[], format: 'DVD' | 'VHS'): Promise<void> {
+        if (updates.length === 0) return;
+        if (!this.isInitialized) await this.initClient();
+        const spreadsheetId = this.getSpreadsheetId(format);
+
+        return this.requestWithRetry(async () => {
+            const data: any[] = [];
+            updates.forEach(u => {
+                const { movie, data: updates } = u;
+                if (!movie._rowIndex || !movie._sheetTitle) return;
+
+                const range1 = `'${movie._sheetTitle}'!G${movie._rowIndex!}:L${movie._rowIndex!}`;
+                const values1 = [[
+                    updates.synopsis || movie.synopsis || '',
+                    updates.rating || movie.rating || '',
+                    updates.duration || movie.duration || '',
+                    updates.director || movie.director || '',
+                    updates.tmdbId || movie.tmdbId || '',
+                    updates.cast || movie.cast || ''
+                ]];
+                data.push({ range: range1, values: values1 });
+
+                const range2 = `'${movie._sheetTitle}'!R${movie._rowIndex!}:U${movie._rowIndex!}`;
+                const values2 = [[
+                    updates.franchise || movie.franchise || '',
+                    updates.soundtrackUrl || movie.soundtrackUrl || '',
+                    updates.rottenTomatoesRating || movie.rottenTomatoesRating || '',
+                    updates.metacriticRating || movie.metacriticRating || ''
+                ]];
+                data.push({ range: range2, values: values2 });
+            });
+
+            if (data.length === 0) return;
+
+            await gapi.client.sheets.spreadsheets.values.batchUpdate({
+                spreadsheetId,
+                resource: { valueInputOption: 'USER_ENTERED', data }
+            });
+        });
+    }
+
+    private async sortSheet(sheetTitle: string, format: 'DVD' | 'VHS'): Promise<void> {
+        if (!this.isInitialized) await this.initClient();
+        const spreadsheetId = this.getSpreadsheetId(format);
+        const sheets = await this.getSheetsMetadata(format);
+        const sheet = sheets.find(s => s.title === sheetTitle);
+        if (!sheet) return;
+
         await gapi.client.sheets.spreadsheets.batchUpdate({
-            spreadsheetId: this.spreadsheetId,
-            resource: { requests: [{ addSheet: { properties: { title: genreName } } }] }
-        });
-        const values = [this.EXPECTED_HEADERS];
-        await gapi.client.sheets.spreadsheets.values.update({
-            spreadsheetId: this.spreadsheetId,
-            range: `'${genreName}'!A1:V1`,
-            valueInputOption: 'USER_ENTERED',
-            resource: { values }
+            spreadsheetId,
+            resource: {
+                requests: [{
+                    sortRange: {
+                        range: {
+                            sheetId: sheet.sheetId,
+                            startRowIndex: 1,
+                        },
+                        sortSpecs: [{ dimensionIndex: 1, sortOrder: "ASCENDING" }]
+                    }
+                }]
+            }
         });
     }
 
-    public async getAllGenreCounts(): Promise<{ genre: string; count: number }[]> {
+    public async getAllGenreCounts(format: 'DVD' | 'VHS'): Promise<{ genre: string; count: number }[]> {
         if (!this.isInitialized) await this.initClient();
         try {
-            const sheets = await this.getSheetsMetadata();
-            if (sheets.length === 0) return [];
-            const ranges = sheets.map(s => `'${s.title}'!A2:A`);
+            const sheets = await this.getSheetsMetadata(format);
+
+            // Filter Welcome
+            const activeSheets = sheets.filter(s => s.title !== 'Welcome');
+            if (activeSheets.length === 0) return [];
+
+            const ranges = activeSheets.map(s => `'${s.title}'!A2:A`);
+            const spreadsheetId = this.getSpreadsheetId(format);
+
             const response = await gapi.client.sheets.spreadsheets.values.batchGet({
-                spreadsheetId: this.spreadsheetId,
+                spreadsheetId,
                 ranges: ranges
             });
             const valueRanges = response.result.valueRanges;
             if (!valueRanges) return [];
-            return sheets.map((sheet, index) => {
+
+            return activeSheets.map((sheet, index) => {
                 const rangeData = valueRanges[index];
                 return { genre: sheet.title, count: rangeData.values ? rangeData.values.length : 0 };
             });
@@ -671,14 +497,31 @@ export class GoogleSheetsService {
         }
     }
 
-    private async getSheetsMetadata(): Promise<{ title: string, sheetId: number }[]> {
-        const response = await gapi.client.sheets.spreadsheets.get({
-            spreadsheetId: this.spreadsheetId,
-        });
-        return response.result.sheets?.map(s => ({
-            title: s.properties?.title || '',
-            sheetId: s.properties?.sheetId || 0
-        })) || [];
+    // --- Migration Logic ---
+
+    public async findLegacyVHSMovies(): Promise<Movie[]> {
+        // Look in DVD spreadsheet (Legacy) for items with Format == 'VHS'
+        // For safety, we fetch all from DVD. 
+        const allDvdMovies = await this.getAllMovies('DVD');
+        // Column V is mapped to 'format'
+        return allDvdMovies.filter(m => m.format === 'VHS');
+    }
+
+    public async migrateMoviesToVHSFile(movies: Movie[]): Promise<void> {
+        console.log(`Migrating ${movies.length} movies to VHS file...`);
+
+        // 1. Add to VHS File
+        for (const movie of movies) {
+            // Add to new file (will auto-create genres)
+            await this.addMovie(movie, 'VHS');
+        }
+
+        // 2. Remove from DVD File (Legacy)
+        // Reverse order to avoid index shifting issues ideally, OR use batch delete.
+        // Simple approach: delete one by one. Slow but safe.
+        for (const movie of movies) {
+            await this.deleteMovie(movie, 'DVD');
+        }
     }
 
 
@@ -686,28 +529,35 @@ export class GoogleSheetsService {
     // V: Format (DVD|VHS)
     private readonly EXPECTED_HEADERS = ['Barcode', 'Title', 'Year', 'Genre', 'ImageType', 'ImageValue', 'Synopsis', 'Rating', 'Duration', 'Director', 'TMDB_ID', 'Cast', 'UserRating', 'Watched', 'BackdropType', 'BackdropValue', 'Tags', 'Franchise', 'Soundtrack', 'RottenTomatoes', 'Metacritic', 'Format'];
 
-    public async validateSheetStructure(): Promise<boolean> {
+    public async validateSheetStructure(format: 'DVD' | 'VHS'): Promise<boolean> {
         if (!this.isInitialized) await this.initClient();
         try {
-            const sheets = await this.getSheetsMetadata();
+            const sheets = await this.getSheetsMetadata(format);
             if (sheets.length === 0) return false;
-            const ranges = sheets.map(s => `'${s.title}'!A1:V1`); // Check up to V
+
+            // Skip Welcome sheet
+            const activeSheets = sheets.filter(s => s.title !== 'Welcome');
+            if (activeSheets.length === 0) return true;
+
+            const ranges = activeSheets.map(s => `'${s.title}'!A1:V1`); // Check up to V
+            const spreadsheetId = this.getSpreadsheetId(format);
+
             const response = await gapi.client.sheets.spreadsheets.values.batchGet({
-                spreadsheetId: this.spreadsheetId,
+                spreadsheetId,
                 ranges: ranges
             });
             const valueRanges = response.result.valueRanges;
             if (!valueRanges) return false;
-            for (let i = 0; i < sheets.length; i++) {
+            for (let i = 0; i < activeSheets.length; i++) {
                 const headers = valueRanges[i].values?.[0];
                 if (!headers || !this.areHeadersValid(headers)) {
-                    console.error(`Invalid headers in sheet: ${sheets[i].title}`, headers);
+                    console.error(`Invalid headers in sheet: ${activeSheets[i].title}`, headers);
                     return false;
                 }
                 // Check if 'Format' (Column V) is present. If only up to U, it's missing.
                 if (!headers || headers.length < 22 || headers[21] !== 'Format') { // 22 columns (A-V)
-                    console.warn(`Sheet ${sheets[i].title} is missing Format column. Attempting to fix...`);
-                    await this.migrateSheetFormatColumn(sheets[i].title);
+                    console.warn(`Sheet ${activeSheets[i].title} is missing Format column. Attempting to fix...`);
+                    await this.migrateSheetFormatColumn(activeSheets[i].title, format);
                 }
             }
             return true;
@@ -717,28 +567,29 @@ export class GoogleSheetsService {
         }
     }
 
-    private async migrateSheetFormatColumn(sheetTitle: string): Promise<void> {
+    private async migrateSheetFormatColumn(sheetTitle: string, format: 'DVD' | 'VHS'): Promise<void> {
+        const spreadsheetId = this.getSpreadsheetId(format);
         // 1. Add Header "Format" to V1
         await gapi.client.sheets.spreadsheets.values.update({
-            spreadsheetId: this.spreadsheetId,
+            spreadsheetId,
             range: `'${sheetTitle}'!V1`,
             valueInputOption: 'USER_ENTERED',
             resource: { values: [['Format']] }
         });
 
         // 2. Fill 'DVD' for all existing rows (from Row 2 to Last Row)
-        // First, assume a safe max range or check row count. simpler: fill V2:V1000 with DVD if empty?
-        // Better: Read Column A to know how many rows.
         const response = await gapi.client.sheets.spreadsheets.values.get({
-            spreadsheetId: this.spreadsheetId,
+            spreadsheetId,
             range: `'${sheetTitle}'!A2:A`
         });
         const rowCount = response.result.values?.length || 0;
 
         if (rowCount > 0) {
-            const formats = Array(rowCount).fill(['DVD']);
+            // If we are migrating the legacy sheet (likely DVD), we default to that format
+            const defaultFormat = format;
+            const formats = Array(rowCount).fill([defaultFormat]);
             await gapi.client.sheets.spreadsheets.values.update({
-                spreadsheetId: this.spreadsheetId,
+                spreadsheetId,
                 range: `'${sheetTitle}'!V2:V${rowCount + 1}`,
                 valueInputOption: 'USER_ENTERED',
                 resource: { values: formats }
@@ -756,9 +607,11 @@ export class GoogleSheetsService {
         );
     }
 
-    public async upgradeSheetStructure(): Promise<void> {
+    // Unlikely to be used now that we have split files, but kept for legacy upgrade if needed
+    public async upgradeSheetStructure(format: 'DVD' | 'VHS'): Promise<void> {
         if (!this.isInitialized) await this.initClient();
-        const sheets = await this.getSheetsMetadata();
+        const spreadsheetId = this.getSpreadsheetId(format);
+        const sheets = await this.getSheetsMetadata(format);
         if (sheets.length === 0) return;
 
         const values = [this.EXPECTED_HEADERS];
@@ -768,38 +621,91 @@ export class GoogleSheetsService {
         }));
 
         await gapi.client.sheets.spreadsheets.values.batchUpdate({
-            spreadsheetId: this.spreadsheetId,
+            spreadsheetId,
             resource: { valueInputOption: 'USER_ENTERED', data }
         });
     }
 
-    public async getGenres(): Promise<string[]> {
-        if (!this.isInitialized) await this.initClient();
-        const response = await gapi.client.sheets.spreadsheets.get({
-            spreadsheetId: this.spreadsheetId,
-        });
-        return response.result.sheets?.map(s => s.properties?.title || '').filter(Boolean) || [];
+    // --- Helper for Retries ---
+    private async requestWithRetry<T>(operation: () => Promise<T>, retries = 3): Promise<T> {
+        try {
+            return await operation();
+        } catch (error: any) {
+            if (retries > 0 && (error.status === 401 || error.status === 429)) {
+                console.warn(`Request failed with status ${error.status}. Retrying... (${retries} attempts left)`);
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                // Force token refresh on 401
+                if (error.status === 401) {
+                    await gapi.auth2.getAuthInstance().currentUser.get().reloadAuthResponse();
+                }
+
+                return this.requestWithRetry(operation, retries - 1);
+            }
+            throw error;
+        }
     }
 
-    private async sortSheet(sheetTitle: string): Promise<void> {
-        if (!this.isInitialized) await this.initClient();
-        const sheets = await this.getSheetsMetadata();
-        const sheet = sheets.find(s => s.title === sheetTitle);
-        if (!sheet) return;
+    private movieToRow(movie: Movie): any[] {
+        return [
+            movie.barcode || '',
+            movie.title,
+            movie.year,
+            movie.genre,
+            movie.imageType,
+            movie.imageValue,
+            movie.synopsis || '',
+            movie.rating || '',
+            movie.duration || '',
+            movie.director || '',
+            movie.tmdbId || '',
+            movie.cast || '',
+            movie.userRating || '',
+            movie.watched ? 'TRUE' : 'FALSE',
+            movie.backdropType || 'tmdb',
+            movie.backdropValue || '',
+            movie.tags?.join(',') || '', // Q: Tags
+            movie.franchise || '',       // R: Franchise
+            movie.soundtrackUrl || '',   // S: Soundtrack
+            movie.rottenTomatoesRating || '', // T: RottenTomatoes
+            movie.metacriticRating || '',     // U: Metacritic
+            movie.format || 'DVD'            // V: Format
+        ];
+    }
 
-        await gapi.client.sheets.spreadsheets.batchUpdate({
-            spreadsheetId: this.spreadsheetId,
-            resource: {
-                requests: [{
-                    sortRange: {
-                        range: {
-                            sheetId: sheet.sheetId,
-                            startRowIndex: 1,
-                        },
-                        sortSpecs: [{ dimensionIndex: 1, sortOrder: "ASCENDING" }]
-                    }
-                }]
-            }
-        });
+    public static getInstance(): GoogleSheetsService {
+        return googleSheetsService;
+    }
+
+    private rowToMovie(row: any[], rowIndex: number, sheetTitle: string): Movie {
+        return {
+            barcode: row[0],
+            title: row[1],
+            year: row[2],
+            genre: row[3],
+            imageType: row[4] as 'tmdb' | 'base64',
+            imageValue: row[5],
+            synopsis: row[6],
+            rating: row[7],
+            duration: row[8],
+            director: row[9],
+            tmdbId: row[10],
+            cast: row[11],
+            userRating: row[12] ? String(row[12]) : undefined, // Fix: Convert to string as per Movie type
+            watched: row[13] === 'TRUE',
+            backdropType: row[14] as 'tmdb' | 'base64' || 'tmdb',
+            backdropValue: row[15],
+            tags: row[16] ? row[16].split(',') : [],
+            franchise: row[17],
+            soundtrackUrl: row[18],
+            rottenTomatoesRating: row[19],
+            metacriticRating: row[20],
+            format: (row[21] as 'DVD' | 'VHS') || 'DVD',
+            _rowIndex: rowIndex,
+            _sheetTitle: sheetTitle
+        };
     }
 }
+
+const googleSheetsService = new GoogleSheetsService();
+export default googleSheetsService;

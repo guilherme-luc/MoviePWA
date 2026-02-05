@@ -12,56 +12,41 @@ export const StartupGuard: React.FC<{ children: React.ReactNode }> = ({ children
 
         const validate = async () => {
             setStatus('validating');
-            const isValid = await service.validateSheetStructure();
-            if (isValid) {
-                setStatus('ready');
-            } else {
-                setStatus('invalid_sheet');
-                setErrorMsg("A planilha precisa ser atualizada para suportar capas de filmes.");
+            try {
+                const [dvdValid, vhsValid] = await Promise.all([
+                    service.validateSheetStructure('DVD'),
+                    service.validateSheetStructure('VHS')
+                ]);
+
+                if (dvdValid && vhsValid) {
+                    setStatus('ready');
+                } else {
+                    setStatus('invalid_sheet');
+                    setErrorMsg("A planilha precisa ser atualizada para suportar capas de filmes.");
+                }
+            } catch (e: any) {
+                console.error("Validation error:", e);
+                // If validation fails, it might be auth or network
+                if (service.isSignedIn) {
+                    setStatus('invalid_sheet');
+                    setErrorMsg("Erro na validação: " + (e.message || "Verifique permissões"));
+                } else {
+                    setStatus('unauthenticated');
+                }
             }
         };
 
-
-
         const init = async () => {
             try {
-                // [NEW] Check for Guest Mode in URL
-                const params = new URLSearchParams(window.location.search);
-                const isGuest = params.get('guest') === 'true';
-
-                if (isGuest) {
-                    console.log("Entering Guest Mode...");
-                    service.enableGuestMode();
-                    await service.initClient();
-                    // In Guest Mode, we try to validate immediately (public read)
-                    try {
-                        await validate();
-                    } catch (err: any) {
-                        // If validation fails in guest mode, it's likely permissions
-                        console.error("Guest Mode Validation Error", err);
-                        setStatus('invalid_sheet');
-                        if (err.result?.error?.code === 403) {
-                            setErrorMsg("🔒 Esta coleção é Privada. O dono precisa deixá-la 'Pública para Leitura' no Google Drive para que o link funcione.");
-                        } else {
-                            setErrorMsg("Erro ao acessar coleção pública: " + (err.result?.error?.message || err.message));
-                        }
-                    }
-                    return;
-                }
-
                 await service.initClient();
 
-                // Now safe to attach listener
-                service.onAuthStateChanged((isSignedIn) => {
-                    if (isSignedIn) validate();
-                    else setStatus('unauthenticated');
-                });
-
-                if (!service.isSignedIn) {
-                    setStatus('unauthenticated');
-                } else {
+                // Check auth status after init
+                if (service.isSignedIn) {
                     validate();
+                } else {
+                    setStatus('unauthenticated');
                 }
+
             } catch (e) {
                 console.error(e);
                 setStatus('invalid_sheet'); // Fallback for init errors
@@ -75,18 +60,20 @@ export const StartupGuard: React.FC<{ children: React.ReactNode }> = ({ children
     const handleLogin = async () => {
         try {
             await GoogleSheetsService.getInstance().signIn();
+            window.location.reload(); // Reload to trigger init again
         } catch (e) {
             console.error("Login failed", e);
         }
     };
 
-
-
     const handleUpgrade = async () => {
         try {
             setStatus('validating');
             const service = GoogleSheetsService.getInstance();
-            await service.upgradeSheetStructure();
+            // Upgrade both if needed (idempotent usually)
+            await service.upgradeSheetStructure('DVD');
+            await service.upgradeSheetStructure('VHS');
+
             alert("Estrutura atualizada com sucesso! Recarregando...");
             window.location.reload();
         } catch (e: any) {

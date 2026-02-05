@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Check } from 'lucide-react';
 import { GoogleSheetsService } from '../../services/GoogleSheetsService';
 import { useQueryClient } from '@tanstack/react-query';
+import { useCollection } from '../../providers/CollectionProvider';
 
 interface GenreManagerModalProps {
     isOpen: boolean;
@@ -14,11 +15,13 @@ export const GenreManagerModal: React.FC<GenreManagerModalProps> = ({ isOpen, on
     const [error, setError] = useState('');
     const queryClient = useQueryClient();
 
+    const { format } = useCollection();
+
     if (!isOpen) return null;
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!newGenre.trim()) return;
+        if (!newGenre.trim() || !format) return;
 
         setIsSubmitting(true);
         setError('');
@@ -26,7 +29,7 @@ export const GenreManagerModal: React.FC<GenreManagerModalProps> = ({ isOpen, on
         try {
             if (!navigator.onLine) throw new Error("Offline. Cannot create genres.");
 
-            await GoogleSheetsService.getInstance().createGenre(newGenre.trim());
+            await GoogleSheetsService.getInstance().createGenre(newGenre.trim(), format);
             await queryClient.invalidateQueries({ queryKey: ['genres'] });
 
             setNewGenre('');
