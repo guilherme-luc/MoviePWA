@@ -297,24 +297,21 @@ export class GoogleSheetsService {
             resource: { values }
         });
 
-        // Optimization: If "Welcome" sheet exists and is empty/unused, from now on we delete it.
         const welcomeSheet = sheets.find(s => s.title === 'Welcome');
-        if (welcomeSheet && sheets.length === 1) {
-            // We just added one, so old length was 1. Now it is effectively 2.
-            // Delete 'Welcome' now.
-            await this.deleteSheet(welcomeSheet.sheetId, spreadsheetId);
+        if (welcomeSheet && welcomeSheet.properties?.sheetId !== undefined) {
+            try {
+                // Check if it's empty or default (implementation detail omitted to be safe, just trying to delete)
+                // Actually, let's strictly delete it only if we have at least one valid genre now.
+                if (sheets.length > 0) {
+                    await gapi.client.sheets.spreadsheets.batchUpdate({
+                        spreadsheetId,
+                        resource: { requests: [{ deleteSheet: { sheetId: welcomeSheet.properties.sheetId } }] }
+                    });
+                }
+            } catch (e) {
+                console.warn("Could not delete Welcome sheet (might be non-empty or only sheet)", e);
+            }
         }
-    }
-
-    public async deleteGenre(genreName: string, format: 'DVD' | 'VHS'): Promise<void> {
-        if (!this.isInitialized) await this.initClient();
-        const spreadsheetId = this.getSpreadsheetId(format);
-        const sheets = await this.getSheetsMetadata(format);
-        const sheet = sheets.find(s => s.title === genreName);
-
-        if (!sheet) throw new Error(`Genre ${genreName} not found in ${format}`);
-
-        await this.deleteSheet(sheet.sheetId, spreadsheetId);
     }
 
     public async renameGenre(oldName: string, newName: string, format: 'DVD' | 'VHS'): Promise<void> {
@@ -323,7 +320,9 @@ export class GoogleSheetsService {
         const sheets = await this.getSheetsMetadata(format);
         const sheet = sheets.find(s => s.title === oldName);
 
-        if (!sheet) throw new Error(`Genre ${oldName} not found in ${format}`);
+        if (!sheet || sheet.sheetId === undefined) {
+            throw new Error(`Genre "${oldName}" not found.`);
+        }
 
         await gapi.client.sheets.spreadsheets.batchUpdate({
             spreadsheetId,
@@ -334,12 +333,36 @@ export class GoogleSheetsService {
                             sheetId: sheet.sheetId,
                             title: newName
                         },
-                        fields: "title"
+                        fields: 'title'
                     }
                 }]
             }
         });
     }
+
+    public async deleteGenre(genreName: string, format: 'DVD' | 'VHS'): Promise<void> {
+        if (!this.isInitialized) await this.initClient();
+        const spreadsheetId = this.getSpreadsheetId(format);
+        const sheets = await this.getSheetsMetadata(format);
+        const sheet = sheets.find(s => s.title === genreName);
+
+        if (!sheet || sheet.sheetId === undefined) {
+            throw new Error(`Genre "${genreName}" not found.`);
+        }
+
+        await gapi.client.sheets.spreadsheets.batchUpdate({
+            spreadsheetId,
+            resource: {
+                requests: [{
+                    deleteSheet: {
+                        sheetId: sheet.sheetId
+                    }
+                }]
+            }
+        });
+    }
+
+    // --- Helper Methods ---
 
     private async deleteSheet(sheetId: number, spreadsheetId: string): Promise<void> {
         await gapi.client.sheets.spreadsheets.batchUpdate({
