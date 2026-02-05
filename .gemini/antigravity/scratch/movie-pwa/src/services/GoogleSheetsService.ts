@@ -49,7 +49,7 @@ export class GoogleSheetsService {
 
                     this.tokenClient = window.google.accounts.oauth2.initTokenClient({
                         client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-                        scope: "https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file",
+                        scope: "https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.metadata.readonly",
                         callback: async (response: any) => {
                             if (response.error !== undefined) {
                                 throw response;
@@ -597,9 +597,28 @@ export class GoogleSheetsService {
             const valueRanges = response.result.valueRanges;
             if (!valueRanges) return false;
             for (let i = 0; i < activeSheets.length; i++) {
+                const sheetTitle = activeSheets[i].title;
                 const headers = valueRanges[i].values?.[0];
-                if (!headers || !this.areHeadersValid(headers)) {
-                    console.error(`Invalid headers in sheet: ${activeSheets[i].title}`, headers);
+
+                // Auto-Repair: If headers are missing, write them!
+                if (!headers || headers.length === 0) {
+                    console.warn(`Sheet '${sheetTitle}' is missing headers. Auto-repairing...`);
+                    const values = [this.EXPECTED_HEADERS];
+                    await gapi.client.sheets.spreadsheets.values.update({
+                        spreadsheetId,
+                        range: `'${sheetTitle}'!A1:V1`,
+                        valueInputOption: 'USER_ENTERED',
+                        resource: { values }
+                    });
+                    continue; // Repaired
+                }
+
+                // Basic validation (check first few columns)
+                const required = ['Barcode', 'Title', 'Year', 'Genre'];
+                const missing = required.filter(h => !headers.includes(h));
+
+                if (missing.length > 0) {
+                    console.error(`Sheet '${sheetTitle}' missing columns:`, missing);
                     return false;
                 }
                 // Check if 'Format' (Column V) is present. If only up to U, it's missing.
