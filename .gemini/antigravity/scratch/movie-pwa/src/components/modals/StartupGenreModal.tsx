@@ -1,100 +1,101 @@
 import React, { useState } from 'react';
-import { ArrowRight, Film } from 'lucide-react';
-import { GoogleSheetsService } from '../../services/GoogleSheetsService';
 import { useQueryClient } from '@tanstack/react-query';
+import { GoogleSheetsService } from '../../services/GoogleSheetsService';
 import { useCollection } from '../../providers/CollectionProvider';
+import { Loader2, Disc, CassetteTape } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface StartupGenreModalProps {
     isOpen: boolean;
 }
 
 export const StartupGenreModal: React.FC<StartupGenreModalProps> = ({ isOpen }) => {
-    const [newGenre, setNewGenre] = useState('');
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [error, setError] = useState('');
-    const queryClient = useQueryClient();
     const { format } = useCollection();
+    const [genreName, setGenreName] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const queryClient = useQueryClient();
 
     if (!isOpen) return null;
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!newGenre.trim()) return;
+        if (!genreName.trim() || !format) return;
 
         setIsSubmitting(true);
-        setError('');
-
         try {
-            if (!navigator.onLine) throw new Error("Offline. Cannot create genres.");
-
-            // Use current format
-            const targetFormat = format || 'DVD';
-            await GoogleSheetsService.getInstance().createGenre(newGenre.trim(), targetFormat);
-
+            await GoogleSheetsService.getInstance().createGenre(genreName.trim(), format);
             await queryClient.invalidateQueries({ queryKey: ['genres'] });
-
-            setNewGenre('');
-            // No onClose needed really, the parent condition (genres.length === 0) will become false
-            // But we might want to reload or just let React Query handle it.
-            // React Query update should cause the parent to unmount this modal automatically if logic is right.
-        } catch (e: any) {
-            console.error(e);
-            setError(e.message || "Failed to create genre.");
+            // The modal will close automatically because the parent component (HomePage) 
+            // will track genre count, which is now > 0
+        } catch (error) {
+            console.error("Failed to create genre", error);
+            alert("Erro ao criar gênero. Tente novamente.");
         } finally {
             setIsSubmitting(false);
         }
     };
 
+    const isVHS = format === 'VHS';
+
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
-            <div className="bg-neutral-900 rounded-2xl w-full max-w-sm shadow-2xl border border-primary-500/30 overflow-hidden animate-in zoom-in-95 duration-300">
+        <AnimatePresence>
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="bg-neutral-900 border border-neutral-800 rounded-2xl p-8 max-w-md w-full shadow-2xl relative overflow-hidden"
+                >
+                    {/* Background decoration */}
+                    <div className={`absolute top-0 left-0 w-full h-2 bg-gradient-to-r ${isVHS ? 'from-orange-500 via-red-500 to-purple-600' : 'from-blue-500 via-cyan-400 to-blue-600'}`} />
 
-                <div className="p-8 pb-0 flex flex-col items-center text-center">
-                    <div className="w-16 h-16 rounded-full bg-primary-500/10 flex items-center justify-center mb-4">
-                        <Film className="text-primary-500" size={32} />
-                    </div>
-                    <h3 className="text-2xl font-bold text-white mb-2">Bem-vindo!</h3>
-                    <p className="text-neutral-400 text-sm">
-                        Sua coleção {format === 'VHS' ? 'de Fitas VHS' : 'de DVDs'} está vazia.
-                        Para começar, crie sua primeira categoria (gênero).
-                    </p>
-                </div>
+                    <div className="flex flex-col items-center text-center mb-8 mt-4">
+                        <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-6 shadow-lg ${isVHS ? 'bg-orange-500/20 text-orange-400' : 'bg-blue-500/20 text-blue-400'}`}>
+                            {isVHS ? <CassetteTape size={40} /> : <Disc size={40} />}
+                        </div>
 
-                <form onSubmit={handleSubmit} className="p-8 flex flex-col gap-4">
-                    <div>
-                        <input
-                            type="text"
-                            value={newGenre}
-                            onChange={(e) => setNewGenre(e.target.value)}
-                            placeholder="ex: Ação, Comédia, Nostalgia..."
-                            className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-4 text-white text-center text-lg focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all placeholder:text-neutral-700"
-                            autoFocus
-                        />
+                        <h2 className="text-2xl font-bold text-white mb-2">
+                            {isVHS ? 'Inicie sua Coleção VHS' : 'Inicie sua Coleção DVD'}
+                        </h2>
+                        <p className="text-neutral-400">
+                            Para começar, crie sua primeira categoria (gênero) para organizar seus filmes.
+                        </p>
                     </div>
 
-                    {error && <p className="text-red-400 text-sm text-center">{error}</p>}
+                    <form onSubmit={handleSubmit} className="space-y-4">
+                        <div>
+                            <input
+                                type="text"
+                                value={genreName}
+                                onChange={(e) => setGenreName(e.target.value)}
+                                placeholder="Ex: Ação, Comédia, Terror..."
+                                className="w-full bg-neutral-800 border-2 border-neutral-700 focus:border-primary-500 focus:outline-none rounded-xl px-4 py-4 text-white text-lg placeholder-neutral-500 text-center transition-colors"
+                                autoFocus
+                            />
+                        </div>
 
-                    <button
-                        type="submit"
-                        disabled={isSubmitting || !newGenre.trim()}
-                        className="w-full bg-primary-600 hover:bg-primary-500 text-white px-6 py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-primary-500/20 hover:scale-[1.02] active:scale-[0.98] mt-2"
-                    >
-                        {isSubmitting ? (
-                            <span className="animate-pulse">Criando...</span>
-                        ) : (
-                            <>
-                                <span>Começar Coleção</span>
-                                <ArrowRight size={20} />
-                            </>
-                        )}
-                    </button>
-
-                    <p className="text-xs text-neutral-600 text-center mt-2">
-                        Você poderá adicionar mais gêneros depois.
-                    </p>
-                </form>
-
+                        <button
+                            type="submit"
+                            disabled={!genreName.trim() || isSubmitting}
+                            className={`w-full py-4 rounded-xl font-bold text-lg transition-all transform active:scale-95 flex items-center justify-center gap-2
+                                ${!genreName.trim()
+                                    ? 'bg-neutral-800 text-neutral-500 cursor-not-allowed'
+                                    : isVHS
+                                        ? 'bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white shadow-lg shadow-orange-900/20'
+                                        : 'bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white shadow-lg shadow-blue-900/20'
+                                }
+                            `}
+                        >
+                            {isSubmitting ? (
+                                <Loader2 className="animate-spin" />
+                            ) : (
+                                <>
+                                    Criar Categoria
+                                </>
+                            )}
+                        </button>
+                    </form>
+                </motion.div>
             </div>
-        </div>
+        </AnimatePresence>
     );
 };

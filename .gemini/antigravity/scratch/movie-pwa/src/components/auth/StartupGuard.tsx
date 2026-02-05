@@ -1,14 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { GoogleSheetsService } from '../../services/GoogleSheetsService';
 import { Loader2, AlertTriangle, LogIn } from 'lucide-react';
-import { MigrationModal } from '../modals/MigrationModal'; // Import
-import type { Movie } from '../../types';
 
 export const StartupGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [status, setStatus] = useState<'loading' | 'unauthenticated' | 'validating' | 'invalid_sheet' | 'ready'>('loading');
     const [errorMsg, setErrorMsg] = useState('');
-    const [legacyMovies, setLegacyMovies] = useState<Movie[]>([]);
-    const [showMigration, setShowMigration] = useState(false);
 
     useEffect(() => {
         const service = GoogleSheetsService.getInstance();
@@ -16,36 +12,13 @@ export const StartupGuard: React.FC<{ children: React.ReactNode }> = ({ children
 
         const validate = async () => {
             setStatus('validating');
-            // Check DVD (primary/legacy)
-            const dvdValid = await service.validateSheetStructure('DVD');
-            if (!dvdValid) {
+            const isValid = await service.validateSheetStructure('DVD');
+            if (isValid) {
+                setStatus('ready');
+            } else {
                 setStatus('invalid_sheet');
-                setErrorMsg("A planilha de DVD precisa ser atualizada para suportar capas de filmes.");
-                return;
+                setErrorMsg("A planilha precisa ser atualizada para suportar capas de filmes.");
             }
-            // Check VHS (new) - unlikely to be invalid since it's new, but good to check
-            const vhsValid = await service.validateSheetStructure('VHS');
-            if (!vhsValid) {
-                setStatus('invalid_sheet');
-                setErrorMsg("A planilha de VHS precisa ser atualizada.");
-                return;
-            }
-
-            // [NEW] Check for legacy VHS items in DVD sheet
-            try {
-                const legacyItems = await service.findLegacyVHSMovies();
-                if (legacyItems.length > 0) {
-                    console.log(`Found ${legacyItems.length} legacy VHS movies.`);
-                    setLegacyMovies(legacyItems);
-                    setShowMigration(true);
-                    // We don't block 'ready' here, we let the modal block user interaction via overlay
-                }
-            } catch (e) {
-                console.warn("Error checking for legacy movies:", e);
-                // Proceed anyway, don't block startup
-            }
-
-            setStatus('ready');
         };
 
 
@@ -58,7 +31,6 @@ export const StartupGuard: React.FC<{ children: React.ReactNode }> = ({ children
 
                 if (isGuest) {
                     console.log("Entering Guest Mode...");
-                    // service.enableGuestMode(); // Not implemented yet
                     await service.initClient();
                     // In Guest Mode, we try to validate immediately (public read)
                     try {
@@ -114,7 +86,6 @@ export const StartupGuard: React.FC<{ children: React.ReactNode }> = ({ children
             setStatus('validating');
             const service = GoogleSheetsService.getInstance();
             await service.upgradeSheetStructure('DVD');
-            await service.upgradeSheetStructure('VHS');
             alert("Estrutura atualizada com sucesso! Recarregando...");
             window.location.reload();
         } catch (e: any) {
@@ -125,18 +96,7 @@ export const StartupGuard: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
-    if (status === 'ready') {
-        return (
-            <>
-                {children}
-                <MigrationModal
-                    isOpen={showMigration}
-                    onClose={() => setShowMigration(false)}
-                    legacyMovies={legacyMovies}
-                />
-            </>
-        );
-    }
+    if (status === 'ready') return <>{children}</>;
 
     return (
         <div className="min-h-screen bg-neutral-900 flex items-center justify-center p-4">

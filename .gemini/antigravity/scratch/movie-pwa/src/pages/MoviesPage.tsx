@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { useMovies } from '../hooks/useMovies';
+import { useAllMovies } from '../hooks/useAllMovies';
 import { ArrowLeft, Search, Plus, Wand2, Loader2, CheckSquare, Trash2, X, Star, Eye, AlertTriangle } from 'lucide-react';
 import { MovieEditorModal } from '../components/modals/MovieEditorModal';
 import { GoogleSheetsService } from '../services/GoogleSheetsService';
@@ -22,12 +22,16 @@ export const MoviesPage: React.FC = () => {
     const queryClient = useQueryClient();
     const navigate = useNavigate();
 
-    const { data: allMovies, isLoading, isError } = useMovies(decodedGenre);
+    const { data: allMovies, isLoading, isError } = useAllMovies();
 
-    // Filter by Format
+    // Filter by Format AND Genre
     const movies = useMemo(() => {
-        return allMovies?.filter(m => (m.format || 'DVD') === format);
-    }, [allMovies, format]);
+        if (!allMovies) return [];
+        return allMovies.filter((m: Movie) =>
+            (m.format || 'DVD') === format &&
+            m.genre === decodedGenre
+        );
+    }, [allMovies, format, decodedGenre]);
 
     const [search, setSearch] = useState('');
 
@@ -54,7 +58,7 @@ export const MoviesPage: React.FC = () => {
     const allTags = useMemo(() => {
         if (!movies) return [];
         const tags = new Set<string>();
-        movies.forEach(m => m.tags?.forEach(t => tags.add(t)));
+        movies.forEach((m: Movie) => m.tags?.forEach((t: string) => tags.add(t)));
         return Array.from(tags).sort();
     }, [movies]);
 
@@ -74,73 +78,34 @@ export const MoviesPage: React.FC = () => {
         }
     };
 
+    // Filtering and Sorting
     const filteredMovies = useMemo(() => {
         if (!movies) return [];
-        const q = search.toLowerCase();
-
-        // 1. Filter by Search
-        let result = movies.filter(m =>
-            m.title.toLowerCase().includes(q) ||
-            m.barcode.toLowerCase().includes(q) ||
-            m.year.includes(q) ||
-            (m.director && m.director.toLowerCase().includes(q)) ||
-            (m.cast && m.cast.toLowerCase().includes(q)) ||
-            (m.franchise && m.franchise.toLowerCase().includes(q))
+        let result = movies.filter((m: Movie) =>
+            m.title.toLowerCase().includes(search.toLowerCase()) ||
+            (m.director && m.director.toLowerCase().includes(search.toLowerCase())) ||
+            (m.cast && m.cast.toLowerCase().includes(search.toLowerCase()))
         );
 
-        // 2. Filter by View Mode
         if (viewMode === 'watched') {
-            result = result.filter(m => m.watched);
+            result = result.filter((m: Movie) => m.watched);
         } else if (viewMode === 'watchlist') {
-            result = result.filter(m => !m.watched);
+            result = result.filter((m: Movie) => !m.watched);
         }
 
-        // 3. Filter by Tag
         if (tagFilter) {
-            result = result.filter(m => m.tags?.includes(tagFilter));
+            result = result.filter((m: Movie) => m.tags?.includes(tagFilter));
         }
 
-        // 3. Apply Sorting
+        // Apply Sorting
         return result.sort((a, b) => {
-            switch (sortBy) {
-                case 'title_asc':
-                    return a.title.localeCompare(b.title);
-                case 'title_desc':
-                    return b.title.localeCompare(a.title);
-                case 'year_desc':
-                    return String(b.year).localeCompare(String(a.year));
-                case 'year_asc':
-                    return String(a.year).localeCompare(String(b.year));
-                case 'rating_desc':
-                    return (Number(b.rating) || 0) - (Number(a.rating) || 0);
-                case 'rating_asc':
-                    return (Number(a.rating) || 0) - (Number(b.rating) || 0);
-                case 'duration_desc': {
-                    // "2h 30m" -> minutes
-                    const parseDuration = (d?: string) => {
-                        if (!d) return 0;
-                        const match = d.match(/(\d+)h\s*(\d*)m?/);
-                        if (!match) return 0;
-                        return (parseInt(match[1] || '0') * 60) + parseInt(match[2] || '0');
-                    };
-                    return parseDuration(b.duration) - parseDuration(a.duration);
-                }
-                case 'duration_asc': {
-                    const parseDuration = (d?: string) => {
-                        if (!d) return 0;
-                        const match = d.match(/(\d+)h\s*(\d*)m?/);
-                        if (!match) return 0;
-                        return (parseInt(match[1] || '0') * 60) + parseInt(match[2] || '0');
-                    };
-                    return parseDuration(a.duration) - parseDuration(b.duration);
-                }
-                case 'added_desc':
-                    return (b._rowIndex || 0) - (a._rowIndex || 0);
-                case 'added_asc':
-                    return (a._rowIndex || 0) - (b._rowIndex || 0);
-                default:
-                    return 0;
-            }
+            if (sortBy === 'title_asc') return a.title.localeCompare(b.title);
+            if (sortBy === 'title_desc') return b.title.localeCompare(a.title);
+            if (sortBy === 'year_desc') return String(b.year).localeCompare(String(a.year));
+            if (sortBy === 'year_asc') return String(a.year).localeCompare(String(b.year));
+            if (sortBy === 'rating_desc') return (Number(b.rating) || 0) - (Number(a.rating) || 0);
+            if (sortBy === 'rating_asc') return (Number(a.rating) || 0) - (Number(b.rating) || 0);
+            return 0;
         });
     }, [movies, search, viewMode, tagFilter, sortBy]);
 
@@ -173,18 +138,17 @@ export const MoviesPage: React.FC = () => {
     };
 
     const handleBulkDelete = async () => {
+        if (!format) return alert("Erro: Formato não selecionado");
         if (!confirm(`Tem certeza que deseja excluir ${selectedMovies.length} filmes? Esta ação não pode ser desfeita.`)) return;
 
-        // Sort descending by index to avoid shifting issues when deleting rows
-        // Note: This relies on _rowIndex being accurate.
-        const sortedToDelete = [...selectedMovies].sort((a, b) => (b._rowIndex || 0) - (a._rowIndex || 0));
+        const sortedToDelete = [...selectedMovies].sort((a: Movie, b: Movie) => (b._rowIndex || 0) - (a._rowIndex || 0));
 
         try {
-            // Sequential delete for safety
             for (const movie of sortedToDelete) {
-                await GoogleSheetsService.getInstance().deleteMovie(movie, movie.format || 'DVD');
+                await GoogleSheetsService.getInstance().deleteMovie(movie, format);
             }
             await queryClient.invalidateQueries({ queryKey: ['movies'] });
+            await queryClient.invalidateQueries({ queryKey: ['all_movies'] });
             exitSelectionMode();
             alert("Filmes excluídos com sucesso!");
         } catch (error) {
@@ -194,14 +158,14 @@ export const MoviesPage: React.FC = () => {
     };
 
     const handleMagicWand = async () => {
+        if (!format) return;
         if (isAutoFetchingRef.current) {
             isAutoFetchingRef.current = false;
             setIsAutoFetching(false);
             return;
         }
 
-        // Extended Logic: Check for missing Poster OR missing Backdrop
-        const missingImages = movies?.filter(m => (!m.imageValue || !m.backdropValue) && m.title) || [];
+        const missingImages = movies?.filter((m: Movie) => (!m.imageValue || !m.backdropValue) && m.title) || [];
         if (missingImages.length === 0) {
             alert("Todos os filmes já têm capa! 🎉");
             return;
@@ -209,7 +173,6 @@ export const MoviesPage: React.FC = () => {
 
         const apiKey = import.meta.env.VITE_TMDB_API_KEY || localStorage.getItem('tmdb_api_key');
         if (!apiKey) {
-            // Fix: Use prompt to ask for key if missing, or redirect
             const key = prompt("API Key do TMDB não encontrada. Insira sua chave:");
             if (key) {
                 localStorage.setItem('tmdb_api_key', key);
@@ -217,7 +180,6 @@ export const MoviesPage: React.FC = () => {
                 return;
             }
         }
-        // ... (rest of logic)
 
         if (!confirm(`Deseja buscar capas automaticamente para ${missingImages.length} filmes?`)) return;
 
@@ -248,14 +210,11 @@ export const MoviesPage: React.FC = () => {
                 if (data.results && data.results.length > 0) {
                     const best = data.results.sort((a: any, b: any) => b.popularity - a.popularity)[0];
                     if (best) {
-                        // Smart Update: Only update what is missing
                         updates.push({
                             movie,
                             imageType: movie.imageType || 'tmdb',
-                            // Keep existing poster if present, otherwise use new one
                             imageValue: movie.imageValue || best.poster_path || '',
                             backdropType: 'tmdb',
-                            // Keep existing backdrop if present (unlikely if we are here for backdrop), otherwise use new one
                             backdropValue: movie.backdropValue || best.backdrop_path || ''
                         });
                         successCount++;
@@ -276,11 +235,9 @@ export const MoviesPage: React.FC = () => {
 
             if (updates.length >= BATCH_SIZE || i === missingImages.length - 1) {
                 if (updates.length > 0) {
-                    // Assuming all missingImages in this batch belong to same format (Page context)
-                    // Safest: Use format from the update item
-                    const batchFormat = updates[0].movie.format || 'DVD';
-                    await GoogleSheetsService.getInstance().batchUpdateImages(updates, batchFormat);
+                    await GoogleSheetsService.getInstance().batchUpdateImages(updates, format);
                     await queryClient.invalidateQueries({ queryKey: ['movies'] });
+                    await queryClient.invalidateQueries({ queryKey: ['all_movies'] });
                     updates.length = 0;
                 }
             }

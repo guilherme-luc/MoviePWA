@@ -168,12 +168,28 @@ export function useAutoEnrichment() {
             // Sync batches
             if (pendingUpdates.length >= BATCH_SIZE || imageUpdates.length >= BATCH_SIZE || i === queue.length - 1) {
                 if (pendingUpdates.length > 0) {
-                    // Assume homogeneous format for batch - fallback to DVD if missing
                     const batchFormat = pendingUpdates[0].movie.format || 'DVD';
                     await GoogleSheetsService.getInstance().batchUpdateMetadata(pendingUpdates, batchFormat);
                     pendingUpdates = [];
                 }
                 if (imageUpdates.length > 0) {
+                    // Format? useAutoEnrichment assumes we are processing 'queue' which comes from allMovies
+                    // allMovies now respects context format.
+                    // So we can assume format is from context?
+                    // But `useAutoEnrichment` hook needs to know format.
+                    // It uses `useAllMovies` which uses `useCollection`.
+                    // But `googleSheetsService.batchUpdateImages` needs explicit format.
+                    // We can get `format` from `movie.format` !!!
+                    // The movie object has the format.
+                    // But wait, batch update expects ONE format for the batch?
+                    // `batchUpdateImages` signature: (updates: ..., format: 'DVD'|'VHS').
+                    // So we must group by format.
+                    // But `useAllMovies` currently returns ONE format (the active one).
+                    // So all movies in queue should have the same format.
+                    // We can pick the format from the first movie in the batch/queue?
+                    // Or retrieve it from context properly.
+                    // Let's assume uniform format for now as per `useAllMovies` filter.
+
                     const batchFormat = imageUpdates[0].movie.format || 'DVD';
                     await GoogleSheetsService.getInstance().batchUpdateImages(imageUpdates, batchFormat);
                     imageUpdates = [];

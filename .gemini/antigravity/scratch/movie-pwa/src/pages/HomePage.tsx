@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { useGenres } from '../hooks/useGenres';
 import { useAllMovies } from '../hooks/useAllMovies';
-import { Film, Plus, Database, Search, X, Dice5, Sparkles, MoreVertical } from 'lucide-react';
+import { Film, Plus, Database, Search, X, Dice5, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { GenreManagerModal } from '../components/modals/GenreManagerModal';
 import { MovieEditorModal } from '../components/modals/MovieEditorModal';
 import { RandomMoviePicker } from '../components/modals/RandomMoviePicker';
 import { SmartSuggestionModal } from '../components/modals/SmartSuggestionModal';
 import { StatsModal } from '../components/modals/StatsModal';
-import { StartupGenreModal } from '../components/modals/StartupGenreModal';
+import { StartupGenreModal } from '../components/modals/StartupGenreModal'; // Added
 import type { Movie } from '../types';
 import { Skeleton } from '../components/ui/Skeleton';
 import { getGenreGradient, getGenreIcon } from '../utils/genreUtils';
@@ -24,15 +24,12 @@ export const HomePage: React.FC = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isRandomOpen, setIsRandomOpen] = useState(false);
     const [isSmartOpen, setIsSmartOpen] = useState(false);
-    const [isStatsOpen, setIsStatsOpen] = useState(false);
+    const [isStatsOpen, setIsStatsOpen] = useState(false); // Stats State
 
     // Search State
     const [search, setSearch] = useState('');
     const [editMovie, setEditMovie] = useState<Movie | undefined>(undefined);
     const [isEditOpen, setIsEditOpen] = useState(false);
-
-    // Genre Edit State
-    const [selectedGenreToEdit, setSelectedGenreToEdit] = useState<string | null>(null);
 
     // Filter by Format
     const allMovies = rawMovies?.filter(m => {
@@ -62,21 +59,8 @@ export const HomePage: React.FC = () => {
 
     return (
         <div className="flex flex-col gap-6 animate-in fade-in duration-500 relative min-h-screen">
-
-            {/* Startup Modal: Show if loaded, no error, and NO genres */}
-            {!isLoading && !isError && allGenres && allGenres.length === 0 && !isShowcaseMode && (
-                <StartupGenreModal isOpen={true} />
-            )}
-
-            <GenreManagerModal
-                isOpen={isModalOpen}
-                onClose={() => {
-                    setIsModalOpen(false);
-                    setSelectedGenreToEdit(null);
-                }}
-                genreToEdit={selectedGenreToEdit}
-            />
-
+            <StartupGenreModal isOpen={!isLoading && genres !== undefined && genres.length === 0} />
+            <GenreManagerModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
             <MovieEditorModal
                 isOpen={isEditOpen}
                 onClose={() => setIsEditOpen(false)}
@@ -223,10 +207,7 @@ export const HomePage: React.FC = () => {
                 </h3>
                 {!isShowcaseMode && (
                     <button
-                        onClick={() => {
-                            setSelectedGenreToEdit(null);
-                            setIsModalOpen(true);
-                        }}
+                        onClick={() => setIsModalOpen(true)}
                         className={`
                             ${isVHS ? 'bg-amber-900/40 text-amber-500 hover:bg-amber-900/60' : 'bg-neutral-800 text-primary-400 hover:bg-neutral-700'} 
                             px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1 transition-colors
@@ -269,41 +250,24 @@ export const HomePage: React.FC = () => {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-20">
                     {genres?.map((g) => (
-                        <div key={g.genre} className="relative group">
-                            <Link
-                                to={`genre/${encodeURIComponent(g.genre)}`}
-                                className="glass-panel p-4 rounded-xl flex items-center justify-between hover:bg-neutral-800/80 transition-all active:scale-[0.98] group pr-12"
-                            >
-                                <div className="flex items-center gap-3">
-                                    <div
-                                        className="w-12 h-12 rounded-lg flex items-center justify-center border border-white/10 shadow-lg group-hover:scale-110 transition-transform"
-                                        style={{ background: getGenreGradient(g.genre) }}
-                                    >
-                                        <span className="text-2xl">{getGenreIcon(g.genre)}</span>
-                                    </div>
-                                    <div>
-                                        <h4 className="font-semibold text-neutral-200">{g.genre}</h4>
-                                        <p className="text-xs text-neutral-400">{g.count} filmes</p>
-                                    </div>
-                                </div>
-                            </Link>
-
-                            {/* Edit Button (Absolute Positioned) */}
-                            {!isShowcaseMode && (
-                                <button
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        setSelectedGenreToEdit(g.genre);
-                                        setIsModalOpen(true);
-                                    }}
-                                    className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-neutral-500 hover:text-white hover:bg-white/10 rounded-full transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
-                                    title="Editar Gênero"
+                        <Link
+                            key={g.genre}
+                            to={`genre/${encodeURIComponent(g.genre)}`}
+                            className="glass-panel p-4 rounded-xl flex items-center justify-between hover:bg-neutral-800/80 transition-all active:scale-[0.98] group"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div
+                                    className="w-12 h-12 rounded-lg flex items-center justify-center border border-white/10 shadow-lg group-hover:scale-110 transition-transform"
+                                    style={{ background: getGenreGradient(g.genre) }}
                                 >
-                                    <MoreVertical size={20} />
-                                </button>
-                            )}
-                        </div>
+                                    <span className="text-2xl">{getGenreIcon(g.genre)}</span>
+                                </div>
+                                <div>
+                                    <h4 className="font-semibold text-neutral-200">{g.genre}</h4>
+                                    <p className="text-xs text-neutral-400">{g.count} filmes</p>
+                                </div>
+                            </div>
+                        </Link>
                     ))}
 
                     {genres?.length === 0 && (
