@@ -1,0 +1,197 @@
+# Task List - Movie Collection PWA
+
+## User Feedback Fixes (Phase 17.1)
+- [x] Fix "Zero State" Glitch on Navigation (Persistence/Guard issue) <!-- id: 58 -->
+- [x] Optimize Auto-Enrichment Persistence (Avoid restart on refresh) <!-- id: 59 -->
+
+## Project Setup
+- [x] Initialize Vite + React + TypeScript project <!-- id: 0 -->
+- [x] Install dependencies: `@tanstack/react-query`, `react-router-dom`, `gapi-script`, `clsx`, `tailwind-merge`, `lucide-react` <!-- id: 1 -->
+- [x] Configure TailwindCSS (index.css, tailwind.config.js) <!-- id: 2 -->
+- [x] Configure `vite-plugin-pwa` (manifest, icons, service worker strategy) <!-- id: 3 -->
+
+## Infrastructure & Architecture
+- [x] Create `GoogleSheetsService` Singleton Structure <!-- id: 4 -->
+- [x] Implement `validateSheetStructure` (Check columns: BarCode, Title, Year, Genre) <!-- id: 5 -->
+- [x] Implement Auth Logic (Login, Silent Refresh, Error Handling) <!-- id: 6 -->
+- [x] Setup React Query Client & Provider <!-- id: 7 -->
+
+## Core API Implementation
+- [x] Implement `getGenres` (Fetch Sheets properties) <!-- id: 8 -->
+- [x] Implement `getMoviesByGenre` (Fetch Rows) <!-- id: 9 -->
+- [x] Implement `addMovie` (Append Row) <!-- id: 10 -->
+- [x] Implement `updateMovie` (Update Row) <!-- id: 11 -->
+- [x] Implement `deleteMovie` (Delete Row) <!-- id: 12 -->
+- [x] Implement `moveMovie` Transaction (Atomic Copy + Delete) <!-- id: 13 -->
+- [x] Implement `createGenre` (Add Sheet) <!-- id: 14 -->
+
+## UI Components
+- [x] Create `AppShell` with Layout & OfflineIndicator <!-- id: 15 -->
+- [x] Create `StartupGuard` (Validates Sheet before showing app) <!-- id: 16 -->
+- [x] Create `GenreList` Page (Home - with counts) <!-- id: 17 -->
+- [x] Create `GenreManager` Modal (Add new genre) <!-- id: 18 -->
+- [x] Create `MovieList` Page (Filterable, Searchable) <!-- id: 19 -->
+- [x] Create `MovieEditor` Page/Modal (Add/Edit Form) <!-- id: 20 -->
+    - [x] **8.3: First Genre Bootstrapping** <!-- id: 8.3 -->
+        - [x] Create `StartupGenreModal.tsx`.
+        - [x] Trigger on `LandingPage` or `HomePage` if selected format has 0 genres.
+    - [x] **8.4: Genre Management Tools** <!-- id: 8.4 -->
+        - [x] Create `GenreManagerModal` (Rename/Delete).
+        - [x] Implement `renameGenre` in Service.
+        - [x] Implement `deleteGenre` in Service (with protection).
+
+## Verification & Polish
+- [x] Verify Offline Read-Only Mode (Block UI actions) <!-- id: 21 -->
+- [x] Verify Sheet Validation (Test with invalid columns) <!-- id: 22 -->
+- [x] Build & PWA Audit (Lighthouse/Browser Check) <!-- id: 23 -->
+
+## User Requested Improvements (Phase 3) - "Pro" Features
+- [x] Implement "What to Watch?" Randomizer Button (Dice Roll) <!-- id: 29 -->
+- [x] Implement Dashboard Stats (Total movies, genre breakdown) <!-- id: 30 -->
+- [x] Enhance TMDB Data (Synopsis, Rating, Duration) <!-- id: 31 -->
+- [x] Implement Bulk Actions (Select multiple to move/delete) <!-- id: 32 -->
+- [ ] Implement Advanced Filters (Sort by Year, Title, Added Date) <!-- id: 33 -->
+
+## User Customization (Phase 4)
+- [x] Add "User Rating" (Minha Nota) field & "Watched" toggle <!-- id: 34 -->
+- [x] Make TMDB Fields Read-Only in Editor <!-- id: 35 -->
+
+## User Feedback Fixes (Phase 4.1)
+- [x] Fix Input Zoom (Force 16px) <!-- id: 36 -->
+- [x] Fix Alphabetical Sorting (Ignore accents/spaces) <!-- id: 37 -->
+- [x] Improve TMDB Selection (Manual Picker) <!-- id: 38 -->
+- [x] Fix Image Save Error (Resize logic) <!-- id: 39 -->
+- [x] Restore Delete Button <!-- id: 40 -->
+
+## Refinements (Phase 4.2)
+- [x] Fix Strict Sorting (Ignore spaces completely) <!-- id: 41 -->
+- [x] Add "Remove Photo" Button <!-- id: 42 -->
+- [x] Fix Footer Layout (Prevent button wrap) <!-- id: 43 -->
+
+## Phase 13: Cleanup & Refinement
+- [x] Remove Barcode Scanner Feature <!-- id: 11 -->
+    - [x] Remove `BarcodeScanner.tsx` component <!-- id: 12 -->
+    - [x] Remove scanner logic/UI from `MovieEditorModal.tsx` <!-- id: 13 -->
+
+## User Experience Improvements (Phase 5)
+- [x] Implement Skeleton Loading (Movies, Categories) <!-- id: 44 -->
+- [x] Implement Dashboard Statistics <!-- id: 45 -->
+
+## Advanced Media Integration (Phase 6)
+- [x] Implement Youtube Trailer Integration (Fetch & Play) <!-- id: 46 -->
+- [x] Implement "Watchlist" vs "Collection" Toggle <!-- id: 47 -->
+
+## Phase 7: Content & Experience Expansion
+- [x] Implement Backdrop Images (Thematic Backgrounds) <!-- id: 48 -->
+- [ ] ~~Implement Auto-Enrichment System (Background Sync)~~ [DISABLED by User Request] <!-- id: 57 -->
+- [x] Implement Advanced Filters (Sort by Duration/Rating/Date) <!-- id: 49 -->
+- [x] Implement Custom Lists/Tags <!-- id: 50 -->
+- [x] Implement Clickable Cast & Crew (Cross-search) <!-- id: 51 -->
+- [x] Implement Streaming Availability (Where to Watch) <!-- id: 52 -->
+- [x] Implement Franchise/Universe Grouping <!-- id: 53 -->
+- [x] Implement User Badges & Achievements <!-- id: 54 -->
+- [x] Implement Soundtrack Integration (Spotify) <!-- id: 55 -->
+- [x] **Critics Ratings (OMDB)**
+    - [x] Integrate OMDB API for Rotten Tomatoes / Metacritic <!-- id: 5 -->
+    - [x] Display ratings in Movie Modal <!-- id: 6 -->
+    - [ ] ~~Auto-fetch ratings for existing movies (Enrichment V3)~~ [DISABLED] <!-- id: 7 -->
+- [x] **System Reliability**
+    - [x] Fix 401 Auth Errors (Auto-Retry Mechanism) <!-- id: 8 -->
+    - [x] Fix TypeScript Build Errors <!-- id: 9 -->
+- [x] **Final Polish**
+    - [x] Verify Backdrop logic for all movies
+    - [x] Full UI Review
+
+## Phase 8: "God Mode" Polish & Features
+- [x] **Visual**: Implement View Transitions (Smooth Navigation) <!-- id: 60 -->
+- [x] **Visual**: Add Micro-interactions (Confetti/Pulse on Watched/Rated) <!-- id: 61 -->
+- [x] **Customization**: Implement Theme Color Picker (Netflix Red, Prime Blue, etc.) <!-- id: 62 -->
+- [x] **Social**: Create "Share Card" Generator (Instagram Stories format) <!-- id: 63 -->
+- [x] **Privacy**: Implement "Showcase Mode" (Guest View - Hide Edit Buttons) <!-- id: 64 -->
+- [x] **Data**: Implement JSON/CSV Export <!-- id: 65 -->
+
+## Phase 9: Mobile Polish & Refinement
+- [x] **Navigation**: Implement Bottom Navigation Bar (Mobile only) <!-- id: 66 -->
+- [x] **Gestures**: Improve Touch Targets & Active States <!-- id: 67 -->
+- [x] **UX**: Implement Pull-to-Refresh <!-- id: 68 -->
+- [x] **Visual**: Improve "Safe Area" handling (iPhone notch/home bar) <!-- id: 69 -->
+
+## Phase 10: Smart Suggestions (Collection Intelligence)
+- [x] **Logic**: Implement "Smart Picker" Algorithm (Weighted Random based on Rating/Status) <!-- id: 70 -->
+- [x] **UI**: Create "Suggestion Wizard" (Step-by-step preference selector) <!-- id: 71 -->
+- [x] **UX**: Add "AI" Analysis Visuals (Simulated processing steps) <!-- id: 72 -->
+
+## Phase 11: Real AI Integration (Gemini API)
+- [x] **Config**: Add `VITE_GEMINI_API_KEY` to environment variables <!-- id: 73 -->
+- [x] **Service**: Implement `GeminiService` with Google Generative AI SDK <!-- id: 74 -->
+- [x] **UI**: Connect `SmartSuggestionModal` to Gemini Service <!-- id: 75 -->
+
+## Phase 12: Granular Preferences (Gemini V2)
+- [x] **UI**: Add Sub-Mood selection step to Wizard <!-- id: 76 -->
+- [x] **Logic**: Update `GeminiService` to use sub-mood in prompt <!-- id: 77 -->
+- [x] **Data**: Define sub-mood categories for each main mood <!-- id: 78 -->
+
+## Phase 14: P0 UI/UX Improvements (Critical Accessibility & Hierarchy)
+- [x] **Contrast**: Improve text contrast across all components (neutral-500 → neutral-400) <!-- id: 79 -->
+    - [x] HomePage search and genre cards
+    - [x] MoviesPage filters and empty states
+    - [x] BottomNav inactive states
+    - [x] All modals (MovieEditor, Stats, Settings, SmartSuggestion)
+    - [x] UI components (TagInput, StreamingProviders, BadgeSystem)
+- [x] **Button Hierarchy**: Establish clear primary/secondary/danger patterns <!-- id: 80 -->
+    - [x] Primary actions: bg-primary-600 with shadow-primary-500/30
+    - [x] Secondary actions: bg-neutral-800 without shadow
+    - [x] Danger actions: bg-red-600 with shadow-red-500/20
+- [x] **Visual Feedback**: Enhanced button shadows for better affordance <!-- id: 81 -->
+
+## Phase 15: P1 UI/UX Improvements (Strong Enhancements)
+- [x] **View Toggle Redesign**: Improved contrast and visual hierarchy <!-- id: 82 -->
+    - [x] Better background (neutral-900/50 with border)
+    - [x] Stronger active state with shadow-primary-500/30
+    - [x] Hover states for inactive tabs
+- [x] **Genre Cards Visual Identity**: Unique colors and icons per genre <!-- id: 83 -->
+    - [x] Created genreUtils.ts with color/icon generation
+    - [x] Dynamic gradient backgrounds based on genre name hash
+    - [x] Emoji icons for common genres (🎬 Ação, 💕 Romance, etc.)
+    - [x] Hover scale animation on genre icons
+- [x] **Mobile Edit Button**: Always visible on touch devices <!-- id: 84 -->
+    - [x] opacity-100 on mobile, opacity-0 md:group-hover:opacity-100 on desktop
+    - [x] No hover dependency for touch screens
+
+## Phase 16: P2 UI/UX Refinements (Polish)
+- [x] **Empty States Illustrated**: Friendly, helpful empty states <!-- id: 85 -->
+    - [x] HomePage search: Icon + helpful message
+    - [x] HomePage genres: Large icon + CTA
+    - [x] MoviesPage: Contextual messages based on view mode/filters
+    - [x] All empty states use icons and friendly tone
+- [x] **Micro-animations Utilities**: Created animations.ts <!-- id: 86 -->
+    - [x] Pulse animation for watchlist actions
+    - [x] Shake animation for validation errors
+    - [x] Confetti already implemented for high ratings
+- [x] **Loading States**: Improved contextual loading indicators <!-- id: 87 -->
+    - [x] Spinner with descriptive text
+    - [x] Skeleton screens for movie cards
+
+## Phase 17: User Reported Fixes & Polish (Final)
+- [x] **Build Fixes**: Resolved Vercel build errors (imports, unused vars, JSX types) <!-- id: 88 -->
+- [x] **Navigation**: Fixed genre link redirect issue (relative vs absolute paths) <!-- id: 89 -->
+- [x] **Data Persistence**:
+    - [x] Added `Format` column migration (Auto-fix missing Column V) <!-- id: 90 -->
+    - [x] Fixed Write Range logic to include Column V (saving VHS format correctly) <!-- id: 91 -->
+    - [x] Hardened `movieToRow` to prevent data shifting on empty fields <!-- id: 92 -->
+    - [x] **CRITICAL FIX**: Fixed `getMoviesByGenre` reading only up to Column Q (causing missing Format bug) <!-- id: 93 -->
+    - [x] **CRITICAL FIX**: Fixed `sortSheet` truncation bug (was deleting Column V data) <!-- id: 94 -->
+- [x] **UI Polish**:
+    - [x] Integrated VHS/DVD Logos on Landing Page <!-- id: 95 -->
+    - [x] Fixed `noise.svg` 402 error (Replaced with local base64 asset) <!-- id: 96 -->
+    - [x] Fixed Genre Visibility (Show all genres even with 0 counts in current format) <!-- id: 97 -->
+    - [x] Added visual Format Badge (Temporary Debug) -> REMOVED after fix verification <!-- id: 98 -->
+    - [x] **New Feature**: Added "Import from TMDB Link" button (Paste URL/ID) <!-- id: 99 -->
+    - [x] **UX**: Improved Auth Experience (Removed forced consent prompt) <!-- id: 100 -->
+    - [x] **Fix**: Solved "Infinite Loading" (Missing Google Scripts in index.html) <!-- id: 101 -->
+    - [x] **Fix**: Solved "Duplicate Sheets" (Added Drive Metadata Scope) <!-- id: 102 -->
+    - [x] **Fix**: Solved "Empty Sheet Headers" (Auto-repair missing columns) <!-- id: 103 -->
+    - [x] **UX**: Removed forced consent prompt (Login Item 1) <!-- id: 104 -->
+    - [x] **UX**: Implemented Token Persistence (Login Item 2) <!-- id: 105 -->
+    - [x] **Fix**: Solved "Ghost Randomizer" (Universal fetch for Landing Page) <!-- id: 106 -->
+    - [x] **Feature**: Added "Sign Out" button (Landing & Settings) <!-- id: 107 -->
