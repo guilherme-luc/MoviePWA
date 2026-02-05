@@ -210,17 +210,24 @@ export class GoogleSheetsService {
     }
 
     public async getAllMovies(format: 'DVD' | 'VHS'): Promise<Movie[]> {
+        console.log(`getAllMovies called for ${format}`);
         if (!this.isInitialized) await this.initClient();
 
         return this.requestWithRetry(async () => {
             const spreadsheetId = this.getSpreadsheetId(format);
             const sheets = await this.getSheetsMetadata(format);
+            console.log(`Sheets found for ${format}:`, sheets.map(s => s.title));
 
             // Filter out "Welcome" placeholder
             const genreSheets = sheets.filter(s => s.title !== 'Welcome');
-            if (genreSheets.length === 0) return [];
+            if (genreSheets.length === 0) {
+                console.log(`No genre sheets found for ${format} (only Welcome or none). Returning empty.`);
+                return [];
+            }
 
             const ranges = genreSheets.map(s => `'${s.title}'!A2:V`);
+            console.log(`Fetching ranges for ${format}:`, ranges);
+
             const response = await gapi.client.sheets.spreadsheets.values.batchGet({
                 spreadsheetId,
                 ranges
@@ -240,6 +247,7 @@ export class GoogleSheetsService {
                 });
             }
 
+            console.log(`getAllMovies for ${format} returning ${allMovies.length} movies.`);
             return allMovies;
         });
     }
