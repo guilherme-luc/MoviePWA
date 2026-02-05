@@ -11,6 +11,7 @@ import { StreamingProviders } from '../ui/StreamingProviders';
 import { useQueryClient } from '@tanstack/react-query';
 import { triggerConfetti, triggerSmallConfetti } from '../../utils/confetti';
 import { useShowcase } from '../../providers/ShowcaseProvider';
+import { useCollection } from '../../providers/CollectionProvider'; // Import
 
 interface MovieEditorModalProps {
     isOpen: boolean;
@@ -63,6 +64,7 @@ const compressImage = (file: File): Promise<string> => {
 
 export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onClose, movieToEdit, initialGenre, initialFormat, onSearch }) => {
     const { isShowcaseMode } = useShowcase();
+    const { format: contextFormat } = useCollection(); // Get context format
     const queryClient = useQueryClient();
     const [isLoading, setIsLoading] = useState(false);
     const [genres, setGenres] = useState<string[]>([]);
@@ -155,7 +157,9 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
     }, [isOpen, movieToEdit, initialGenre, initialFormat]);
 
     const loadGenres = async () => {
-        const g = await GoogleSheetsService.getInstance().getGenres(initialFormat || 'DVD');
+        // Use initialFormat (prop) -> contextFormat -> default 'DVD'
+        const effectiveFormat = initialFormat || contextFormat || 'DVD';
+        const g = await GoogleSheetsService.getInstance().getGenres(effectiveFormat);
         setGenres(g);
     };
 
@@ -534,15 +538,18 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
         };
 
         try {
+            // Determine effective format
+            const effectiveFormat = format || contextFormat || 'DVD';
+
             if (movieToEdit) {
                 // If genre changed, use moveMovie logic
                 if (movieToEdit.genre !== genre) {
-                    await GoogleSheetsService.getInstance().moveMovie(movieData, genre, movieData.format || 'DVD');
+                    await GoogleSheetsService.getInstance().moveMovie(movieData, movieToEdit.genre, effectiveFormat);
                 } else {
-                    await GoogleSheetsService.getInstance().updateMovie(movieData, movieData.format || 'DVD');
+                    await GoogleSheetsService.getInstance().updateMovie(movieData, effectiveFormat);
                 }
             } else {
-                await GoogleSheetsService.getInstance().addMovie(movieData, movieData.format || 'DVD');
+                await GoogleSheetsService.getInstance().addMovie(movieData, effectiveFormat);
             }
             await queryClient.invalidateQueries({ queryKey: ['movies'] });
             await queryClient.invalidateQueries({ queryKey: ['genres'] });
@@ -1154,7 +1161,8 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                             onClick={() => {
                                 if (confirm("Tem certeza que deseja excluir este filme permanentemente?")) {
                                     setIsLoading(true);
-                                    GoogleSheetsService.getInstance().deleteMovie(movieToEdit, movieToEdit.format || 'DVD')
+                                    const effectiveFormat = format || contextFormat || 'DVD';
+                                    GoogleSheetsService.getInstance().deleteMovie(movieToEdit, effectiveFormat)
                                         .then(() => {
                                             queryClient.invalidateQueries({ queryKey: ['movies'] });
                                             queryClient.invalidateQueries({ queryKey: ['all_movies'] });

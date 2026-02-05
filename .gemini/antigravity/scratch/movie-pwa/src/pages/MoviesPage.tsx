@@ -276,7 +276,10 @@ export const MoviesPage: React.FC = () => {
 
             if (updates.length >= BATCH_SIZE || i === missingImages.length - 1) {
                 if (updates.length > 0) {
-                    await GoogleSheetsService.getInstance().batchUpdateImages(updates, format || 'DVD');
+                    // Assuming all missingImages in this batch belong to same format (Page context)
+                    // Safest: Use format from the update item
+                    const batchFormat = updates[0].movie.format || 'DVD';
+                    await GoogleSheetsService.getInstance().batchUpdateImages(updates, batchFormat);
                     await queryClient.invalidateQueries({ queryKey: ['movies'] });
                     updates.length = 0;
                 }

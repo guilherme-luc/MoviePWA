@@ -24,7 +24,7 @@ export function useAutoEnrichment() {
 
     const isProcessingRef = useRef(false);
     const BATCH_SIZE = 5;
-    const PROCESS_DELAY_MS = 1500; // Rate limit protection
+    const PROCESS_DELAY_MS = 1500; // Rate limit protection (TMDB is generous but let's be safe)
 
     useEffect(() => {
         if (!allMovies || allMovies.length === 0 || isProcessingRef.current) return;
@@ -33,11 +33,16 @@ export function useAutoEnrichment() {
         const processedIds = new Set(JSON.parse(localStorage.getItem('auto_enrich_processed_v3') || '[]'));
 
         // Identify candidates
+        // Candidate = Missing Backdrop OR Missing TMDB Metadata (Synopsis, etc)
+        // AND not processed recently
         const candidates = allMovies.filter(m => {
             if (!m.title) return false;
-            // Unique ID for cache
+
+            // Unique ID for cache (Barcode or Title+Year)
             const uid = m.barcode ? m.barcode.trim() : `${m.title.trim()}-${m.year}`;
             if (processedIds.has(uid)) return false;
+
+            // V3: Force re-check for everyone to ensure OMDB ratings are fetched
             return true;
         });
 
@@ -45,38 +50,7 @@ export function useAutoEnrichment() {
 
         startProcessing(candidates);
 
-    }, [allMovies?.length]);
-
-
-    const flushBatches = async (
-        metaUpdates: { movie: Movie, data: Partial<Movie> }[],
-        imgUpdates: { movie: Movie, imageType: 'tmdb', imageValue: string, backdropType: 'tmdb', backdropValue: string }[]
-    ) => {
-        // Group by format
-        const processMeta = async (updates: typeof metaUpdates) => {
-            const dvd = updates.filter(u => u.movie.format === 'DVD' || !u.movie.format);
-            const vhs = updates.filter(u => u.movie.format === 'VHS');
-
-            if (dvd.length) await GoogleSheetsService.getInstance().batchUpdateMetadata(dvd, 'DVD');
-            if (vhs.length) await GoogleSheetsService.getInstance().batchUpdateMetadata(vhs, 'VHS');
-        };
-
-        const processImg = async (updates: typeof imgUpdates) => {
-            const dvd = updates.filter(u => u.movie.format === 'DVD' || !u.movie.format);
-            const vhs = updates.filter(u => u.movie.format === 'VHS');
-
-            if (dvd.length) await GoogleSheetsService.getInstance().batchUpdateImages(dvd, 'DVD');
-            if (vhs.length) await GoogleSheetsService.getInstance().batchUpdateImages(vhs, 'VHS');
-        };
-
-        await Promise.all([processMeta(metaUpdates), processImg(imgUpdates)]);
-
-        if (metaUpdates.length > 0 || imgUpdates.length > 0) {
-            await queryClient.invalidateQueries({ queryKey: ['movies'] });
-            await queryClient.invalidateQueries({ queryKey: ['all_movies'] });
-        }
-    };
-
+    }, [allMovies?.length]); // Only re-evaluate when count changes significantly
 
     const startProcessing = async (queue: Movie[]) => {
         if (isProcessingRef.current) return;
@@ -106,7 +80,7 @@ export function useAutoEnrichment() {
             const movie = queue[i];
             const uid = movie.barcode || `${movie.title}-${movie.year}`;
 
-            // Mark as processed immediately
+            // Mark as processed immediately to avoid restart loops if user refreshes during fetch
             processedCache.add(uid);
             localStorage.setItem('auto_enrich_processed_v3', JSON.stringify(Array.from(processedCache)));
 
@@ -122,7 +96,10 @@ export function useAutoEnrichment() {
                 const searchData = await searchRes.json();
 
                 if (searchData.results && searchData.results.length > 0) {
-                    const best = searchData.results[0];
+                    const best = searchData.results[0]; // Best match logic
+
+                    // 1. Prepare Metadata Update (if missing or forcing update)
+                    // We check specific fields, but for v2 we basically trust the fetch if we are here
 
                     const detailsUrl = `https://api.themoviedb.org/3/movie/${best.id}?api_key=${apiKey}&language=pt-BR&append_to_response=credits`;
                     const detailsRes = await fetch(detailsUrl);
@@ -176,7 +153,7 @@ export function useAutoEnrichment() {
                         imageUpdates.push({
                             movie,
                             imageType: 'tmdb',
-                            imageValue: movie.imageValue || best.poster_path || '',
+                            imageValue: movie.imageValue || best.poster_path || '', // Keep existing if good
                             backdropType: 'tmdb',
                             backdropValue: movie.backdropValue || best.backdrop_path || ''
                         });
@@ -190,17 +167,25 @@ export function useAutoEnrichment() {
 
             // Sync batches
             if (pendingUpdates.length >= BATCH_SIZE || imageUpdates.length >= BATCH_SIZE || i === queue.length - 1) {
-                await flushBatches(pendingUpdates, imageUpdates);
-                pendingUpdates = [];
-                imageUpdates = [];
+                if (pendingUpdates.length > 0) {
+                    // Assume homogeneous format for batch - fallback to DVD if missing
+                    const batchFormat = pendingUpdates[0].movie.format || 'DVD';
+                    await GoogleSheetsService.getInstance().batchUpdateMetadata(pendingUpdates, batchFormat);
+                    pendingUpdates = [];
+                }
+                if (imageUpdates.length > 0) {
+                    const batchFormat = imageUpdates[0].movie.format || 'DVD';
+                    await GoogleSheetsService.getInstance().batchUpdateImages(imageUpdates, batchFormat);
+                    imageUpdates = [];
+                }
+                // Invalidate cache to reflect changes in UI incrementally
+                await queryClient.invalidateQueries({ queryKey: ['movies'] });
+                await queryClient.invalidateQueries({ queryKey: ['all_movies'] });
             }
 
             setState(prev => ({ ...prev, processedCount: i + 1 }));
             await new Promise(r => setTimeout(r, PROCESS_DELAY_MS));
         }
-
-        // Final Flush (just in case, mostly covered by loop)
-        await flushBatches(pendingUpdates, imageUpdates);
 
         setState(prev => ({ ...prev, isSyncing: false, currentMovie: undefined }));
         isProcessingRef.current = false;

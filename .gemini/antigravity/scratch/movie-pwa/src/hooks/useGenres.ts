@@ -9,12 +9,12 @@ export interface GenreCount {
 
 export function useGenres() {
     const { format } = useCollection();
+    const effectiveFormat = format || 'DVD';
 
     return useQuery({
-        queryKey: ['genres', format],
+        queryKey: ['genres', effectiveFormat],
         queryFn: async () => {
-            if (!format) return [];
-            return await GoogleSheetsService.getInstance().getAllGenreCounts(format);
+            return await GoogleSheetsService.getInstance().getAllGenreCounts(effectiveFormat);
         },
         staleTime: 1000 * 60 * 5, // 5 minutes
         refetchOnWindowFocus: false, // Avoid hitting rate limits

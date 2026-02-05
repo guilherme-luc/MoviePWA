@@ -242,7 +242,10 @@ export class GoogleSheetsService {
                     const rows = range.values;
                     if (rows && rows.length > 0) {
                         const sheetTitle = genreSheets[index].title;
-                        const movies = rows.map((row: any[], i: number) => this.rowToMovie(row, i + 2, sheetTitle)); // i + 2 because row 1 is header
+                        const movies = rows.map((row: any[], i: number) => ({
+                            ...this.rowToMovie(row, i + 2, sheetTitle),
+                            format // Enforce strict format context
+                        }));
                         allMovies = [...allMovies, ...movies];
                     }
                 });
