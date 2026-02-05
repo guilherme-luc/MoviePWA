@@ -665,7 +665,10 @@ export class GoogleSheetsService {
                 const rangeData = valueRanges[index];
                 return { genre: sheet.title, count: rangeData.values ? rangeData.values.length : 0 };
             });
-        });
+        } catch (error) {
+            console.error("Failed to fetch genre counts", error);
+            throw error;
+        }
     }
 
     private async getSheetsMetadata(): Promise<{ title: string, sheetId: number }[]> {
