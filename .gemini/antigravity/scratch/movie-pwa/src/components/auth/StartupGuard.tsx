@@ -6,50 +6,54 @@ export const StartupGuard: React.FC<{ children: React.ReactNode }> = ({ children
     const [status, setStatus] = useState<'loading' | 'unauthenticated' | 'validating' | 'invalid_sheet' | 'ready'>('loading');
     const [errorMsg, setErrorMsg] = useState('');
 
+    const validate = async () => {
+        const service = GoogleSheetsService.getInstance();
+        setStatus('validating');
+        try {
+            const [dvdValid, vhsValid] = await Promise.all([
+                service.validateSheetStructure('DVD'),
+                service.validateSheetStructure('VHS')
+            ]);
+
+            if (dvdValid && vhsValid) {
+                setStatus('ready');
+            } else {
+                setStatus('invalid_sheet');
+                setErrorMsg("A planilha precisa ser atualizada para suportar capas de filmes.");
+            }
+        } catch (e: any) {
+            console.error("Validation error:", e);
+            setStatus('invalid_sheet');
+            setErrorMsg("Erro na validação: " + (e.message || "Verifique permissões"));
+        }
+    };
+
     useEffect(() => {
         const service = GoogleSheetsService.getInstance();
         console.log("Initializing with Client ID ending in:", import.meta.env.VITE_GOOGLE_CLIENT_ID?.slice(-10));
 
-        const validate = async () => {
-            setStatus('validating');
-            try {
-                const [dvdValid, vhsValid] = await Promise.all([
-                    service.validateSheetStructure('DVD'),
-                    service.validateSheetStructure('VHS')
-                ]);
-
-                if (dvdValid && vhsValid) {
-                    setStatus('ready');
-                } else {
-                    setStatus('invalid_sheet');
-                    setErrorMsg("A planilha precisa ser atualizada para suportar capas de filmes.");
-                }
-            } catch (e: any) {
-                console.error("Validation error:", e);
-                // If validation fails, it might be auth or network
-                if (service.isSignedIn) {
-                    setStatus('invalid_sheet');
-                    setErrorMsg("Erro na validação: " + (e.message || "Verifique permissões"));
-                } else {
-                    setStatus('unauthenticated');
-                }
-            }
-        };
-
         const init = async () => {
             try {
-                await service.initClient();
+                // Subscribe to auth changes FIRST
+                service.onAuthStateChanged((isSignedIn) => {
+                    if (isSignedIn) {
+                        validate();
+                    } else {
+                        // Only set unauthenticated if we are not already ready (though generally if listed changes, we might want to logout)
+                        // If we were ready and logged out, we should probably show unauthenticated.
+                        setStatus('unauthenticated');
+                    }
+                });
 
-                // Check auth status after init
-                if (service.isSignedIn) {
-                    validate();
-                } else {
+                await service.initClient();
+                // onAuthStateChanged will be called inside initClient logic or we can trigger check
+                if (!service.isSignedIn) {
                     setStatus('unauthenticated');
                 }
 
             } catch (e) {
                 console.error(e);
-                setStatus('invalid_sheet'); // Fallback for init errors
+                setStatus('invalid_sheet');
                 setErrorMsg("Falha ao inicializar API do Google. Verifique sua conexão.");
             }
         };
@@ -59,10 +63,11 @@ export const StartupGuard: React.FC<{ children: React.ReactNode }> = ({ children
 
     const handleLogin = async () => {
         try {
+            // signIn will trigger onAuthStateChanged -> validate
             await GoogleSheetsService.getInstance().signIn();
-            window.location.reload(); // Reload to trigger init again
         } catch (e) {
             console.error("Login failed", e);
+            alert("Falha no login. Verifique o console.");
         }
     };
 
@@ -70,17 +75,16 @@ export const StartupGuard: React.FC<{ children: React.ReactNode }> = ({ children
         try {
             setStatus('validating');
             const service = GoogleSheetsService.getInstance();
-            // Upgrade both if needed (idempotent usually)
             await service.upgradeSheetStructure('DVD');
             await service.upgradeSheetStructure('VHS');
 
-            alert("Estrutura atualizada com sucesso! Recarregando...");
-            window.location.reload();
+            alert("Estrutura atualizada com sucesso!");
+            // No need to reload, just re-validate
+            validate();
         } catch (e: any) {
             console.error("Upgrade failed:", e);
             setStatus('invalid_sheet');
             setErrorMsg("Falha ao atualizar: " + (e.message || "Erro desconhecido"));
-            alert("Erro ao atualizar: " + (e.message || "Verifique o console"));
         }
     };
 
