@@ -10,7 +10,7 @@ interface MigrationModalProps {
 export const MigrationModal: React.FC<MigrationModalProps> = ({ isOpen, onComplete }) => {
     const [status, setStatus] = useState<'idle' | 'analyzing' | 'migrating' | 'completed' | 'error'>('idle');
     const [count, setCount] = useState(0);
-    const [count, setCount] = useState(0);
+
 
     useEffect(() => {
         if (isOpen && status === 'idle') {
