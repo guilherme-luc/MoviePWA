@@ -250,16 +250,14 @@ export class GoogleSheetsService {
                 const response = await gapi.client.sheets.spreadsheets.get({ spreadsheetId: authorizedId });
                 if (response.status === 200) {
                     console.log(`Verified existing spreadsheet [${authorizedId}] for ${fileName}`);
-                    // Optional: Rename it to match standard if needed? 
-                    // No, user might keep their own name.
                     return authorizedId;
                 }
             } catch (e) {
-                console.warn(`Stored ID [${authorizedId}] is invalid or inaccessible. Searching by name...`);
+                console.warn(`Stored ID [${authorizedId}] is invalid or inaccessible.`);
             }
         }
 
-        // 1. Search
+        // 1. Search with priority for non-empty sheets
         // @ts-ignore
         const searchResponse = await gapi.client.drive.files.list({
             q: `name = '${fileName}' and mimeType = 'application/vnd.google-apps.spreadsheet' and trashed = false`,
@@ -270,7 +268,16 @@ export class GoogleSheetsService {
         const files = searchResponse.result.files;
 
         if (files && files.length > 0) {
-            console.log(`Found existing spreadsheet for ${fileName}:`, files[0].id);
+            // Iterate through duplicates to find one with data
+            for (const file of files) {
+                const isEmpty = await this.isSpreadsheetEmpty(file.id!);
+                if (!isEmpty) {
+                    console.log(`Found POPULATED spreadsheet for ${fileName}:`, file.id);
+                    return file.id!;
+                }
+            }
+            // If all are empty, just use the first one
+            console.log(`Found empty spreadsheet for ${fileName}, reusing it:`, files[0].id);
             return files[0].id!;
         } else {
             // 2. Create
