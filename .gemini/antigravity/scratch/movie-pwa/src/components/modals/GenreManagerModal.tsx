@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Check, Trash2, Edit2, AlertTriangle, Loader2 } from 'lucide-react';
+import { X, Check, Trash2, Edit2, Loader2 } from 'lucide-react';
 import { GoogleSheetsService } from '../../services/GoogleSheetsService';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCollection } from '../../providers/CollectionProvider';

@@ -298,14 +298,14 @@ export class GoogleSheetsService {
         });
 
         const welcomeSheet = sheets.find(s => s.title === 'Welcome');
-        if (welcomeSheet && welcomeSheet.properties?.sheetId !== undefined) {
+        if (welcomeSheet && welcomeSheet.sheetId !== undefined) {
             try {
                 // Check if it's empty or default (implementation detail omitted to be safe, just trying to delete)
                 // Actually, let's strictly delete it only if we have at least one valid genre now.
                 if (sheets.length > 0) {
                     await gapi.client.sheets.spreadsheets.batchUpdate({
                         spreadsheetId,
-                        resource: { requests: [{ deleteSheet: { sheetId: welcomeSheet.properties.sheetId } }] }
+                        resource: { requests: [{ deleteSheet: { sheetId: welcomeSheet.sheetId } }] }
                     });
                 }
             } catch (e) {
@@ -363,15 +363,6 @@ export class GoogleSheetsService {
     }
 
     // --- Helper Methods ---
-
-    private async deleteSheet(sheetId: number, spreadsheetId: string): Promise<void> {
-        await gapi.client.sheets.spreadsheets.batchUpdate({
-            spreadsheetId,
-            resource: {
-                requests: [{ deleteSheet: { sheetId } }]
-            }
-        });
-    }
 
     private async getSheetsMetadata(format: 'DVD' | 'VHS'): Promise<{ title: string, sheetId: number }[]> {
         const spreadsheetId = this.getSpreadsheetId(format);
