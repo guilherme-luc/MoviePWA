@@ -7,7 +7,9 @@ declare global {
     }
 }
 
-const gapi = window.gapi;
+
+// Removed const gapi = window.gapi; to avoid early binding
+
 
 export class GoogleSheetsService {
     private _dvdSpreadsheetId: string | null = null;
@@ -26,7 +28,7 @@ export class GoogleSheetsService {
     }
 
     public get isSignedIn(): boolean {
-        return gapi.auth2.getAuthInstance().isSignedIn.get();
+        return window.gapi?.auth2?.getAuthInstance()?.isSignedIn?.get() || false;
     }
 
     public async initClient(): Promise<void> {
@@ -34,7 +36,7 @@ export class GoogleSheetsService {
 
         return new Promise((resolve, reject) => {
             const initGapi = () => {
-                gapi.client.init({
+                window.gapi.client.init({
                     apiKey: import.meta.env.VITE_GOOGLE_API_KEY,
                     clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID,
                     discoveryDocs: [
@@ -45,7 +47,7 @@ export class GoogleSheetsService {
                 }).then(() => {
                     this.isInitialized = true;
                     // Listen for auth changes to re-provision if needed
-                    gapi.auth2.getAuthInstance().isSignedIn.listen((isSignedIn: boolean) => {
+                    window.gapi.auth2.getAuthInstance().isSignedIn.listen((isSignedIn: boolean) => {
                         if (isSignedIn) this.provisionUserSheets();
                     });
 
@@ -60,21 +62,25 @@ export class GoogleSheetsService {
                 });
             };
 
-            if (gapi.client) {
-                initGapi();
-            } else {
-                gapi.load('client:auth2', initGapi);
-            }
+            const checkGapi = () => {
+                if (window.gapi && window.gapi.load) {
+                    window.gapi.load('client:auth2', initGapi);
+                } else {
+                    setTimeout(checkGapi, 100); // Wait for script to load
+                }
+            };
+
+            checkGapi();
         });
     }
 
     public async signIn(): Promise<void> {
-        await gapi.auth2.getAuthInstance().signIn();
+        await window.gapi.auth2.getAuthInstance().signIn();
         await this.provisionUserSheets();
     }
 
     public async signOut(): Promise<void> {
-        await gapi.auth2.getAuthInstance().signOut();
+        await window.gapi.auth2.getAuthInstance().signOut();
         this._dvdSpreadsheetId = null;
         this._vhsSpreadsheetId = null;
         localStorage.removeItem('user_spreadsheet_id'); // Clear legacy
@@ -637,7 +643,7 @@ export class GoogleSheetsService {
 
                 // Force token refresh on 401
                 if (error.status === 401) {
-                    await gapi.auth2.getAuthInstance().currentUser.get().reloadAuthResponse();
+                    await window.gapi.auth2.getAuthInstance().currentUser.get().reloadAuthResponse();
                 }
 
                 return this.requestWithRetry(operation, retries - 1);
