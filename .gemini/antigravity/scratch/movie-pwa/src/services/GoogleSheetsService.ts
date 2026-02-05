@@ -675,7 +675,7 @@ export class GoogleSheetsService {
 
         const values = [this.EXPECTED_HEADERS];
         const data = sheets.map(s => ({
-            range: `'${s.title}'!A1:Q1`,
+            range: `'${s.title}'!A1:V1`,
             values: values
         }));
 
