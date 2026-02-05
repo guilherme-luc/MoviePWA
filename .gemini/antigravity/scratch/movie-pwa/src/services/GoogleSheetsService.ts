@@ -205,18 +205,20 @@ export class GoogleSheetsService {
 
             if (files && files.length > 0) {
                 // Found it! Use the first one.
-                this._spreadsheetId = files[0].id;
+                this._spreadsheetId = files[0].id || null;
                 console.log("Found existing spreadsheet:", this._spreadsheetId);
             } else {
                 // 2. Not found, Create it!
                 console.log("Creating new spreadsheet...");
                 const createResponse = await gapi.client.sheets.spreadsheets.create({
-                    properties: {
-                        title: "MoviePWA Collection"
-                    },
-                    sheets: [
-                        { properties: { title: "Geral" } } // Default first tab
-                    ]
+                    resource: {
+                        properties: {
+                            title: "MoviePWA Collection"
+                        },
+                        sheets: [
+                            { properties: { title: "Geral" } } // Default first tab
+                        ]
+                    }
                 });
 
                 this._spreadsheetId = createResponse.result.spreadsheetId;
@@ -378,7 +380,7 @@ export class GoogleSheetsService {
 
                 const ranges = genres.map(genre => `'${genre}'!A2:V`);
                 const response = await gapi.client.sheets.spreadsheets.values.batchGet({
-                    spreadsheetId: this.SPREADSHEET_ID,
+                    spreadsheetId: this.spreadsheetId,
                     ranges: ranges
                 });
 
@@ -464,7 +466,7 @@ export class GoogleSheetsService {
             // 1. Find the next empty row by checking Title column (B)
             // We use B because Barcode (A) can be empty, but Title is required.
             const response = await gapi.client.sheets.spreadsheets.values.get({
-                spreadsheetId: this.SPREADSHEET_ID,
+                spreadsheetId: this.spreadsheetId,
                 range: `'${movie.genre}'!B:B`
             });
             const rowCount = response.result.values?.length || 0;
@@ -475,7 +477,7 @@ export class GoogleSheetsService {
 
             // 3. Update the specific row
             await gapi.client.sheets.spreadsheets.values.update({
-                spreadsheetId: this.SPREADSHEET_ID,
+                spreadsheetId: this.spreadsheetId,
                 range: `'${movie.genre}'!A${nextRow}:V${nextRow}`,
                 valueInputOption: 'USER_ENTERED',
                 resource: { values }
@@ -509,7 +511,7 @@ export class GoogleSheetsService {
             if (data.length === 0) return;
 
             await gapi.client.sheets.spreadsheets.values.batchUpdate({
-                spreadsheetId: this.SPREADSHEET_ID,
+                spreadsheetId: this.spreadsheetId,
                 resource: { valueInputOption: 'USER_ENTERED', data }
             });
         });
@@ -552,7 +554,7 @@ export class GoogleSheetsService {
             if (data.length === 0) return;
 
             await gapi.client.sheets.spreadsheets.values.batchUpdate({
-                spreadsheetId: this.SPREADSHEET_ID,
+                spreadsheetId: this.spreadsheetId,
                 resource: { valueInputOption: 'USER_ENTERED', data }
             });
         });
@@ -567,7 +569,7 @@ export class GoogleSheetsService {
             const values = [this.movieToRow(movie)];
 
             await gapi.client.sheets.spreadsheets.values.update({
-                spreadsheetId: this.SPREADSHEET_ID,
+                spreadsheetId: this.spreadsheetId,
                 range,
                 valueInputOption: 'USER_ENTERED',
                 resource: { values }
@@ -587,7 +589,7 @@ export class GoogleSheetsService {
             const endIndex = startIndex + 1;
 
             await gapi.client.sheets.spreadsheets.batchUpdate({
-                spreadsheetId: this.SPREADSHEET_ID,
+                spreadsheetId: this.spreadsheetId,
                 resource: {
                     requests: [{
                         deleteDimension: {
@@ -635,12 +637,12 @@ export class GoogleSheetsService {
 
         // 2. Create if not exists
         await gapi.client.sheets.spreadsheets.batchUpdate({
-            spreadsheetId: this.SPREADSHEET_ID,
+            spreadsheetId: this.spreadsheetId,
             resource: { requests: [{ addSheet: { properties: { title: genreName } } }] }
         });
         const values = [this.EXPECTED_HEADERS];
         await gapi.client.sheets.spreadsheets.values.update({
-            spreadsheetId: this.SPREADSHEET_ID,
+            spreadsheetId: this.spreadsheetId,
             range: `'${genreName}'!A1:V1`,
             valueInputOption: 'USER_ENTERED',
             resource: { values }
@@ -654,7 +656,7 @@ export class GoogleSheetsService {
             if (sheets.length === 0) return [];
             const ranges = sheets.map(s => `'${s.title}'!A2:A`);
             const response = await gapi.client.sheets.spreadsheets.values.batchGet({
-                spreadsheetId: this.SPREADSHEET_ID,
+                spreadsheetId: this.spreadsheetId,
                 ranges: ranges
             });
             const valueRanges = response.result.valueRanges;
@@ -663,15 +665,12 @@ export class GoogleSheetsService {
                 const rangeData = valueRanges[index];
                 return { genre: sheet.title, count: rangeData.values ? rangeData.values.length : 0 };
             });
-        } catch (error) {
-            console.error("Failed to fetch genre counts", error);
-            throw error;
-        }
+        });
     }
 
     private async getSheetsMetadata(): Promise<{ title: string, sheetId: number }[]> {
         const response = await gapi.client.sheets.spreadsheets.get({
-            spreadsheetId: this.SPREADSHEET_ID,
+            spreadsheetId: this.spreadsheetId,
         });
         return response.result.sheets?.map(s => ({
             title: s.properties?.title || '',
@@ -691,7 +690,7 @@ export class GoogleSheetsService {
             if (sheets.length === 0) return false;
             const ranges = sheets.map(s => `'${s.title}'!A1:V1`); // Check up to V
             const response = await gapi.client.sheets.spreadsheets.values.batchGet({
-                spreadsheetId: this.SPREADSHEET_ID,
+                spreadsheetId: this.spreadsheetId,
                 ranges: ranges
             });
             const valueRanges = response.result.valueRanges;
@@ -766,7 +765,7 @@ export class GoogleSheetsService {
         }));
 
         await gapi.client.sheets.spreadsheets.values.batchUpdate({
-            spreadsheetId: this.SPREADSHEET_ID,
+            spreadsheetId: this.spreadsheetId,
             resource: { valueInputOption: 'USER_ENTERED', data }
         });
     }
