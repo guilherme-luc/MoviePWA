@@ -221,7 +221,7 @@ export class GoogleSheetsService {
                     }
                 });
 
-                this._spreadsheetId = createResponse.result.spreadsheetId;
+                this._spreadsheetId = createResponse.result.spreadsheetId || null;
                 console.log("Created new spreadsheet:", this._spreadsheetId);
 
                 // 3. Initialize Headers in "Geral"
@@ -720,7 +720,7 @@ export class GoogleSheetsService {
     private async migrateSheetFormatColumn(sheetTitle: string): Promise<void> {
         // 1. Add Header "Format" to V1
         await gapi.client.sheets.spreadsheets.values.update({
-            spreadsheetId: this.SPREADSHEET_ID,
+            spreadsheetId: this.spreadsheetId,
             range: `'${sheetTitle}'!V1`,
             valueInputOption: 'USER_ENTERED',
             resource: { values: [['Format']] }
@@ -730,7 +730,7 @@ export class GoogleSheetsService {
         // First, assume a safe max range or check row count. simpler: fill V2:V1000 with DVD if empty?
         // Better: Read Column A to know how many rows.
         const response = await gapi.client.sheets.spreadsheets.values.get({
-            spreadsheetId: this.SPREADSHEET_ID,
+            spreadsheetId: this.spreadsheetId,
             range: `'${sheetTitle}'!A2:A`
         });
         const rowCount = response.result.values?.length || 0;
@@ -738,7 +738,7 @@ export class GoogleSheetsService {
         if (rowCount > 0) {
             const formats = Array(rowCount).fill(['DVD']);
             await gapi.client.sheets.spreadsheets.values.update({
-                spreadsheetId: this.SPREADSHEET_ID,
+                spreadsheetId: this.spreadsheetId,
                 range: `'${sheetTitle}'!V2:V${rowCount + 1}`,
                 valueInputOption: 'USER_ENTERED',
                 resource: { values: formats }
@@ -776,7 +776,7 @@ export class GoogleSheetsService {
     public async getGenres(): Promise<string[]> {
         if (!this.isInitialized) await this.initClient();
         const response = await gapi.client.sheets.spreadsheets.get({
-            spreadsheetId: this.SPREADSHEET_ID,
+            spreadsheetId: this.spreadsheetId,
         });
         return response.result.sheets?.map(s => s.properties?.title || '').filter(Boolean) || [];
     }
@@ -788,7 +788,7 @@ export class GoogleSheetsService {
         if (!sheet) return;
 
         await gapi.client.sheets.spreadsheets.batchUpdate({
-            spreadsheetId: this.SPREADSHEET_ID,
+            spreadsheetId: this.spreadsheetId,
             resource: {
                 requests: [{
                     sortRange: {
