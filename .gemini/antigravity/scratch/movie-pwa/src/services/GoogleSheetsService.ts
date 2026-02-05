@@ -7,14 +7,16 @@ declare global {
     }
 }
 
-
-// Removed const gapi = window.gapi; to avoid early binding
-
-
 export class GoogleSheetsService {
     private _dvdSpreadsheetId: string | null = null;
     private _vhsSpreadsheetId: string | null = null;
     private isInitialized = false;
+
+    // GIS Properties
+    private tokenClient: any = null;
+    private _accessToken: string | null = null;
+    private pendingSignInResolve: ((value: void | PromiseLike<void>) => void) | null = null;
+    private authListeners: ((isSignedIn: boolean) => void)[] = [];
 
     private getSpreadsheetId(format: 'DVD' | 'VHS'): string {
         const id = format === 'VHS' ? this._vhsSpreadsheetId : this._dvdSpreadsheetId;
@@ -28,45 +30,58 @@ export class GoogleSheetsService {
     }
 
     public get isSignedIn(): boolean {
-        return window.gapi?.auth2?.getAuthInstance()?.isSignedIn?.get() || false;
+        return !!this._accessToken;
     }
 
     public async initClient(): Promise<void> {
         if (this.isInitialized) return;
 
         return new Promise((resolve, reject) => {
-            const initGapi = () => {
-                window.gapi.client.init({
-                    apiKey: import.meta.env.VITE_GOOGLE_API_KEY,
-                    clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-                    discoveryDocs: [
-                        "https://sheets.googleapis.com/$discovery/rest?version=v4",
-                        "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"
-                    ],
-                    scope: "https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file",
-                }).then(() => {
-                    this.isInitialized = true;
-                    // Listen for auth changes to re-provision if needed
-                    window.gapi.auth2.getAuthInstance().isSignedIn.listen((isSignedIn: boolean) => {
-                        if (isSignedIn) this.provisionUserSheets();
+            const initGapiClient = async () => {
+                try {
+                    await window.gapi.client.init({
+                        apiKey: import.meta.env.VITE_GOOGLE_API_KEY,
+                        discoveryDocs: [
+                            "https://sheets.googleapis.com/$discovery/rest?version=v4",
+                            "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"
+                        ],
                     });
 
-                    if (this.isSignedIn) {
-                        this.provisionUserSheets().then(resolve).catch(reject);
-                    } else {
-                        resolve();
-                    }
-                }).catch((error: any) => {
+                    this.tokenClient = window.google.accounts.oauth2.initTokenClient({
+                        client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+                        scope: "https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file",
+                        callback: async (response: any) => {
+                            if (response.error !== undefined) {
+                                throw response;
+                            }
+                            this._accessToken = response.access_token;
+                            if (window.gapi.client) window.gapi.client.setToken(response);
+                            localStorage.setItem('gst_logged_in', 'true');
+
+                            await this.provisionUserSheets();
+                            this.notifyAuthChange();
+
+                            if (this.pendingSignInResolve) {
+                                this.pendingSignInResolve();
+                                this.pendingSignInResolve = null;
+                            }
+                        },
+                    });
+
+                    this.isInitialized = true;
+                    resolve();
+
+                } catch (error) {
                     console.error("Error initializing Google Sheets API", error);
                     reject(error);
-                });
+                }
             };
 
             const checkGapi = () => {
-                if (window.gapi && window.gapi.load) {
-                    window.gapi.load('client:auth2', initGapi);
+                if (window.gapi && window.gapi.load && window.google && window.google.accounts) {
+                    window.gapi.load('client', initGapiClient);
                 } else {
-                    setTimeout(checkGapi, 100); // Wait for script to load
+                    setTimeout(checkGapi, 100);
                 }
             };
 
@@ -74,18 +89,36 @@ export class GoogleSheetsService {
         });
     }
 
+    public onAuthStateChanged(callback: (isSignedIn: boolean) => void): void {
+        this.authListeners.push(callback);
+        callback(this.isSignedIn);
+    }
+
+    private notifyAuthChange() {
+        this.authListeners.forEach(cb => cb(this.isSignedIn));
+    }
+
     public async signIn(): Promise<void> {
-        await window.gapi.auth2.getAuthInstance().signIn();
-        await this.provisionUserSheets();
+        return new Promise((resolve) => {
+            this.pendingSignInResolve = resolve;
+            this.tokenClient.requestAccessToken({ prompt: 'consent' });
+        });
     }
 
     public async signOut(): Promise<void> {
-        await window.gapi.auth2.getAuthInstance().signOut();
+        if (this._accessToken) {
+            window.google.accounts.oauth2.revoke(this._accessToken, () => { console.log("Token revoked"); });
+        }
+        this._accessToken = null;
+        if (window.gapi.client) window.gapi.client.setToken(null);
+        localStorage.removeItem('gst_logged_in');
+
         this._dvdSpreadsheetId = null;
         this._vhsSpreadsheetId = null;
         localStorage.removeItem('user_spreadsheet_id'); // Clear legacy
         localStorage.removeItem('user_dvd_spreadsheet_id');
         localStorage.removeItem('user_vhs_spreadsheet_id');
+        this.notifyAuthChange();
     }
 
     public async provisionUserSheets(): Promise<void> {
@@ -643,7 +676,10 @@ export class GoogleSheetsService {
 
                 // Force token refresh on 401
                 if (error.status === 401) {
-                    await window.gapi.auth2.getAuthInstance().currentUser.get().reloadAuthResponse();
+                    // Try to silently refresh or prompt used
+                    // We can reuse signIn which now properly waits for the token
+                    console.log("401 detected, attempting to refresh token...");
+                    await this.signIn();
                 }
 
                 return this.requestWithRetry(operation, retries - 1);
