@@ -118,8 +118,12 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
     // Manual Override for Metadata
     const [isMetadataLocked, setIsMetadataLocked] = useState(true);
 
+    // Ref to track if user has manually typed in the title field
+    const userTouchedTitle = useRef(false);
+
     useEffect(() => {
         if (isOpen) {
+            userTouchedTitle.current = false; // Reset on open
             loadGenres();
             if (movieToEdit) {
                 setBarcode(movieToEdit.barcode);
@@ -219,11 +223,9 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
             return;
         }
 
-        // Feedback #5: Don't auto-search if we are editing and the title hasn't changed (Robust check)
-        if (movieToEdit) {
-            const currentTitle = title.trim().toLowerCase();
-            const originalTitle = (movieToEdit.title || '').trim().toLowerCase();
-            if (currentTitle === originalTitle) return;
+        // Feedback #5 & #21: Strictly block auto-search unless user manually typed.
+        if (!userTouchedTitle.current) {
+            return;
         }
 
         // If this change was caused by a user selection, ignore it
@@ -767,7 +769,10 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                                                 <input
                                                     type="text"
                                                     value={title}
-                                                    onChange={(e) => setTitle(e.target.value)}
+                                                    onChange={(e) => {
+                                                        setTitle(e.target.value);
+                                                        userTouchedTitle.current = true;
+                                                    }}
                                                     onBlur={() => {
                                                         // Don't auto-fetch on blur anymore to avoid annoying behavior
                                                         // let user click search manually

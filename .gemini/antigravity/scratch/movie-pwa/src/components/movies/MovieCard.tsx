@@ -22,7 +22,7 @@ export const MovieCard: React.FC<MovieCardProps> = ({ movie, isSelected, isSelec
             `}
             onClick={() => onClick(movie)}
         >
-            <div className="flex items-center gap-3 overflow-hidden flex-1 h-full">
+            <div className="flex items-center gap-3 flex-1 h-full">
 
                 {/* Checkbox for Selection - Larger Touch Area */}
                 {isSelectionMode && (
