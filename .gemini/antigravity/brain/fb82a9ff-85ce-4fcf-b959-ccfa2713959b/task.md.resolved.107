@@ -212,4 +212,4 @@
 - [x] Fix Grouping Logic on Edit (Feedback #3) <!-- id: 114 -->
 - [x] Fix Delete Button Visibility (Feedback #4) <!-- id: 115 -->
 - [x] Remove TMDB Search on Edit Existing (Feedback #5) <!-- id: 116 -->
-- [x] Fix Settings Modal Size (Feedback #6) <!-- id: 117 -->
+- [ ] Fix Settings Modal Size (Feedback #6) <!-- id: 117 -->

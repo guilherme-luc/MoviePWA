@@ -31,7 +31,7 @@
 - [x] Create `GenreList` Page (Home - with counts) <!-- id: 17 -->
 - [x] Create [GenreManager](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/modals/GenreManagerModal.tsx#13-186) Modal (Add new genre) <!-- id: 18 -->
 - [x] Create `MovieList` Page (Filterable, Searchable) <!-- id: 19 -->
-- [x] Create [MovieEditor](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/modals/MovieEditorModal.tsx#64-1252) Page/Modal (Add/Edit Form) <!-- id: 20 -->
+- [x] Create [MovieEditor](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/modals/MovieEditorModal.tsx#64-1236) Page/Modal (Add/Edit Form) <!-- id: 20 -->
     - [x] **8.3: First Genre Bootstrapping** <!-- id: 8.3 -->
         - [x] Create [StartupGenreModal.tsx](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/modals/StartupGenreModal.tsx).
         - [x] Trigger on [LandingPage](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/pages/LandingPage.tsx#14-267) or [HomePage](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/pages/HomePage.tsx#19-289) if selected format has 0 genres.
@@ -208,8 +208,8 @@
 
 ## Phase 19: User Feedback & Polish (Feb 6)
 - [x] Fix Badge Size & Position (Feedback #1) <!-- id: 112 -->
-- [x] Fix Genre Auto-fill (Feedback #2) <!-- id: 113 -->
-- [x] Fix Grouping Logic on Edit (Feedback #3) <!-- id: 114 -->
-- [x] Fix Delete Button Visibility (Feedback #4) <!-- id: 115 -->
-- [x] Remove TMDB Search on Edit Existing (Feedback #5) <!-- id: 116 -->
-- [x] Fix Settings Modal Size (Feedback #6) <!-- id: 117 -->
+- [ ] Fix Genre Auto-fill (Feedback #2) <!-- id: 113 -->
+- [ ] Fix Grouping Logic on Edit (Feedback #3) <!-- id: 114 -->
+- [ ] Fix Delete Button Visibility (Feedback #4) <!-- id: 115 -->
+- [ ] Remove TMDB Search on Edit Existing (Feedback #5) <!-- id: 116 -->
+- [ ] Fix Settings Modal Size (Feedback #6) <!-- id: 117 -->

@@ -63,6 +63,10 @@
 - [x] Fix Image Save Error (Resize logic) <!-- id: 39 -->
 - [x] Restore Delete Button <!-- id: 40 -->
 
+## Phase 19: User Feedback & Polish (Feb 6)
+- [x] Fix Badge Size & Position (Feedback #1) <!-- id: 112 -->
+- [x] Fix Genre Auto-fill (Feedback #2) <!-- id: 113 -->
+
 ## Refinements (Phase 4.2)
 - [x] Fix Strict Sorting (Ignore spaces completely) <!-- id: 41 -->
 - [x] Add "Remove Photo" Button <!-- id: 42 -->
@@ -201,3 +205,11 @@
 - [x] Create `DuplicateSelectionModal` (Handle clicks on groups) <!-- id: 109 -->
 - [x] Update `MovieCard` to accept `groupCount` and render Badge <!-- id: 110 -->
 - [x] Implement Grouping Integration in `HomePage` <!-- id: 111 -->
+
+## Phase 19: User Feedback & Polish (Feb 6)
+- [x] Fix Badge Size & Position (Feedback #1) <!-- id: 112 -->
+- [x] Fix Genre Auto-fill (Feedback #2) <!-- id: 113 -->
+- [x] Fix Grouping Logic on Edit (Feedback #3) <!-- id: 114 -->
+- [x] Fix Delete Button Visibility (Feedback #4) <!-- id: 115 -->
+- [x] Remove TMDB Search on Edit Existing (Feedback #5) <!-- id: 116 -->
+- [x] Fix Settings Modal Size (Feedback #6) <!-- id: 117 -->
