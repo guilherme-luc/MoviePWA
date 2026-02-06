@@ -522,7 +522,7 @@ export const MoviesPage: React.FC = () => {
             {/* Bottom Actions Bar (Selection Mode) */}
             {
                 isSelectionMode ? (
-                    <div className="fixed bottom-0 left-0 right-0 p-4 bg-neutral-900 border-t border-white/10 flex items-center justify-center gap-4 animate-in slide-in-from-bottom z-30 pb-safe mb-[env(safe-area-inset-bottom)]">
+                    <div className="fixed bottom-0 left-0 right-0 p-4 bg-neutral-900 border-t border-white/10 flex items-center justify-center gap-4 animate-in slide-in-from-bottom z-[90] pb-8">
                         <button
                             onClick={handleBulkDelete}
                             disabled={selectedMovies.length === 0}

@@ -49,11 +49,11 @@ export const MovieCard: React.FC<MovieCardProps> = ({ movie, isSelected, isSelec
 
                             {/* Group Badge */}
                             {groupCount && groupCount > 1 && (
-                                <div className="absolute top-2 right-2 z-10">
-                                    <div className="bg-primary-600 text-white text-xs font-bold w-7 h-7 flex items-center justify-center rounded-full shadow-lg border border-white/20 animate-in zoom-in spin-in-12 duration-300">
+                                <div className="absolute top-1 right-1 z-10">
+                                    <div className="bg-primary-600 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full shadow-sm border border-white/20 animate-in zoom-in spin-in-12 duration-300">
                                         {groupCount}
                                     </div>
-                                    <div className="absolute top-0.5 right-0.5 w-7 h-7 bg-primary-800 rounded-full -z-10 translate-x-0.5 -translate-y-0.5" />
+                                    <div className="absolute top-0.5 right-0.5 w-5 h-5 bg-primary-900 rounded-full -z-10 translate-x-0.5 -translate-y-0.5" />
                                 </div>
                             )}
                         </>

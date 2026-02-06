@@ -38,9 +38,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-neutral-900 border border-white/10 w-full max-w-md rounded-2xl p-6 shadow-2xl animate-in zoom-in-95 duration-200 relative">
+            <div className="bg-neutral-900 border border-white/10 w-full max-w-md rounded-2xl p-4 sm:p-6 shadow-2xl animate-in zoom-in-95 duration-200 relative flex flex-col max-h-[90vh]">
 
-                <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center justify-between mb-4 flex-shrink-0">
                     <h2 className="text-xl font-bold text-white flex items-center gap-2">
                         <Key className="text-primary-400" size={24} />
                         Configurações
@@ -50,11 +50,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                     </button>
                 </div>
 
-                <div className="space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar pr-2">
+                <div className="space-y-4 overflow-y-auto custom-scrollbar pr-2 flex-1">
 
                     {/* Guest Mode Link Generator */}
                     {!isShowcaseMode && (
-                        <div className="bg-primary-500/10 p-4 rounded-xl border border-primary-500/20 mb-6">
+                        <div className="bg-primary-500/10 p-4 rounded-xl border border-primary-500/20 mb-4">
                             <h3 className="text-white font-bold text-sm mb-2 flex items-center gap-2">
                                 <Share2 size={16} className="text-primary-400" />
                                 Compartilhar Coleção (Link Público)

@@ -158,6 +158,12 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
         loadGenres();
     }, [format]); // Reload genres if format changes
 
+    useEffect(() => {
+        if (isOpen && !movieToEdit && initialGenre) {
+            setGenre(initialGenre);
+        }
+    }, [isOpen, movieToEdit, initialGenre]);
+
     const loadGenres = async () => {
         const g = await GoogleSheetsService.getInstance().getGenres(format);
         setGenres(g);
@@ -213,6 +219,11 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
             return;
         }
 
+        // Feedback #5: Don't auto-search if we are editing and the title hasn't changed
+        if (movieToEdit && title === movieToEdit.title) {
+            return;
+        }
+
         // If this change was caused by a user selection, ignore it
         if (isSelectionRef.current) {
             isSelectionRef.current = false;
@@ -225,7 +236,7 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
         }, 200);
 
         return () => clearTimeout(timer);
-    }, [title, isLinkMode, isShowcaseMode]);
+    }, [title, isLinkMode, isShowcaseMode, movieToEdit]);
 
     const importFromLink = async () => {
         if (!linkInput) return;
@@ -520,7 +531,9 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
             duration,
             director,
             cast,
-            tmdbId,
+            // Fix #3: If title changed manually but ID wasn't updated (still matches original),
+            // clear the ID to ensure it ungroups (treat as new movie).
+            tmdbId: (movieToEdit && title !== movieToEdit.title && tmdbId === movieToEdit.tmdbId) ? '' : tmdbId,
             userRating,
 
 
@@ -860,6 +873,9 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
                                         disabled={isShowcaseMode}
                                     >
                                         <option value="" disabled>Selecione...</option>
+                                        {initialGenre && !genres.includes(initialGenre) && (
+                                            <option value={initialGenre}>{initialGenre}</option>
+                                        )}
                                         {genres.map(g => (
                                             <option key={g} value={g}>{g}</option>
                                         ))}
