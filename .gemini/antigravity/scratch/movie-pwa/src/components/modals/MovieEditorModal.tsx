@@ -219,9 +219,11 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
             return;
         }
 
-        // Feedback #5: Don't auto-search if we are editing and the title hasn't changed
-        if (movieToEdit && title === movieToEdit.title) {
-            return;
+        // Feedback #5: Don't auto-search if we are editing and the title hasn't changed (Robust check)
+        if (movieToEdit) {
+            const currentTitle = title.trim().toLowerCase();
+            const originalTitle = (movieToEdit.title || '').trim().toLowerCase();
+            if (currentTitle === originalTitle) return;
         }
 
         // If this change was caused by a user selection, ignore it
@@ -531,9 +533,9 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
             duration,
             director,
             cast,
-            // Fix #3: If title changed manually but ID wasn't updated (still matches original),
+            // Fix #3: If title OR year changed manually but ID wasn't updated,
             // clear the ID to ensure it ungroups (treat as new movie).
-            tmdbId: (movieToEdit && title !== movieToEdit.title && tmdbId === movieToEdit.tmdbId) ? '' : tmdbId,
+            tmdbId: (movieToEdit && (title !== movieToEdit.title || year !== movieToEdit.year) && tmdbId === movieToEdit.tmdbId) ? '' : tmdbId,
             userRating,
 
 

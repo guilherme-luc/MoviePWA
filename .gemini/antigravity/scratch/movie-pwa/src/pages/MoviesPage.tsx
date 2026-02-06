@@ -278,6 +278,7 @@ export const MoviesPage: React.FC = () => {
                 }}
                 movieToEdit={selectedMovie}
                 initialFormat={format || 'DVD'}
+                initialGenre={decodedGenre}
                 onSearch={setSearch}
             />
 

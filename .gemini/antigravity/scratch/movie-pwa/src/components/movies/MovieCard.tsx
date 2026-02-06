@@ -35,7 +35,7 @@ export const MovieCard: React.FC<MovieCardProps> = ({ movie, isSelected, isSelec
                 )}
 
                 {/* Thumbnail */}
-                <div className="w-[3.5rem] h-full bg-neutral-900 rounded-md flex-shrink-0 overflow-hidden border border-white/5 relative aspect-[2/3]">
+                <div className="w-[3.5rem] h-full bg-neutral-900 flex-shrink-0 border border-white/5 relative aspect-[2/3]">
                     {movie.imageValue ? (
                         <>
                             <img
@@ -44,12 +44,12 @@ export const MovieCard: React.FC<MovieCardProps> = ({ movie, isSelected, isSelec
                                     : movie.imageValue}
                                 alt=""
                                 loading="lazy"
-                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                className="w-full h-full object-cover rounded-md transition-transform duration-500 group-hover:scale-105"
                             />
 
-                            {/* Group Badge */}
+                            {/* Group Badge - Adjusted Position */}
                             {groupCount && groupCount > 1 && (
-                                <div className="absolute top-1 right-1 z-10">
+                                <div className="absolute -top-2 -right-2 z-10">
                                     <div className="bg-primary-600 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full shadow-sm border border-white/20 animate-in zoom-in spin-in-12 duration-300">
                                         {groupCount}
                                     </div>
