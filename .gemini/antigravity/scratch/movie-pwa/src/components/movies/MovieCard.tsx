@@ -8,9 +8,10 @@ interface MovieCardProps {
     isSelectionMode: boolean;
     isShowcaseMode: boolean;
     onClick: (movie: Movie) => void;
+    groupCount?: number; // Added
 }
 
-export const MovieCard: React.FC<MovieCardProps> = ({ movie, isSelected, isSelectionMode, isShowcaseMode, onClick }) => {
+export const MovieCard: React.FC<MovieCardProps> = ({ movie, isSelected, isSelectionMode, isShowcaseMode, onClick, groupCount }) => {
     return (
         <div
             className={`
@@ -36,14 +37,26 @@ export const MovieCard: React.FC<MovieCardProps> = ({ movie, isSelected, isSelec
                 {/* Thumbnail */}
                 <div className="w-[3.5rem] h-full bg-neutral-900 rounded-md flex-shrink-0 overflow-hidden border border-white/5 relative aspect-[2/3]">
                     {movie.imageValue ? (
-                        <img
-                            src={movie.imageType === 'tmdb'
-                                ? `https://image.tmdb.org/t/p/w92${movie.imageValue}`
-                                : movie.imageValue}
-                            alt=""
-                            className="w-full h-full object-cover"
-                            loading="lazy"
-                        />
+                        <>
+                            <img
+                                src={movie.imageType === 'tmdb'
+                                    ? `https://image.tmdb.org/t/p/w92${movie.imageValue}`
+                                    : movie.imageValue}
+                                alt=""
+                                loading="lazy"
+                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            />
+
+                            {/* Group Badge */}
+                            {groupCount && groupCount > 1 && (
+                                <div className="absolute top-2 right-2 z-10">
+                                    <div className="bg-primary-600 text-white text-xs font-bold w-7 h-7 flex items-center justify-center rounded-full shadow-lg border border-white/20 animate-in zoom-in spin-in-12 duration-300">
+                                        {groupCount}
+                                    </div>
+                                    <div className="absolute top-0.5 right-0.5 w-7 h-7 bg-primary-800 rounded-full -z-10 translate-x-0.5 -translate-y-0.5" />
+                                </div>
+                            )}
+                        </>
                     ) : (
                         <div className="w-full h-full flex items-center justify-center text-neutral-700">
                             <div className="w-4 h-4 bg-white/10 rounded-full" />

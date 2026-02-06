@@ -8,6 +8,8 @@ import { GoogleSheetsService } from '../services/GoogleSheetsService';
 import type { Movie } from '../types';
 import { MovieCardSkeleton } from '../components/movies/MovieCardSkeleton';
 import { MovieCard } from '../components/movies/MovieCard';
+import { useMovieGrouping, type GroupedMovie } from '../hooks/useMovieGrouping';
+import { DuplicateSelectionModal } from '../components/modals/DuplicateSelectionModal';
 
 import { PullToRefresh } from '../components/ui/PullToRefresh';
 
@@ -109,13 +111,31 @@ export const MoviesPage: React.FC = () => {
         });
     }, [movies, search, viewMode, tagFilter, sortBy]);
 
-    const handleEdit = (movie: Movie) => {
+    // Grouping Logic
+    const groupedMovies = useMovieGrouping(filteredMovies);
+    const [selectedGroup, setSelectedGroup] = useState<GroupedMovie | null>(null);
+
+    // In selection mode, we show ALL movies (flat) to allow specific selection.
+    // In normal mode, we show GROUPED movies.
+    const displayMovies = isSelectionMode ? filteredMovies : groupedMovies;
+
+    const handleCardClick = (movie: Movie) => {
         if (isSelectionMode) {
             handleToggleSelection(movie);
-        } else {
-            setSelectedMovie(movie);
-            setIsEditorOpen(true);
+            return;
         }
+
+        const grouped = movie as GroupedMovie;
+        if (grouped.groupCount && grouped.groupCount > 1) {
+            setSelectedGroup(grouped);
+        } else {
+            handleEdit(movie);
+        }
+    };
+
+    const handleEdit = (movie: Movie) => {
+        setSelectedMovie(movie);
+        setIsEditorOpen(true);
     };
 
     const handleAddNew = () => {
@@ -257,9 +277,32 @@ export const MoviesPage: React.FC = () => {
                     setSelectedMovie(undefined);
                 }}
                 movieToEdit={selectedMovie}
-                initialGenre={decodedGenre}
                 initialFormat={format || 'DVD'}
                 onSearch={setSearch}
+            />
+
+            <DuplicateSelectionModal
+                isOpen={!!selectedGroup}
+                onClose={() => setSelectedGroup(null)}
+                groupTitle={selectedGroup?.title || ''}
+                movies={selectedGroup?.instances || []}
+                onEdit={(m) => {
+                    setSelectedGroup(null);
+                    handleEdit(m);
+                }}
+                onDelete={async (m) => {
+                    if (!format) return;
+                    if (!confirm("Excluir esta cópia permanentemente?")) return;
+                    try {
+                        await GoogleSheetsService.getInstance().deleteMovie(m, format);
+                        await queryClient.invalidateQueries({ queryKey: ['movies'] });
+                        await queryClient.invalidateQueries({ queryKey: ['all_movies'] });
+                        setSelectedGroup(null);
+                    } catch (e) {
+                        alert("Erro ao excluir. Verifique o console.");
+                        console.error(e);
+                    }
+                }}
             />
 
             {/* Selection Header */}
@@ -460,14 +503,15 @@ export const MoviesPage: React.FC = () => {
                         </div>
                     ) : (
                         <div className="space-y-2">
-                            {filteredMovies.map((movie) => (
+                            {displayMovies.map((movie) => (
                                 <MovieCard
                                     key={`${movie._rowIndex}-${movie.barcode}`}
                                     movie={movie}
                                     isSelected={selectedMovies.some(m => m === movie)}
                                     isSelectionMode={isSelectionMode}
                                     isShowcaseMode={isShowcaseMode}
-                                    onClick={handleEdit}
+                                    onClick={handleCardClick}
+                                    groupCount={isSelectionMode ? undefined : (movie as GroupedMovie).groupCount}
                                 />
                             ))}
                         </div>
