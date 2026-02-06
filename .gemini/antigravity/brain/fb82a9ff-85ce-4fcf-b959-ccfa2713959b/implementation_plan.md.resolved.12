@@ -1,0 +1,35 @@
+# Implementation Plan - User Experience Improvements (Phase 5)
+
+## Goal Description
+Enhance the visual polish and perceived performance of the application. The immediate focus is on "Skeleton Loading" to replace blank screens during data fetching.
+
+## Proposed Changes
+
+### 1. Implement Skeleton Loading
+#### [NEW] [src/components/ui/Skeleton.tsx]
+- Create a reusable [Skeleton](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/ui/Skeleton.tsx#5-13) component (gray pulsing div) using Tailwind `animate-pulse`.
+
+#### [NEW] [src/components/movies/MovieCardSkeleton.tsx]
+- Create a mock version of [MovieCard](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/movies/MovieCardSkeleton.tsx#3-18) using skeletons for Poster, Title, and Year.
+
+#### [MODIFY] [src/components/movies/MovieList.tsx]
+- Update to show [MovieCardSkeleton](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/movies/MovieCardSkeleton.tsx#3-18) grid while `isLoading` is true.
+
+#### [MODIFY] [src/pages/GenreList.tsx]
+- Update to show skeletons while categories are loading.
+
+
+### 2. Implement Dashboard Statistics
+#### [MODIFY] [src/components/modals/StatsModal.tsx]
+- The modal currently exists with basic stats (Total, Genres, Decades).
+- **Enhancement:** Add "Average User Rating" and "Watched vs Unwatched" chart.
+- **Enhancement:** Improve UI with gradients and better spacing.
+
+#### [MODIFY] [src/services/GoogleSheetsService.ts]
+- Ensure `userRating` and `watched` boolean are strictly typed/parsed for accurate math.
+
+## Verification Plan
+1. **Skeleton:** Verify as per previous step (Done).
+2. **Stats:** Open Dashboard. Check if "Total Movies" matches reality.
+3. **Charts:** Check if "Top Genres" bar chart renders correctly.
+4. **Calculations:** Verify "Watched vs Unwatched" counts.

@@ -1,0 +1,47 @@
+# Implementation Plan - User Feedback Fixes (Phase 4.1)
+
+## Goal Description
+Address 5 specific user reported issues to improve usability and stability.
+
+## User Review Required
+> [!IMPORTANT]
+> **Image Size Limit:** To fix the "Error saving" issue with camera photos, we will aggressively compress images to ~400px width to fit within Google Sheets cell limits (50k characters). High-res covers will not be supported for manual uploads (TMDB covers are fine as they are just URLs).
+
+## Proposed Changes
+
+### 1. Fix Input Zoom on Mobile
+#### [MODIFY] [index.css](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/index.css)
+- Add global rule: `input, select, textarea { font-size: 16px !important; }` for mobile viewports to prevent iOS auto-zoom.
+
+### 2. Fix Alphabetical Sorting
+#### [MODIFY] [src/hooks/useMovies.ts](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/hooks/useMovies.ts) (or Service)
+- Implement `Intl.Collator` for sorting.
+- Normalize strings: Remove accents, special characters, and trim whitespace before comparing.
+- Ignore "A", "O", "As", "Os" prefixes? (Maybe not requested, but "ignore spaces/accents" was).
+
+### 3. Improve TMDB Movie Selection
+#### [MODIFY] [src/components/modals/MovieEditorModal.tsx](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/modals/MovieEditorModal.tsx)
+- **Problem:** Auto-match picks wrong movie.
+- **Solution:**
+    - Change "Blur" behavior: If multiple results, show a "Select Movie" picker (simple list overlay) instead of auto-selecting the first one.
+    - Add a "Manual Search" button that explicitly opens the result list.
+    - Allow "None of the above" option to keep fields blank.
+
+### 4. Fix Image Save Error
+#### [MODIFY] [src/components/modals/MovieEditorModal.tsx](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/modals/MovieEditorModal.tsx)
+- Update [compressImage](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/modals/MovieEditorModal.tsx#15-53):
+    - Reduce `MAX_WIDTH` from 800 to **400**.
+    - Reduce `quality` from 0.6 to **0.5**.
+    - Ensure output string is < 50,000 characters (check length before returning).
+
+### 5. Restore Delete Button
+#### [MODIFY] [src/components/modals/MovieEditorModal.tsx](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/modals/MovieEditorModal.tsx)
+- Re-enable the "Trash" icon button.
+- Ensure it calls `GoogleSheetsService.deleteMovie` and closes modal.
+
+## Verification Plan
+1. **Zoom:** Manual check (difficult to verify without mobile device, but CSS fix is standard).
+2. **Sort:** Add movies with accents ("Águia", "Zebra", " Ant"). Verify order "Águia" -> "Ant" -> "Zebra".
+3. **TMDB:** Search for "Batman". Verify it asks which Batman instead of auto-picking 1989/2022 randomly.
+4. **Image:** Upload a large photo. Verify it saves successfully (mocking the upload).
+5. **Delete:** Click Trash icon. Verify movie disappears.

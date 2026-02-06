@@ -1,0 +1,42 @@
+# Nova Funcionalidade: Gerenciador de Coleções Múltiplas (VHS & DVD)
+
+Gabriel, terminamos a implementação da nova arquitetura para suportar suas fitas VHS! 🎉
+
+O sistema agora é capaz de gerenciar múltiplas coleções dentro da mesma planilha, mantendo tudo organizado e centralizado.
+
+## 🌟 O Que Mudou?
+
+### 1. Landing Page Épica
+Ao abrir o app, você agora será recebido por uma tela de escolha de formato com estilos distintos:
+*   **Lado Esquerdo (VHS):** Estilo retrô, com scanlines, ruído visual e cores quentes (Âmbar/Laranja).
+*   **Lado Direito (DVD):** O estilo moderno que você já conhece (Azul/Roxo).
+
+### 2. Filtragem Inteligente
+*   Ao escolher **DVD**, você verá **apenas** seus filmes de DVD (seus dados antigos estão seguros aqui!).
+*   Ao escolher **VHS**, você entrará em um "espaço vazio" pronto para cadastrar suas fitas.
+
+### 3. Cadastro Automático
+*   Quando você estiver no modo "VHS" e clicar no botão **+** para adicionar um filme, ele será salvo automaticamente como formato `VHS` na planilha.
+*   Não é necessário selecionar manualmente o formato toda vez.
+
+---
+
+## 🛠️ Como Usar
+
+1.  Acesse a página inicial (`/`).
+2.  Clique em **VHS** para inaugurar sua nova coleção.
+3.  Adicione um filme de teste (ex: "Alien O 8º Passageiro" ou "O Rei Leão").
+4.  Volte para a **Landing Page** (clique no botão voltar do navegador ou recarregue).
+5.  Clique em **DVD** e verifique que o filme VHS **não aparece** lá.
+
+## 💾 Dados Técnicos
+*   Foi adicionada uma nova coluna na sua planilha Google Sheets (Coluna V: [Format](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/providers/CollectionProvider.tsx#21-29)).
+*   O sistema assume automaticamente que qualquer filme sem essa informação é um **DVD** (para compatibilidade com seus dados antigos).
+
+---
+
+### Próximos Passos (Opcionais)
+*   **Migração Manual:** Se você tiver algum filme na lista de DVD que na verdade é VHS, basta editá-lo e (futuramente) podemos colocar um seletor de formato na edição, mas por enquanto a separação é feita na criação.
+*   **Temas Específicos:** Podemos aprofundar ainda mais a customização visual do modo VHS no futuro (fontes diferentes, ícones retrô em todo o app).
+
+Aproveite sua nova central de mídia retro-futurista! 📼✨

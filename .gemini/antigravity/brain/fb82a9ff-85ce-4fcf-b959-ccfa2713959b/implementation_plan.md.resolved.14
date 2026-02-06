@@ -1,0 +1,32 @@
+# Implementation Plan - Advanced Media Integration (Phase 6)
+
+### Watchlist vs Collection
+- [ ] **UI Update**: Add a view toggle/filter in [MoviesPage.tsx](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/pages/MoviesPage.tsx).
+    - Options: "Todos" (All), "Já Assisti" (Collection), "Quero Ver" (Watchlist).
+- [ ] **Logic**: Filter `filteredMovies` based on the selected mode and the `watched` boolean.
+- [ ] **Default**: Keep "Todos" as default or "Já Assisti" depending on preference (will stick to "Todos" for now).
+
+## Goal Description
+Allow users to watch movie trailers directly within the application without leaving the interface.
+
+## Proposed Changes
+
+### 1. Implement Trailer Integration
+#### [NEW] [src/components/modals/TrailerModal.tsx]
+- Create a modal that accepts a `videoId` (YouTube ID).
+- Embed a strict `iframe` pointing to `https://www.youtube.com/embed/${videoId}`.
+- Styling: Dark backdrop, responsive aspect ratio (16:9).
+
+#### [MODIFY] [src/components/modals/MovieEditorModal.tsx]
+- Add a "Play Trailer" button next to the movie title/poster.
+- **Logic:**
+    - If `tmdbId` exists, call TMDB API endpoint `/movie/{id}/videos`.
+    - Filter results for `site: "YouTube"` and `type: "Trailer"`.
+    - If found, open [TrailerModal](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/modals/TrailerModal.tsx#10-33).
+    - If not found, show toast/alert.
+
+## Verification Plan
+1. **Search:** Select a popular movie (e.g., "Inception").
+2. **Action:** Click "Ver Trailer".
+3. **Expectation:** Modal opens, YouTube video loads and plays.
+4. **Mobile:** Verify the modal is responsive and doesn't break layout on small screens.

@@ -1,0 +1,41 @@
+# Guia de Deploy (Colocar no Ar) 🚀
+
+Para acessar seu app do celular ou de casa, vamos colocá-lo na nuvem usando a Vercel.
+
+## Passo 1: Subir código para o GitHub
+(Eu já fiz o commit localmente para você, agora você precisa enviar para seu repositório).
+
+1.  Abra seu terminal/VS Code.
+2.  Execute: `git push`
+    *   *Se você ainda não tem um repositório remoto configurado, crie um no site do GitHub e siga as instruções para adicionar o `remote`.*
+
+## Passo 2: Publicar na Vercel
+1.  Acesse [vercel.com](https://vercel.com) e faça login (pode usar sua conta GitHub).
+2.  Clique em **"Add New..."** -> **"Project"**.
+3.  Selecione seu repositório `movie-pwa` (ou o nome que você deu).
+4.  Clique em **Import**.
+5.  Nas configurações de Build, o padrão deve funcionar (`npm run build`).
+6.  Clique em **Deploy**.
+7.  Aguarde até ficar verde e ganhar um link (algo como `movie-pwa-xyz.vercel.app`).
+    *   🛑 **NÃO TENTE LOGAR AINDA!** Vai dar erro 403/400. Vá para o Passo 3.
+
+## Passo 3: Configurar Google Cloud (CRÍTICO) 🔐
+O Google Login só aceita sites que você autorizou explicitamente.
+
+1.  Acesse o [Google Cloud Console](https://console.cloud.google.com/).
+2.  Selecione seu projeto.
+3.  Vá em **APIs e Serviços** -> **Credenciais**.
+4.  Clique no lápis para editar seu **"ID do cliente OAuth 2.0"**.
+5.  Em **"Origens JavaScript autorizadas"**, adicione o link da Vercel (sem a barra final).
+    *   Exemplo: `https://movie-pwa-seu-nome.vercel.app`
+6.  Em **"URIs de redirecionamento autorizados"**, adicione o mesmo link.
+    *   Exemplo: `https://movie-pwa-seu-nome.vercel.app` (algumas libs pedem isso).
+7.  Clique em **Salvar**.
+
+> **Nota:** Pode levar alguns minutos para o Google atualizar. Se der erro logo após salvar, espere 5 minutinhos e tente de novo.
+
+## Passo 4: Testar no Celular 📱
+1.  Abra o link da Vercel no navegador do seu celular (Chrome/Safari).
+2.  Faça login com Google.
+3.  No Android/iOS, deve aparecer a opção "Adicionar à Tela Inicial" (Instalar App).
+4.  Pronto! Agora você tem o app instalado e sincronizado.

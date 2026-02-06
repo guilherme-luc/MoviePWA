@@ -1,0 +1,45 @@
+## Implementação de Imagens (Capas)
+
+### Estratégia de Armazenamento
+1.  **Imagens do TMDB (Padrão):**
+    *   Salvar apenas o **`poster_path`** (ex: `/uXDfjJbdP4ijW5hWSBrPrlKpxab.jpg`).
+    *   **Frontend:** Gera a URL completa: `https://image.tmdb.org/t/p/{size}{poster_path}`.
+2.  **Imagens Manuais (Fallback):**
+    *   Salvar em **Base64** (WebP, Quality 0.6-0.7).
+    *   **Limites:** Resize para ~300x450px.
+    *   **Bloqueio:** Se exceder 45.000 caracteres, não salvar (evita erro da célula do Sheets).
+
+### Componentes
+
+#### 1. Configurações ([SettingsModal](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/modals/SettingsModal.tsx#9-81))
+*   [x] Modal para salvar a **TMDB API Key** no `localStorage`.
+
+#### 2. Backend ([GoogleSheetsService](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#4-522))
+*   [x] **Schema:** Suportar colunas `ImageType` e `ImageValue`.
+*   [x] **Validação:** Verificar se existem 6 colunas.
+*   [x] **Batch Update:** Criar método [batchUpdateImages](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#224-254) para salvar múltiplas capas de uma vez (evita rate limit).
+
+#### 3. Frontend (`MovieEditorModal`)
+*   [x] **Visualização:** Renderizar condicionalmente (`tmdb` ou `base64`).
+*   [x] **Busca (TMDB):** Endpoint `search/movie`. Priorizar `popularity`.
+*   [x] **Upload Manual:** Compressor Canvas WebP.
+*   [x] **Auto-Search:** Ao digitar o título (onBlur), buscar automaticamente se não houver capa.
+
+#### 4. Frontend (`Lists/MoviesPage`)
+*   [x] **Renderização Defensiva:** Não renderizar `<img>` inválidos.
+*   [x] **Magic Wand:** Botão "Auto-Completar Capas".
+    *   Itera filmes sem foto.
+    *   Busca no TMDB (Throttle 300ms).
+    *   Salva em lote.
+
+#### 4. Frontend (`Lists/MoviesPage`)
+*   [ ] **Renderização Defensiva:**
+    *   Não renderizar `<img>` se URL/Base64 for inválido ou vazio.
+    *   Exibir miniatura otimizada (`w92` ou `w154` para TMDB).
+
+### Fluxo de Migração
+1.  Atualizar Tipos ([Movie](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/types/index.ts#1-12) interface).
+2.  Service: Atualizar Headers e Métodos CRUD.
+3.  UI: Criar SettingsModal.
+4.  UI: Atualizar MovieEditorModal com busca e upload.
+5.  UI: Exibir nas listas.

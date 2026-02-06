@@ -1,0 +1,327 @@
+# Implementation Plan - Phase 8: Dual-Format Storage & Content Expansion
+
+
+## Goal Description
+Enhance the application with rich content (backdrops, streaming info, soundtracks) and deepen the user experience with better organization tools (filters, lists, franchises) and gamification (badges).
+
+## Phase 8: Dual-Format Storage & Management
+The goal is to provide a robust experience where each user has their owned data split into two separate Google Sheet files: "DVD" and "VHS". This allows for independent genre organization per format and prevents data mixing. Additionally, users must be able to manage their genres (Rename/Delete).
+
+> [!IMPORTANT]
+> **Data Migration Strategy (Answer to your question)**: 
+> Since your current file has both DVD and VHS mixed (distinguished by the 'Format' column), we will implement an **Automated Migration**:
+> 1. Your current file becomes the **DVD Source**.
+> 2. On first load, we detect items in this file where `Format == 'VHS'`.
+> 3. We clearly ask you: *"Encontramos X filmes VHS na sua coleção antiga. Deseja movê-los para a nova planilha de VHS?"*
+> 4. If yes, we automatically move them and clean up the old file.
+
+## Phase 8: Dual-Format Storage & Management
+The goal is to provide a robust experience where each user has their owned data split into two separate Google Sheet files: "DVD" and "VHS". This allows for independent genre organization per format and prevents data mixing. Additionally, users must be able to manage their genres (Rename/Delete).
+
+> [!IMPORTANT]
+> **Data Migration Strategy (Manual)**: 
+> You have chosen to manually rename your files in Google Drive.
+> 1. You will rename "MoviePWA Collection" to "**MoviePWA DVD Collection**".
+> 2. You will create a new sheet named "**MoviePWA VHS Collection**".
+> 3. You will manually move your VHS rows to the new sheet.
+> **The App will simply look for these exact file names.**
+
+**We will implement this in the following strict order, waiting for approval after each step:**
+
+### Phase 8.1: Service Layer Core (Foundation)
+- **Goal**: Enable the backend service to talk to TWO spreadsheets instead of one.
+- **Deliverables**:
+    - [ ] Modify [GoogleSheetsService](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#10-802) to manage `dvdSpreadsheetId` and `vhsSpreadsheetId`.
+    - [ ] Update [provisionUserSheet](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#142-167) to ensure both files exist (or create them).
+    - [ ] Update header initialization to support the new "Welcome" flow (no default "Geral").
+
+### Phase 8.2: Context & Routing
+- **Goal**: Make the app "know" if it's in DVD mode or VHS mode.
+- **Deliverables**:
+    - [ ] Update [CollectionProvider](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/providers/CollectionProvider.tsx#14-39) to expose the current `SpreadsheetID` based on format.
+    - [ ] Update [LandingPage](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/pages/LandingPage.tsx#14-267) to select the correct ID when clicking "DVD" or "VHS".
+
+### Phase 8.3: First Genre Bootstrapping
+- **Goal**: Enforce organized data entry for new collections.
+- **Deliverables**:
+    - [ ] Create [StartupGenreModal](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/modals/StartupGenreModal.tsx#12-102).
+    - [ ] Trigger logic: If [getGenres(currentFormat)](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#376-387) is empty -> Show Modal.
+    - [ ] "Qual o primeiro gênero da sua coleção?" input.
+
+### Phase 8.4: Genre Management Tools
+- **Goal**: Allow users to fix mistakes or reorganize.
+- **Deliverables**:
+    - [ ] Create [GenreManagerModal](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/modals/GenreManagerModal.tsx#13-186) (Rename/Delete).
+    - [ ] Implement [renameGenre](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#317-342) in Service.
+    - [ ] Implement [deleteGenre](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#343-364) in Service (with "Delete all movies" warning).
+
+### Phase 8.5: Manual Migration Support
+- **Goal**: Ensure the app gracefully handles the transition.
+- **Deliverables**:
+    - [ ] Update [provisionUserSheet](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#142-167) to fallback: if "MoviePWA DVD Collection" is missing but "MoviePWA Collection" exists, use it (and maybe warn user/auto-rename if possible, or just treat as DVD).
+    - [ ] **No automatic data moving validation required.**
+
+### Detailed File Changes
+#### [MODIFY] [GoogleSheetsService.ts](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts)
+- **State**: Maintain two spreadsheet IDs: `dvdSpreadsheetId` and `vhsSpreadsheetId`.
+- **Provisioning**: Look for "MoviePWA DVD Collection" AND "MoviePWA VHS Collection".
+- **Methods**: Update all CRUD methods to use the correct ID.
+- **Management**: Implement [renameGenre](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#317-342) and [deleteGenre](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#343-364).
+
+#### [DELETE] [MigrationModal.tsx]
+- Not needed anymore.
+
+### Smart Suggestions (Phase 10)
+### Smart Suggestions (Phase 10)
+#### [NEW] [SmartSuggestionModal.tsx](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/modals/SmartSuggestionModal.tsx)
+- **Create new component** (Do not touch [RandomMoviePicker](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/modals/RandomMoviePicker.tsx#15-209)).
+- **Purpose**: Step-by-step wizard to filter collection.
+- **State**: "Mood", "Time" (Duration), "Status" (Watched/Unwatched).
+- **UI**:
+    - **Step 1**: "Como você está hoje?" (Mood tags).
+    - **Step 2**: "Quanto tempo você tem?" (Short/Medium/Long).
+    - **Step 3**: "Algo novo ou repetido?" (Status).
+    - **Step 4**: AI Simulation & Reveal.
+
+#### [MODIFY] [GenreManagerModal.tsx](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/modals/GenreManagerModal.tsx)
+- Integrate [useGenres](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/hooks/useGenres.ts#10-24) to list current genres.
+- Add "Edit" and "Delete" icons for each genre.
+- Implement strictly controlled "Delete" flow with confirmation prompt: "Ao excluir este gênero, TODOS os filmes nele serão apagados. Deseja continuar?".
+
+### Services
+#### [MODIFY] [GoogleSheetsService.ts](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts)
+- Implement [renameGenre(oldName, newName, format)](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#317-342):
+    - Find sheet by title.
+    - Call [batchUpdate](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#457-485) with `updateSheetProperties` to change title.
+- Implement [deleteGenre(genreName, format)](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#343-364):
+    - Find sheet by title.
+    - Call [batchUpdate](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#457-485) with `deleteSheet` to remove the tab (and all its data).
+- Add **NEW** "Sparkles" (✨) button next to it for "Smart### Gemini Integration (Phase 11)
+#### [NEW] [GeminiService.ts](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GeminiService.ts)
+- Implement `getRecommendation(candidates: Movie[], preferences: UserPreferences): Promise<{ winner: Movie, reasoning: string }>`
+- **Security**: Use `import.meta.env.VITE_GEMINI_API_KEY`.
+- **Logic**: 
+    - Construct prompt with movie list (title, genre, duration) + user preference.
+    - Request structured JSON response.
+    - Fallback to local random if API fails or key is missing.
+
+#### [MODIFY] [SmartSuggestionModal.tsx](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/modals/SmartSuggestionModal.tsx)
+- Integrate `GeminiService`.
+- **UI State**:
+    - Add "Analyzing with Gemini..." loading state (maybe different icon/color).
+    - Display **AI Reasoning** text in the result view.
+
+## Phase 12: Granular Preferences (Gemini V2)
+### User Experience
+- **New Step**: After choosing "Mood" (e.g., Laugh), user sees specific flavors (e.g., "Slapstick", "Satire").
+- **Gemini Context**: The AI receives this specific preference to refine its choice.
+
+### Technical Changes
+- **SmartSuggestionModal**:
+    - [x] **Sub-Mood UI**: Add intermediate step in `SmartSuggestionModal` for sub-mood selection.
+- [x] **Prompt Engineering**: Inject selected `subMood` into the Gemini prompt for targeted advice.
+- **GeminiService**:
+    - Update `UserPreferences` interface.
+    - Include `subMood` in privacy-conscious prompt.
+
+## Phase 13: Cleanup & Refinement
+- **Remove Barcode Scanner**:
+    - Delete `BarcodeScanner.tsx`.
+    - Clean [MovieEditorModal.tsx](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/modals/MovieEditorModal.tsx) (remove "Scan" button and logic).
+    - **Note**: Keep `barcode` field in [Movie](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/types/index.ts#1-34) type as it is now used as a unique ID for Gemini matching.
+
+#### [MODIFY] [.env.example](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/.env.example)
+- Add `VITE_GEMINI_API_KEY=your_key_here`.fe areas (`env(safe-area-inset-bottom)`).
+- Improve active states for buttons (remove tap highlight, add transform).
+
+#### [MODIFY] [MovieCard.tsx](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/movies/MovieCard.tsx)
+- Enlarge touch targets for "Edit" and "Details" buttons.
+- Ensure text is readable on small screens.
+
+### 1. Backdrop Images (Thematic Backgrounds)
+#### [NEW] [src/components/ui/MovieBackdrop.tsx]
+- Create a component to render the backdrop image.
+- **Logic**: Fetch `backdrop_path` from TMDB when updating movie data.
+- **UI**: Display subtly behind the movie details or as a header in the modal.
+
+#### [MODIFY] [src/components/modals/MovieEditorModal.tsx]
+- Fetch and save `backdrop_path` alongside `poster_path`.
+- Update [Movie](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/types/index.ts#1-34) type to include `backdropValue`.
+
+### 2. Advanced Filters & Sorting
+#### [MODIFY] [src/pages/MoviesPage.tsx]
+- Add a "Sort By" dropdown:
+    - Title (A-Z, Z-A)
+    - Year (Newest, Oldest)
+    - Rating (Highest, Lowest)
+    - Duration (Shortest, Longest)
+    - Date Added (Newest, Oldest)
+
+### 3. Custom Lists (Tags)
+#### [NEW] [src/components/modals/TagManagerModal.tsx]
+- Manage custom tags (e.g., "Favorites", "To Watch with Mom").
+
+#### [MODIFY] [src/types/index.ts]
+- Add `tags: string[]` to [Movie](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/types/index.ts#1-34) interface.
+
+### 4. Clickable Cast & Crew
+#### [MODIFY] [src/components/modals/MovieEditorModal.tsx]
+- Render cast names as clickable links/badges.
+- **Action**: Clicking a name triggers a search in the main list for that actor/director.
+
+### 5. Streaming Availability
+#### [NEW] [src/components/ui/StreamingProviders.tsx]
+- Component to display icons of providers (Netflix, Prime, etc.).
+- **API**: Use TMDB `/movie/{id}/watch/providers` endpoint.
+
+### 6. Franchises & Universes
+#### [NEW] [src/components/ui/FranchiseCard.tsx]
+- Visual grouping for collections (e.g., "Harry Potter Collection").
+- **API**: Check `belongs_to_collection` in TMDB response.
+
+### 7. Badges & Achievements
+#### [NEW] [src/components/gamification/BadgeSystem.tsx]
+- Logic to award badges (e.g., "Watched 10 Horror Movies").
+- **UI**: Display badges in `StatsModal`.
+
+### 8. Soundtrack Integration
+#### [MODIFY] [src/components/modals/MovieEditorModal.tsx]
+- Add a spotify link field or auto-search button.
+
+### 9. Critics Rating
+#### [MODIFY] [src/components/modals/MovieEditorModal.tsx]
+- Fetch additional rating data if available (or map TMDB logic).
+
+### 11. "Watching" Status (Interactive Tabs)
+#### [MODIFY] [src/types/index.ts]
+- Add `status?: 'watched' | 'watching' | 'plan_to_watch' | 'dropped'` to [Movie](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/types/index.ts#1-34).
+- Keep `watched` boolean for backward compatibility (mapped to `status === 'watched'`).
+
+#### [MODIFY] [src/services/GoogleSheetsService.ts]
+- **Read**: Map Column 21 (V) to `status`. If empty, infer from `watched` (Col 13).
+- **Write**: Save `status` to Column 21. sync `watched` (Col 13) based on status.
+- **Range**: Expand read/write ranges from [A:U](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/modals/RandomMoviePicker.tsx#23-30) to [A:V](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#581-588).
+
+#### [MODIFY] [src/pages/MoviesPage.tsx]
+- Add "Assistindo" (Watching) tab to the view toggle.
+- Filter list by `status === 'watching'`.
+- **UI**: Add "Finish" or "Check" button directly on card for watching items?
+
+#### [MODIFY] [src/components/modals/RandomMoviePicker.tsx]
+- Change "Assistir" button behavior:
+    - Update movie status to `watching`.
+    - Close modal.
+    - Navigate to "Assistindo" tab (optional).
+
+#### [MODIFY] [src/components/modals/MovieEditorModal.tsx]
+- Add "Status" dropdown (Planning, Watching, Completed, Dropped).
+- Sync with "Watched" toggle (toggle changes status to Completed/Planning).
+
+## Proposed Changes
+  
+  ### UI Components
+  
+  #### [MODIFY] [MovieEditorModal.tsx](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/modals/MovieEditorModal.tsx)
+  - **[NEW] Real-time Search**:
+      - Add `useEffect` on `title` input change.
+      - Implement 500ms debounce to avoid API spam.
+      - Trigger search automatically when characters > 2.
+  - **[NEW] Mixed Search (Movies + TV)**:
+      - Change search endpoint from `/search/movie` to `/search/multi`.
+      - Filter results to only show [movie](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#742-768) and `tv` types.
+      - Display "TV" badge in results list.
+  - **[NEW] Support TV Series Links**:
+      - Detect `/tv/` in URL.
+      - Fetch from `/tv/{id}` endpoint.
+      - Map [name](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#317-342) -> `title`, `first_air_date` -> `year`, `backdrop_path` -> `backdrop`.
+      - Store ID (acknowledging collision risk).
+
+### 10. Auto-Enrichment System (Background Sync)
+#### [NEW] [src/hooks/useAutoEnrichment.ts]
+- **Purpose**: Silently fetch missing data (Backdrops, Posters, Metadata).
+- **Logic**:
+    - Identify movies with missing `backdropValue` or `tmdbId`.
+    - Queue them for processing (1 request per 2 seconds).
+    - Batch update Google Sheets every 5 items or on complete.
+- **UI**: Add a small spinning sync icon in the `AppShell` footer.
+
+## Verification Plan
+- **Backdrops**: Add a new movie, verify unique background image appears.
+- **Filters**: Sort list by Rating, verify order.
+- **Streaming**: Open a popular movie, check if Netflix/Prime icons appear.
+
+## Phase 8: God Mode Implementation
+
+### 1. Visual Polish (View Transitions & Micro-interactions)
+#### [NEW] [src/components/ui/Confetti.tsx]
+- Use `canvas-confetti` library for lightweight particle effects.
+- Trigger when:
+    - User marks movie as "Watched".
+    - User rates a movie 5 stars (or 10/10).
+
+#### [MODIFY] [src/App.tsx] & [src/index.css]
+- Enable View Transitions API (if supported) or use simple CSS layout transitions.
+- Animate modal opening/closing with `framer-motion` or CSS keyframes.
+
+### 2. Theme Customization
+#### [NEW] [src/providers/ThemeProvider.tsx]
+- Context to manage app-wide color theme.
+- Variables: Primary Color (Indigo default), Secondary.
+- Pre-sets: 
+    - "Original" (Indigo)
+    - "Streamer Red" (Netflix-ish)
+    - "Prime Blue" (Amazon-ish)
+    - "Hulu Green"
+    - "Classic Gold"
+
+### 3. Social Sharing (Share Card)
+#### [NEW] [src/components/modals/ShareModal.tsx]
+- Display a preview of the card.
+- **Tech**: Use `html2canvas` to capture a DOM element rendering the movie poster + rating + app logo.
+- [x] **Social**: Create "Share Card" Generator (Instagram Stories format) <!-- id: 63 -->
+
+#### [DONE] [x] **Critics Ratings Implementation**
+  - [x] Create `OmdbService` or integrate into [MovieEditorModal](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/modals/MovieEditorModal.tsx#64-1236)
+  - [x] Add Rotten Tomatoes/Metacritic fields to [Movie](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/types/index.ts#1-34) type and Sheets
+  - [x] Display ratings in Movie Editor UI
+  - [x] Implement "Auto-Enrich" for existing movies
+
+## Verification Plan
+
+### Automated Tests
+- [x] browser: Open [MovieEditorModal](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/modals/MovieEditorModal.tsx#64-1236), verify OMDB fetch.
+- [x] browser: Check specific movie (e.g., "The Matrix") for correct ratings.
+
+### Manual Verification
+- [x] User confirms "Refresh" button works.
+- [x] User confirms Auto-Enrichment is processing.
+- [x] Auth Retry logic handles 401 errors.
+
+### 5. Data Export
+#### [MODIFY] [src/components/modals/SettingsModal.tsx]
+- Add "Export Data" section.
+- Function to dump `allMovies` to a JSON file.
+- Function to convert to CSV.
+
+## Fase 18: Agrupamento Visual de Duplicatas (Visual Grouping)
+- **Objetivo**: Reduzir a poluição visual combinando filmes repetidos em um único card, mantendo a integridade dos dados individuais.
+- **Regras de Agrupamento**:
+    - **Identificador**: Usa `tmdbId` (se disponível) ou combinação `Title` + `Year` (case-insensitive).
+    - **Visualização**: Exibe o poster do *primeiro* item encontrado.
+- **UI (Interface)**:
+    - **Badge**: Adicionar contador (ex: "3") em um círculo destacado no canto do poster.
+    - **Efeito**: (Opcional) CSS sutil parecendo "cartas empilhadas".
+- **Interação (Regras de Negócio)**:
+    - **Clique no Grupo**: Abre `DuplicateSelectionModal`.
+    - **Modal de Seleção**: Lista as versões (diferenciando por: Nota, Data de Adição ou Formato se misturado).
+    - **Edição**: Edita apenas a instância selecionada.
+    - **Exclusão**:
+        - Ao excluir uma instância, o grupo diminui (x3 -> x2).
+        - Se restar apenas 1, o grupo deixa de existir visualmente.
+        - **Proteção**: Confirmação padrão "Excluir esta cópia?".
+
+### Arquivos Afetados
+- `src/hooks/useMovieGrouping.ts` (Novo Hook)
+- `src/components/modals/DuplicateSelectionModal.tsx` (Novo Componente)
+- [src/pages/HomePage.tsx](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/pages/HomePage.tsx) (Implementar hook e lógica de clique)
+- [src/components/movies/MovieCard.tsx](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/movies/MovieCard.tsx) (Adicionar prop `groupCount` e badge)

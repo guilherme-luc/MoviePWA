@@ -1,0 +1,35 @@
+# Movie Collection PWA - Implementation Plan (Updated)
+
+## Goal Description
+Create a premium, mobile-first Progressive Web App (PWA) to manage a personal movie catalog backed by Google Sheets.
+
+## Key Changes (Migration to GIS)
+- **Authentication**: Switch from deprecated `gapi.auth2` to **Google Identity Services (GIS)**.
+- **Library**: Load `https://accounts.google.com/gsi/client`.
+- **Flow**:
+    1. Init `gapi.client` (sheets) with API Key.
+    2. Init `google.accounts.oauth2.initTokenClient` for Auth.
+    3. On Sign-In -> Request Access Token -> `gapi.client.setToken(response)`.
+
+## Proposed Changes
+
+### Core Infrastructure
+#### [MODIFY] [index.html]
+- Verify `referrer` tag exists.
+- Add `<script src="https://accounts.google.com/gsi/client" async defer></script>`.
+
+### Architecture & Service Layer
+#### [MODIFY] [GoogleSheetsService.ts]
+- **Remove**: All `gapi.auth2` references.
+- **Add**: `TokenClient` initialization using the `google` global object.
+- **SignIn Logic**: Trigger token request popup.
+- **State Check**: Manage `access_token` expiration manually (or simply check validity).
+
+### Components
+#### [MODIFY] [StartupGuard.tsx]
+- Adapt to new [GoogleSheetsService](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#4-322) auth state logic.
+- Ensure correct loading sequence (GAPI + GIS).
+
+## Verification Plan
+- **Auth**: User clicks login -> New Google Popup appears -> Token received -> App opens.
+- **Sheets**: Ensure CRUD operations still work using the new token mechanism.

@@ -1,44 +1,38 @@
 # Task List - Movie Collection PWA
 
-## User Feedback Fixes (Phase 17.1)
+## User Feedback Fixes (Phase 7.1)
+## User Feedback Fixes (Phase 7.1)
 - [x] Fix "Zero State" Glitch on Navigation (Persistence/Guard issue) <!-- id: 58 -->
 - [x] Optimize Auto-Enrichment Persistence (Avoid restart on refresh) <!-- id: 59 -->
 
 ## Project Setup
-- [x] Initialize Vite + React + TypeScript project <!-- id: 0 -->
-- [x] Install dependencies: `@tanstack/react-query`, `react-router-dom`, `gapi-script`, `clsx`, `tailwind-merge`, `lucide-react` <!-- id: 1 -->
+- [/] Initialize Vite + React + TypeScript project <!-- id: 0 -->
+- [/] Install dependencies: `@tanstack/react-query`, `react-router-dom`, `gapi-script`, `clsx`, `tailwind-merge`, `lucide-react` <!-- id: 1 -->
 - [x] Configure TailwindCSS (index.css, tailwind.config.js) <!-- id: 2 -->
 - [x] Configure `vite-plugin-pwa` (manifest, icons, service worker strategy) <!-- id: 3 -->
 
 ## Infrastructure & Architecture
-- [x] Create `GoogleSheetsService` Singleton Structure <!-- id: 4 -->
-- [x] Implement `validateSheetStructure` (Check columns: BarCode, Title, Year, Genre) <!-- id: 5 -->
+- [x] Create [GoogleSheetsService](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#4-655) Singleton Structure <!-- id: 4 -->
+- [x] Implement [validateSheetStructure](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#572-597) (Check columns: BarCode, Title, Year, Genre) <!-- id: 5 -->
 - [x] Implement Auth Logic (Login, Silent Refresh, Error Handling) <!-- id: 6 -->
 - [x] Setup React Query Client & Provider <!-- id: 7 -->
 
 ## Core API Implementation
-- [x] Implement `getGenres` (Fetch Sheets properties) <!-- id: 8 -->
-- [x] Implement `getMoviesByGenre` (Fetch Rows) <!-- id: 9 -->
-- [x] Implement `addMovie` (Append Row) <!-- id: 10 -->
-- [x] Implement `updateMovie` (Update Row) <!-- id: 11 -->
-- [x] Implement `deleteMovie` (Delete Row) <!-- id: 12 -->
-- [x] Implement `moveMovie` Transaction (Atomic Copy + Delete) <!-- id: 13 -->
-- [x] Implement `createGenre` (Add Sheet) <!-- id: 14 -->
+- [x] Implement [getGenres](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#625-632) (Fetch Sheets properties) <!-- id: 8 -->
+- [x] Implement [getMoviesByGenre](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#232-282) (Fetch Rows) <!-- id: 9 -->
+- [x] Implement [addMovie](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#370-384) (Append Row) <!-- id: 10 -->
+- [x] Implement [updateMovie](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#458-474) (Update Row) <!-- id: 11 -->
+- [x] Implement [deleteMovie](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#475-503) (Delete Row) <!-- id: 12 -->
+- [x] Implement [moveMovie](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#504-520) Transaction (Atomic Copy + Delete) <!-- id: 13 -->
+- [x] Implement [createGenre](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#521-535) (Add Sheet) <!-- id: 14 -->
 
 ## UI Components
-- [x] Create `AppShell` with Layout & OfflineIndicator <!-- id: 15 -->
-- [x] Create `StartupGuard` (Validates Sheet before showing app) <!-- id: 16 -->
+- [x] Create [AppShell](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/layout/AppShell.tsx#13-83) with Layout & OfflineIndicator <!-- id: 15 -->
+- [x] Create [StartupGuard](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/auth/StartupGuard.tsx#5-163) (Validates Sheet before showing app) <!-- id: 16 -->
 - [x] Create `GenreList` Page (Home - with counts) <!-- id: 17 -->
 - [x] Create `GenreManager` Modal (Add new genre) <!-- id: 18 -->
 - [x] Create `MovieList` Page (Filterable, Searchable) <!-- id: 19 -->
-- [x] Create `MovieEditor` Page/Modal (Add/Edit Form) <!-- id: 20 -->
-    - [x] **8.3: First Genre Bootstrapping** <!-- id: 8.3 -->
-        - [x] Create `StartupGenreModal.tsx`.
-        - [x] Trigger on `LandingPage` or `HomePage` if selected format has 0 genres.
-    - [x] **8.4: Genre Management Tools** <!-- id: 8.4 -->
-        - [x] Create `GenreManagerModal` (Rename/Delete).
-        - [x] Implement `renameGenre` in Service.
-        - [x] Implement `deleteGenre` in Service (with protection).
+- [x] Create [MovieEditor](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/modals/MovieEditorModal.tsx#63-1061) Page/Modal (Add/Edit Form) <!-- id: 20 -->
 
 ## Verification & Polish
 - [x] Verify Offline Read-Only Mode (Block UI actions) <!-- id: 21 -->
@@ -70,8 +64,8 @@
 
 ## Phase 13: Cleanup & Refinement
 - [x] Remove Barcode Scanner Feature <!-- id: 11 -->
-    - [x] Remove `BarcodeScanner.tsx` component <!-- id: 12 -->
-    - [x] Remove scanner logic/UI from `MovieEditorModal.tsx` <!-- id: 13 -->
+    - [x] Remove [BarcodeScanner.tsx](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/modals/BarcodeScanner.tsx) component <!-- id: 12 -->
+    - [x] Remove scanner logic/UI from [MovieEditorModal.tsx](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/modals/MovieEditorModal.tsx) <!-- id: 13 -->
 
 ## User Experience Improvements (Phase 5)
 - [x] Implement Skeleton Loading (Movies, Categories) <!-- id: 44 -->
@@ -98,9 +92,9 @@
 - [x] **System Reliability**
     - [x] Fix 401 Auth Errors (Auto-Retry Mechanism) <!-- id: 8 -->
     - [x] Fix TypeScript Build Errors <!-- id: 9 -->
-- [x] **Final Polish**
-    - [x] Verify Backdrop logic for all movies
-    - [x] Full UI Review
+- [ ] **Final Polish**
+    - [ ] Verify Backdrop logic for all movies
+    - [ ] Full UI Review
 
 ## Phase 8: "God Mode" Polish & Features
 - [x] **Visual**: Implement View Transitions (Smooth Navigation) <!-- id: 60 -->
@@ -123,12 +117,12 @@
 
 ## Phase 11: Real AI Integration (Gemini API)
 - [x] **Config**: Add `VITE_GEMINI_API_KEY` to environment variables <!-- id: 73 -->
-- [x] **Service**: Implement `GeminiService` with Google Generative AI SDK <!-- id: 74 -->
-- [x] **UI**: Connect `SmartSuggestionModal` to Gemini Service <!-- id: 75 -->
+- [x] **Service**: Implement [GeminiService](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GeminiService.ts#24-111) with Google Generative AI SDK <!-- id: 74 -->
+- [x] **UI**: Connect [SmartSuggestionModal](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/modals/SmartSuggestionModal.tsx#46-451) to Gemini Service <!-- id: 75 -->
 
 ## Phase 12: Granular Preferences (Gemini V2)
 - [x] **UI**: Add Sub-Mood selection step to Wizard <!-- id: 76 -->
-- [x] **Logic**: Update `GeminiService` to use sub-mood in prompt <!-- id: 77 -->
+- [x] **Logic**: Update [GeminiService](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GeminiService.ts#24-111) to use sub-mood in prompt <!-- id: 77 -->
 - [x] **Data**: Define sub-mood categories for each main mood <!-- id: 78 -->
 
 ## Phase 14: P0 UI/UX Improvements (Critical Accessibility & Hierarchy)
@@ -143,61 +137,3 @@
     - [x] Secondary actions: bg-neutral-800 without shadow
     - [x] Danger actions: bg-red-600 with shadow-red-500/20
 - [x] **Visual Feedback**: Enhanced button shadows for better affordance <!-- id: 81 -->
-
-## Phase 15: P1 UI/UX Improvements (Strong Enhancements)
-- [x] **View Toggle Redesign**: Improved contrast and visual hierarchy <!-- id: 82 -->
-    - [x] Better background (neutral-900/50 with border)
-    - [x] Stronger active state with shadow-primary-500/30
-    - [x] Hover states for inactive tabs
-- [x] **Genre Cards Visual Identity**: Unique colors and icons per genre <!-- id: 83 -->
-    - [x] Created genreUtils.ts with color/icon generation
-    - [x] Dynamic gradient backgrounds based on genre name hash
-    - [x] Emoji icons for common genres (🎬 Ação, 💕 Romance, etc.)
-    - [x] Hover scale animation on genre icons
-- [x] **Mobile Edit Button**: Always visible on touch devices <!-- id: 84 -->
-    - [x] opacity-100 on mobile, opacity-0 md:group-hover:opacity-100 on desktop
-    - [x] No hover dependency for touch screens
-
-## Phase 16: P2 UI/UX Refinements (Polish)
-- [x] **Empty States Illustrated**: Friendly, helpful empty states <!-- id: 85 -->
-    - [x] HomePage search: Icon + helpful message
-    - [x] HomePage genres: Large icon + CTA
-    - [x] MoviesPage: Contextual messages based on view mode/filters
-    - [x] All empty states use icons and friendly tone
-- [x] **Micro-animations Utilities**: Created animations.ts <!-- id: 86 -->
-    - [x] Pulse animation for watchlist actions
-    - [x] Shake animation for validation errors
-    - [x] Confetti already implemented for high ratings
-- [x] **Loading States**: Improved contextual loading indicators <!-- id: 87 -->
-    - [x] Spinner with descriptive text
-    - [x] Skeleton screens for movie cards
-
-## Phase 17: User Reported Fixes & Polish (Final)
-- [x] **Build Fixes**: Resolved Vercel build errors (imports, unused vars, JSX types) <!-- id: 88 -->
-- [x] **Navigation**: Fixed genre link redirect issue (relative vs absolute paths) <!-- id: 89 -->
-- [x] **Data Persistence**:
-    - [x] Added `Format` column migration (Auto-fix missing Column V) <!-- id: 90 -->
-    - [x] Fixed Write Range logic to include Column V (saving VHS format correctly) <!-- id: 91 -->
-    - [x] Hardened `movieToRow` to prevent data shifting on empty fields <!-- id: 92 -->
-    - [x] **CRITICAL FIX**: Fixed `getMoviesByGenre` reading only up to Column Q (causing missing Format bug) <!-- id: 93 -->
-    - [x] **CRITICAL FIX**: Fixed `sortSheet` truncation bug (was deleting Column V data) <!-- id: 94 -->
-- [x] **UI Polish**:
-    - [x] Integrated VHS/DVD Logos on Landing Page <!-- id: 95 -->
-    - [x] Fixed `noise.svg` 402 error (Replaced with local base64 asset) <!-- id: 96 -->
-    - [x] Fixed Genre Visibility (Show all genres even with 0 counts in current format) <!-- id: 97 -->
-    - [x] Added visual Format Badge (Temporary Debug) -> REMOVED after fix verification <!-- id: 98 -->
-    - [x] **New Feature**: Added "Import from TMDB Link" button (Paste URL/ID) <!-- id: 99 -->
-    - [x] **UX**: Improved Auth Experience (Removed forced consent prompt) <!-- id: 100 -->
-    - [x] **Fix**: Solved "Infinite Loading" (Missing Google Scripts in index.html) <!-- id: 101 -->
-    - [x] **Fix**: Solved "Duplicate Sheets" (Added Drive Metadata Scope) <!-- id: 102 -->
-    - [x] **Fix**: Solved "Empty Sheet Headers" (Auto-repair missing columns) <!-- id: 103 -->
-    - [x] **UX**: Removed forced consent prompt (Login Item 1) <!-- id: 104 -->
-    - [x] **UX**: Implemented Token Persistence (Login Item 2) <!-- id: 105 -->
-    - [x] **Fix**: Solved "Ghost Randomizer" (Universal fetch for Landing Page) <!-- id: 106 -->
-    - [x] **Feature**: Added "Sign Out" button (Landing & Settings) <!-- id: 107 -->
-
-## Phase 18: Visual Grouping (Duplicatas)
-- [x] Create `useMovieGrouping` hook (Logic for clustering) <!-- id: 108 -->
-- [x] Create `DuplicateSelectionModal` (Handle clicks on groups) <!-- id: 109 -->
-- [x] Update `MovieCard` to accept `groupCount` and render Badge <!-- id: 110 -->
-- [x] Implement Grouping Integration in `HomePage` <!-- id: 111 -->

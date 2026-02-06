@@ -1,0 +1,24 @@
+# Implementation Plan - User Experience Improvements (Phase 5)
+
+## Goal Description
+Enhance the visual polish and perceived performance of the application. The immediate focus is on "Skeleton Loading" to replace blank screens during data fetching.
+
+## Proposed Changes
+
+### 1. Implement Skeleton Loading
+#### [NEW] [src/components/ui/Skeleton.tsx]
+- Create a reusable `Skeleton` component (gray pulsing div) using Tailwind `animate-pulse`.
+
+#### [NEW] [src/components/movies/MovieCardSkeleton.tsx]
+- Create a mock version of `MovieCard` using skeletons for Poster, Title, and Year.
+
+#### [MODIFY] [src/components/movies/MovieList.tsx]
+- Update to show `MovieCardSkeleton` grid while `isLoading` is true.
+
+#### [MODIFY] [src/pages/GenreList.tsx]
+- Update to show skeletons while categories are loading.
+
+## Verification Plan
+1. **Throttling:** Use Chrome DevTools Network "Slow 3G".
+2. **Visual Check:** refresh the page.
+3. **Expectation:** See gray pulsing rectangles for 1-2 seconds before the actual usage loads, instead of a white flash or a tiny spinner.

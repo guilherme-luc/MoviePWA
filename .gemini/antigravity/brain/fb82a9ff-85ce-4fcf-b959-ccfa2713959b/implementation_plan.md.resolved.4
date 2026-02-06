@@ -1,0 +1,34 @@
+## Implementação de Imagens (Capas)
+
+### Estratégia de Armazenamento
+1.  **Imagens do TMDB (Preferencial):** Salvaremos apenas a **URL** (`https://image.tmdb.org/...`).
+    *   **Vantagem:** Qualidade original, carrega rápido, não ocupa espaço na planilha.
+2.  **Imagens Manuais (Fallback):** Salvaremos em **Base64** na célula.
+    *   **Limitação:** O Google Sheets tem limite de 50.000 caracteres por célula.
+    *   **Solução:** Compressor inteligente para Resize/WebP para garantir que caiba sem perder muita qualidade visual.
+
+### Componentes
+
+#### 1. Configurações (`SettingsModal`)
+*   [ ] Criar um botão de engrenagem na Home.
+*   [ ] Modal para salvar a **TMDB API Key** no `localStorage`.
+
+#### 2. Backend ([GoogleSheetsService](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#4-390))
+*   [ ] Adicionar cabeçalho `Image` na planilha.
+*   [ ] Atualizar validação para aceitar 5 colunas.
+*   [ ] Atualizar Leitura/Escrita para gerenciar o campo `image`.
+
+#### 3. Frontend ([MovieEditorModal](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/modals/MovieEditorModal.tsx#15-209))
+*   [ ] **Visualização:** Mostrar capa atual (grande). Ao clicar, abre lightbox.
+*   [ ] **Busca:** Botão "Buscar Capa" -> Usa a API Key -> Busca por "Título + Ano" -> Lista resultados -> User seleciona -> Salva URL.
+*   [ ] **Upload:** Input file / Câmera -> Comprime -> Salva Base64.
+*   [ ] **Remover:** Botão para limpar a imagem.
+
+#### 4. Frontend (`Lists`)
+*   [ ] Mostrar miniatura na lista de filmes (circle/rounded).
+
+### Fluxo de Migração
+1.  Atualizar tipos e serviço.
+2.  Criar Modal de Configurações.
+3.  Atualizar Modal de Edição com a lógica de busca/upload.
+4.  Ajustar listas.

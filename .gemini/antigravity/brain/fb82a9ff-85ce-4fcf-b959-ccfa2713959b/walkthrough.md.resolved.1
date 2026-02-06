@@ -1,0 +1,47 @@
+# Suporte a Imagens nos Filmes 🎬
+
+Agora cada filme pode ter sua própria capa, seja oficial (TMDB) ou personalizada (Upload).
+
+## O que foi feito
+
+### 1. Sistema Híbrido de Imagens
+Criamos um sistema inteligente que suporta dois tipos de imagem:
+*   **TMDB (Recomendado):** Salva apenas o link oficial (`/poster_path.jpg`), garantindo qualidade máxima e carregamento instantâneo.
+*   **Upload (Manual):** Salva a imagem comprimida (WebP) diretamente na planilha. Implementamos travas de segurança para não deixar a planilha pesada.
+
+### 2. Nova Estrutura de Dados
+A planilha foi evoluída para suportar 6 colunas:
+`Barcode | Title | Year | Genres | ImageType | ImageValue`
+
+### 3. Configurações
+Adicionamos um menu de configurações (ícone de engrenagem) na Home, onde você pode salvar sua **TMDB API Key** de forma segura no seu navegador.
+
+### 4. Editor de Filmes
+*   **Buscar Capa:** Pesquisa inteligente cruzando Título + Ano para achar o pôster exato.
+*   **Upload:** Permite subir fotos da galeria ou tirar na hora.
+*   **Preview:** Visualização imediata da capa escolhida.
+
+### 5. Listagem Visual
+A lista de filmes agora exibe as miniaturas ao lado de cada título, deixando a navegação muito mais visual e agradável.
+
+## Como Testar
+
+1.  **Configurar:**
+    *   No app, clique na ⚙️ (Engrenagem) no topo direito.
+    *   Cole sua chave da API do TMDB.
+    *   Salve.
+
+2.  **Adicionar Capa:**
+    *   Vá para um gênero (ex: AçãoAventura).
+    *   Clique para editar um filme existente (ou crie um novo).
+    *   Clique em **"Buscar Capa (TMDB)"**.
+    *   Selecione o pôster correto.
+    *   Salve.
+
+3.  **Verificar:**
+    *   Veja se a capa aparece na lista principal.
+    *   Confira se, ao recarregar a página, a capa continua lá.
+
+---
+
+> **Nota Técnica:** Se você quiser ver como ficou na planilha, abra o Google Sheets. Você verá duas novas colunas preenchidas automaticamente. Não delete essas colunas manualmente! 😉

@@ -1,0 +1,35 @@
+# Task List - Movie Collection PWA
+
+## Project Setup
+- [/] Initialize Vite + React + TypeScript project <!-- id: 0 -->
+- [/] Install dependencies: `@tanstack/react-query`, `react-router-dom`, `gapi-script`, `clsx`, `tailwind-merge`, `lucide-react` <!-- id: 1 -->
+- [x] Configure TailwindCSS (index.css, tailwind.config.js) <!-- id: 2 -->
+- [x] Configure `vite-plugin-pwa` (manifest, icons, service worker strategy) <!-- id: 3 -->
+
+## Infrastructure & Architecture
+- [x] Create [GoogleSheetsService](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#3-147) Singleton Structure <!-- id: 4 -->
+- [x] Implement [validateSheetStructure](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#93-127) (Check columns: BarCode, Title, Year, Genre) <!-- id: 5 -->
+- [x] Implement Auth Logic (Login, Silent Refresh, Error Handling) <!-- id: 6 -->
+- [x] Setup React Query Client & Provider <!-- id: 7 -->
+
+## Core API Implementation
+- [x] Implement [getGenres](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#139-146) (Fetch Sheets properties) <!-- id: 8 -->
+- [x] Implement `getMoviesByGenre` (Fetch Rows) <!-- id: 9 -->
+- [x] Implement `addMovie` (Append Row) <!-- id: 10 -->
+- [x] Implement `updateMovie` (Update Row) <!-- id: 11 -->
+- [x] Implement `deleteMovie` (Delete Row) <!-- id: 12 -->
+- [ ] Implement `moveMovie` Transaction (Atomic Copy + Delete) <!-- id: 13 -->
+- [ ] Implement `createGenre` (Add Sheet) <!-- id: 14 -->
+
+## UI Components
+- [ ] Create `AppShell` with Layout & OfflineIndicator <!-- id: 15 -->
+- [ ] Create `StartupGuard` (Validates Sheet before showing app) <!-- id: 16 -->
+- [ ] Create `GenreList` Page (Home - with counts) <!-- id: 17 -->
+- [ ] Create `GenreManager` Modal (Add new genre) <!-- id: 18 -->
+- [ ] Create `MovieList` Page (Filterable, Searchable) <!-- id: 19 -->
+- [ ] Create `MovieEditor` Page/Modal (Add/Edit Form) <!-- id: 20 -->
+
+## Verification & Polish
+- [ ] Verify Offline Read-Only Mode (Block UI actions) <!-- id: 21 -->
+- [ ] Verify Sheet Validation (Test with invalid columns) <!-- id: 22 -->
+- [ ] Build & PWA Audit (Lighthouse/Browser Check) <!-- id: 23 -->

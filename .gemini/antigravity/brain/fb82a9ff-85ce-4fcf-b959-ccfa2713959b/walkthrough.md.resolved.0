@@ -1,0 +1,47 @@
+# Movie Collection PWA - Walkthrough
+
+## Overview
+We have built a premium, offline-capable Movie Collection Manager integrated with Google Sheets.
+
+## Features Verified
+- **Google Sheets Integration**: 
+  - Validates sheet structure on startup.
+  - CRUD operations (Add, Edit, Delete, Move Genre) mapped to API.
+  - "Atomic-ish" moves (Add new -> Delete old) for genre changes.
+- **Offline Strategy**:
+  - [OfflineIndicator](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/ui/OfflineIndicator.tsx#5-37) shows when disconnected.
+  - UI allows read-only access (cached data).
+  - CRUD actions blocked when offline.
+- **UI/UX**:
+  - Glassmorphism design with gradients.
+  - Smooth animations (framer-motion-like CSS).
+  - Responsive Grid layout.
+  - Genre Manager Modal.
+  - Movie Editor Modal with Barcode/Year fields.
+
+## Setup Instructions
+1. **Google Cloud Project**:
+   - Enable Google Sheets API.
+   - Create OAuth 2.0 Client ID (Web Application).
+     - Javascript Origins: `http://localhost:5173`, `http://localhost:4173`
+   - Create API Key (restrict to Sheets API).
+2. **Environment Variables**:
+   - Create `.env.local` based on [.env.example](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/.env.example).
+   - Fill in `VITE_GOOGLE_CLIENT_ID`, `VITE_GOOGLE_API_KEY`, `VITE_GOOGLE_SHEET_ID`.
+3. **Google Sheet**:
+   - Create a blank sheet.
+   - Ensure the FIRST sheet (or any genre sheet you create) strictly follows: 
+     `A1:D1` = `Código de barras`, `Título do filme`, `Ano`, `Gênero`.
+     (Or use the app to Create Genre - it handles headers automatically).
+
+## Running the App
+```bash
+npm install
+npm run dev
+```
+
+## Production Build
+```bash
+npm run build
+npm run preview
+```

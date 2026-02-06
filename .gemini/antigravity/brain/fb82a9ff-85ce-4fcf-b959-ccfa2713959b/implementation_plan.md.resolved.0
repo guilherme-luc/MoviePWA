@@ -1,0 +1,69 @@
+# Movie Collection PWA - Implementation Plan
+
+## Goal Description
+Create a premium, mobile-first Progressive Web App (PWA) to manage a personal movie catalog. The app will use a Google Sheet as its database, with no backend server required. It will support real-time CRUD operations, automatic categorization by genre (sheets), and offline capabilities via PWA standards.
+
+## User Review Required
+> [!IMPORTANT]
+> **Google Cloud Setup Required**: To interact with your Google Sheet, you will need to set up a Google Cloud Project and provide a **Client ID** and **API Key**. I will provide a guide for this, but the app cannot function without these credentials.
+
+> [!WARNING]
+> **Data Structure**: The app assumes strict control over the spreadsheet. Manual edits to the spreadsheet might break the "BarCode/Title/Year/Genre" structure if columns are reordered.
+
+## Proposed Changes
+
+### Core Infrastructure
+#### [NEW] [project-scaffold]
+- Initialize Vite + React + TypeScript project.
+- Setup TailwindCSS for styling.
+- Configure `vite-plugin-pwa` for offline support and installation capabilities (manifest, service worker).
+- Setup `react-router-dom` for navigation.
+
+### State & API Management
+#### [NEW] [GoogleSheetsService.ts]
+- Implement `gapi` initialization.
+- **Auth**: Handle Google Sign-In (OAuth2) to gain access to the user's sheet.
+- **Read**: Fetch all sheets (genres) and their rows (movies).
+- **Write**: Implement `append`, `update`, and `delete` operations mapped to Sheets API calls.
+- **Cache**: specific caching strategy (e.g., React Query) to minimize API calls and ensure snappy UI.
+
+### Components (Architecture)
+#### [NEW] [Layout Components]
+- `AppShell`: Main layout with safe area handling for iOS.
+- `Navigation`: Simple bottom or top bar (if needed, or just back buttons).
+- `SplashScreen`: Elegant loading state while connecting to Google Sheets.
+
+#### [NEW] [Feature: Genre List (Home)]
+- Display grid/list of Genres.
+- Show counts per genre and global total.
+- Rich animations on entry.
+
+#### [NEW] [Feature: Movie List]
+- Filterable list (Search by Title/Barcode).
+- "Swipe to" actions or visible Edit/Delete buttons.
+- Sticky headers for better UX.
+
+#### [NEW] [Feature: Movie Editor]
+- Form for adding/editing movies.
+- Dropdown for Genre (dynamically populated).
+- "Scan Barcode" UI (placeholder or integration with a library like `react-qr-barcode-scanner` if requested, though prompt mentions "Barcode string").
+
+## Verification Plan
+
+### Automated Tests
+- Since this is a UI/API heavy app, we will focus on **Build Verification**:
+    - `npm run build` must pass.
+    - PWA assets generation verification.
+
+### Manual Verification
+- **Auth Flow**: Verify Google Login popup appears and succeeds.
+- **Read**: Verify data from a test Google Sheet loads correctly.
+- **CRUD**:
+    - Add a movie -> Check if new row appears in Sheet.
+    - Add a movie with NEW genre -> Check if new Sheet is created.
+    - Edit movie -> Verify values update.
+    - Move genre -> Verify row moves to different sheet.
+    - Delete movie -> Verify row is removed.
+- **PWA**:
+    - Verify "Add to Home Screen" prompt (or installability) in Browser.
+    - specific iOS Safari checks (viewport-fit=cover, etc.).

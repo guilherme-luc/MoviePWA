@@ -1,0 +1,35 @@
+# Task List - Movie Collection PWA
+
+## Project Setup
+- [/] Initialize Vite + React + TypeScript project <!-- id: 0 -->
+- [/] Install dependencies: `@tanstack/react-query`, `react-router-dom`, `gapi-script`, `clsx`, `tailwind-merge`, `lucide-react` <!-- id: 1 -->
+- [x] Configure TailwindCSS (index.css, tailwind.config.js) <!-- id: 2 -->
+- [x] Configure `vite-plugin-pwa` (manifest, icons, service worker strategy) <!-- id: 3 -->
+
+## Infrastructure & Architecture
+- [x] Create [GoogleSheetsService](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#4-321) Singleton Structure <!-- id: 4 -->
+- [x] Implement [validateSheetStructure](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#267-301) (Check columns: BarCode, Title, Year, Genre) <!-- id: 5 -->
+- [x] Implement Auth Logic (Login, Silent Refresh, Error Handling) <!-- id: 6 -->
+- [x] Setup React Query Client & Provider <!-- id: 7 -->
+
+## Core API Implementation
+- [x] Implement [getGenres](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#313-320) (Fetch Sheets properties) <!-- id: 8 -->
+- [x] Implement [getMoviesByGenre](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#92-114) (Fetch Rows) <!-- id: 9 -->
+- [x] Implement [addMovie](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#115-125) (Append Row) <!-- id: 10 -->
+- [x] Implement [updateMovie](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#126-141) (Update Row) <!-- id: 11 -->
+- [x] Implement [deleteMovie](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#142-169) (Delete Row) <!-- id: 12 -->
+- [x] Implement [moveMovie](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#170-190) Transaction (Atomic Copy + Delete) <!-- id: 13 -->
+- [x] Implement [createGenre](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#191-215) (Add Sheet) <!-- id: 14 -->
+
+## UI Components
+- [x] Create [AppShell](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/layout/AppShell.tsx#8-28) with Layout & OfflineIndicator <!-- id: 15 -->
+- [x] Create [StartupGuard](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/auth/StartupGuard.tsx#5-111) (Validates Sheet before showing app) <!-- id: 16 -->
+- [x] Create `GenreList` Page (Home - with counts) <!-- id: 17 -->
+- [x] Create [GenreManager](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/modals/GenreManagerModal.tsx#11-97) Modal (Add new genre) <!-- id: 18 -->
+- [/] Create `MovieList` Page (Filterable, Searchable) <!-- id: 19 -->
+- [ ] Create `MovieEditor` Page/Modal (Add/Edit Form) <!-- id: 20 -->
+
+## Verification & Polish
+- [ ] Verify Offline Read-Only Mode (Block UI actions) <!-- id: 21 -->
+- [ ] Verify Sheet Validation (Test with invalid columns) <!-- id: 22 -->
+- [ ] Build & PWA Audit (Lighthouse/Browser Check) <!-- id: 23 -->

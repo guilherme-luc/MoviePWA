@@ -1,0 +1,562 @@
+# UI/UX Audit - Movie Collection PWA
+**Auditor:** Claude Sonnet 4.5  
+**Date:** 2026-02-03  
+**Scope:** Complete visual and interaction design review
+
+---
+
+## A) Diagnóstico Geral
+
+### ✅ Pontos Fortes
+1. **Design System Consistente**: Uso coerente de Tailwind com tema indigo/purple bem definido
+2. **Glassmorphism Bem Aplicado**: `.glass-panel` cria profundidade visual adequada
+3. **Responsividade Mobile-First**: Safe areas, bottom nav, e touch targets bem implementados
+4. **Micro-interações**: Hover states, active scales, e transitions suaves
+5. **Skeleton States**: Loading states bem implementados
+
+### ⚠️ Problemas Críticos (P0)
+
+| Problema | Impacto | Severidade |
+|----------|---------|------------|
+| **Falta de hierarquia visual clara** | Usuário não sabe onde focar atenção | ALTA |
+| **Inconsistência em espaçamentos** | Sensação de "bagunça" visual | ALTA |
+| **Contraste insuficiente em textos secundários** | Acessibilidade comprometida | ALTA |
+| **Ações primárias vs secundárias mal definidas** | Confusão sobre próximos passos | MÉDIA |
+| **Modais sem scroll visual** | Usuário não sabe que há mais conteúdo | MÉDIA |
+
+### 📊 Métricas de Qualidade
+
+- **Acessibilidade (WCAG)**: ~70% (falta contraste em vários pontos)
+- **Consistência Visual**: 75% (alguns componentes desalinhados)
+- **Hierarquia de Informação**: 60% (tudo tem peso similar)
+- **Feedback de Interação**: 85% (bom, mas pode melhorar)
+
+---
+
+## B) Análise Detalhada por Tela/Seção
+
+### 1. HomePage (Tela Inicial)
+
+#### 1.1 Search Bar + Action Buttons
+
+**Problema:**
+- Botões "Sparkles" e "Dice" têm mesmo peso visual que a busca
+- Não fica claro qual é a ação primária
+- Ícones sem labels (só tooltip) dificultam descoberta
+
+**Sugestão:**
+```tsx
+// ANTES: Botões competem visualmente
+<button className="p-2.5 bg-purple-600/20 text-purple-400 hover:text-white hover:bg-purple-600 rounded-full">
+  <Sparkles size={20} />
+</button>
+
+// DEPOIS: Hierarquia clara
+<button className="p-2 text-neutral-500 hover:text-primary-400 rounded-lg transition-colors" title="Sugestão IA">
+  <Sparkles size={18} />
+</button>
+```
+
+**Benefício:**
+- Busca se torna foco principal
+- Ações secundárias mais discretas mas descobríveis
+- Reduz poluição visual
+
+**Como Implementar:**
+1. Reduzir background dos botões secundários (remover bg colorido)
+2. Usar apenas hover state para revelar cor
+3. Adicionar micro-label abaixo do ícone (opcional)
+
+---
+
+#### 1.2 Stats Cards (Filmes/Gêneros)
+
+**Problema:**
+- Cards são clicáveis mas não parecem (cursor pointer só no hover)
+- "Ver Estatísticas" badge é pequeno demais
+- Efeito blur decorativo pode causar lag em dispositivos lentos
+
+**Sugestão:**
+```tsx
+// Adicionar indicador visual de clicabilidade
+<div className="glass-panel p-4 rounded-2xl ... cursor-pointer 
+  ring-1 ring-transparent hover:ring-primary-500/50 
+  transform hover:-translate-y-1 transition-all duration-200">
+  
+  {/* Substituir blur por gradiente sólido */}
+  <div className="absolute -right-4 -top-4 bg-gradient-to-br from-primary-500/20 to-transparent w-24 h-24 rounded-full" />
+</div>
+```
+
+**Benefício:**
+- Affordance clara (usuário sabe que pode clicar)
+- Performance melhorada
+- Feedback tátil mais satisfatório
+
+---
+
+#### 1.3 Genre Cards (Lista de Coleções)
+
+**Problema:**
+- Avatar com inicial é genérico demais
+- Falta diferenciação visual entre gêneros
+- Densidade muito baixa (muito espaço vazio)
+
+**Sugestão:**
+- Usar ícones temáticos por gênero (🎬 Ação, 💀 Terror, 💕 Romance)
+- Ou gradientes de cor únicos por gênero (hash do nome)
+- Aumentar densidade: grid-cols-2 → grid-cols-3 em desktop
+
+**Código:**
+```tsx
+// Gerar cor única por gênero
+const getGenreColor = (name: string) => {
+  const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const hue = hash % 360;
+  return `hsl(${hue}, 70%, 50%)`;
+};
+
+<div className="w-10 h-10 rounded-lg flex items-center justify-center"
+     style={{ background: `linear-gradient(135deg, ${getGenreColor(g.genre)}, ${getGenreColor(g.genre)}dd)` }}>
+  <span className="text-lg">🎬</span>
+</div>
+```
+
+---
+
+### 2. MoviesPage (Lista de Filmes)
+
+#### 2.1 View Toggle (Todos/Vistos/Watchlist)
+
+**Problema:**
+- Toggle atual é funcional mas visualmente fraco
+- Estados não têm contraste suficiente
+- Falta feedback de transição entre estados
+
+**Sugestão:**
+```tsx
+// Melhorar contraste e adicionar animação
+<div className="flex p-1 bg-neutral-900/50 rounded-xl border border-white/5">
+  <button className={`
+    flex-1 py-2 px-3 text-xs font-semibold rounded-lg transition-all relative
+    ${viewMode === 'all' 
+      ? 'bg-primary-600 text-white shadow-lg shadow-primary-500/30' 
+      : 'text-neutral-400 hover:text-neutral-200 hover:bg-white/5'}
+  `}>
+    <span className="relative z-10">Todos</span>
+    {viewMode === 'all' && (
+      <motion.div layoutId="activeTab" className="absolute inset-0 bg-primary-600 rounded-lg" />
+    )}
+  </button>
+</div>
+```
+
+**Benefício:**
+- Estado ativo muito mais claro
+- Animação suave entre tabs (se usar Framer Motion)
+- Melhor acessibilidade (contraste WCAG AA)
+
+---
+
+#### 2.2 Search + Filters Row
+
+**Problema:**
+- Dropdowns de Tag/Sort são pequenos demais em mobile
+- Placeholder "Buscar título, ano ou código..." muito longo
+- Falta clear button visível no search
+
+**Sugestão:**
+1. Simplificar placeholder: "Buscar filme..."
+2. Aumentar min-width dos dropdowns em mobile
+3. Sempre mostrar X button quando há texto (não só no hover)
+
+```tsx
+<input 
+  placeholder="Buscar filme..." // Mais curto
+  className="... text-base" // Aumentar de text-sm
+/>
+
+{search && (
+  <button className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-white/10 rounded-full">
+    <X size={16} />
+  </button>
+)}
+```
+
+---
+
+#### 2.3 MovieCard Component
+
+**Problema:**
+- Edit button só aparece no hover (ruim para touch)
+- Badges (ano, rating, watched) são muito pequenas
+- Título pode truncar de forma estranha
+
+**Sugestão:**
+```tsx
+// Sempre mostrar edit em mobile, hover em desktop
+<button className={`
+  p-3 -mr-2 text-neutral-600 transition-colors flex-shrink-0
+  md:opacity-0 md:group-hover:opacity-100 // Desktop: hover
+  opacity-100 // Mobile: sempre visível
+  group-hover:text-primary-400
+`}>
+  <Edit2 size={20} />
+</button>
+
+// Aumentar badges
+<span className="text-xs text-neutral-400 bg-white/5 px-2 py-1 rounded-full">
+  {movie.year}
+</span>
+```
+
+**Benefício:**
+- Melhor usabilidade mobile (sem depender de hover)
+- Badges mais legíveis
+- Consistência entre plataformas
+
+---
+
+### 3. Modals
+
+#### 3.1 MovieEditorModal (Problema Crítico)
+
+**Problema:**
+- Modal muito longo sem indicador de scroll
+- Botões de ação no footer podem ficar fora da viewport
+- Campos de formulário sem agrupamento visual claro
+
+**Sugestão:**
+```tsx
+// Adicionar scroll indicator
+<div className="relative flex-1 overflow-y-auto">
+  {/* Gradient fade no topo */}
+  <div className="sticky top-0 h-8 bg-gradient-to-b from-neutral-900 to-transparent pointer-events-none z-10" />
+  
+  {/* Conteúdo */}
+  <div className="p-6 space-y-6">
+    {/* Agrupar campos relacionados */}
+    <section className="space-y-4">
+      <h3 className="text-sm font-semibold text-neutral-400 uppercase tracking-wider">
+        Informações Básicas
+      </h3>
+      {/* Campos */}
+    </section>
+  </div>
+  
+  {/* Gradient fade no bottom */}
+  <div className="sticky bottom-0 h-8 bg-gradient-to-t from-neutral-900 to-transparent pointer-events-none" />
+</div>
+
+// Footer sempre visível
+<div className="sticky bottom-0 bg-neutral-900/95 backdrop-blur-xl border-t border-white/10 p-4">
+  {/* Botões */}
+</div>
+```
+
+**Benefício:**
+- Usuário sabe que há mais conteúdo
+- Botões sempre acessíveis
+- Organização visual clara
+
+---
+
+#### 3.2 StatsModal
+
+**Problema:**
+- Muita informação sem hierarquia
+- Grid de 4 colunas em mobile é apertado
+- Cores dos gráficos não seguem tema
+
+**Sugestão:**
+```tsx
+// Mobile: 2 colunas, Desktop: 4
+<div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+  
+// Usar cores do tema consistentemente
+<div className="h-full bg-gradient-to-r from-primary-500 to-primary-600" />
+```
+
+---
+
+#### 3.3 RandomMoviePicker
+
+**Problema:**
+- Botão "Assistir" não deixa claro o que faz
+- Animação de sorteio pode ser enjoativa após várias vezes
+- Falta opção de "não gostei, sortear outro"
+
+**Sugestão:**
+```tsx
+// Renomear e adicionar ícone
+<button className="...">
+  <Check size={20} />
+  Vou Assistir
+</button>
+
+// Adicionar botão secundário
+<button className="flex-1 bg-neutral-800 ...">
+  <SkipForward size={20} />
+  Pular
+</button>
+```
+
+---
+
+### 4. Bottom Navigation (Mobile)
+
+**Problema:**
+- Ícone "Buscar" leva para home + foca input (comportamento confuso)
+- "Sugerir" abre modal de dice (mas ícone é dice, não sparkles)
+- Falta indicador de aba ativa mais forte
+
+**Sugestão:**
+```tsx
+// Remover ação de busca duplicada, usar para "Coleção"
+<button onClick={() => navigate('/collection')}>
+  <Grid size={22} />
+  <span className="text-[10px]">Coleção</span>
+</button>
+
+// Indicador ativo mais forte
+<div className={`absolute top-0 left-1/2 -translate-x-1/2 w-12 h-1 rounded-full transition-all
+  ${isActive('/') ? 'bg-primary-500' : 'bg-transparent'}`} 
+/>
+```
+
+---
+
+## C) Backlog Priorizado
+
+### P0 - Essencial (Fazer Agora)
+
+#### P0.1: Melhorar Contraste de Textos
+**Descrição:** Textos secundários (neutral-400, neutral-500) não passam em WCAG AA  
+**Critério de Aceite:**
+- Todos os textos ≥ neutral-300
+- Contraste mínimo 4.5:1 para texto normal
+- Contraste mínimo 3:1 para texto grande (≥18px)
+
+**Implementação:**
+```css
+/* Substituir globalmente */
+.text-neutral-500 → .text-neutral-400
+.text-neutral-400 → .text-neutral-300
+```
+
+---
+
+#### P0.2: Adicionar Scroll Indicators em Modals
+**Descrição:** Usuário não sabe que pode rolar em modals longos  
+**Critério de Aceite:**
+- Gradient fade top/bottom em todos os modals com scroll
+- Footer sticky em modals com formulários
+
+**Arquivos:**
+- `MovieEditorModal.tsx`
+- `SettingsModal.tsx`
+- `SmartSuggestionModal.tsx`
+
+---
+
+#### P0.3: Hierarquia de Botões (Primary vs Secondary)
+**Descrição:** Todas as ações têm mesmo peso visual  
+**Critério de Aceite:**
+- Ação primária: `bg-primary-600` com shadow
+- Ação secundária: `bg-neutral-800` sem shadow
+- Ação destrutiva: `bg-red-600`
+
+**Exemplo:**
+```tsx
+// Salvar (primário)
+<button className="bg-primary-600 hover:bg-primary-500 shadow-lg shadow-primary-500/30">
+  Salvar
+</button>
+
+// Cancelar (secundário)
+<button className="bg-neutral-800 hover:bg-neutral-700">
+  Cancelar
+</button>
+```
+
+---
+
+### P1 - Melhoria Forte (Próxima Sprint)
+
+#### P1.1: Redesign do View Toggle
+**Descrição:** Toggle atual é funcional mas visualmente fraco  
+**Critério de Aceite:**
+- Contraste claro entre ativo/inativo
+- Animação suave entre estados
+- Ícones + texto para melhor compreensão
+
+---
+
+#### P1.2: Genre Cards com Identidade Visual
+**Descrição:** Cards genéricos demais, difícil diferenciar  
+**Critério de Aceite:**
+- Cor única por gênero (baseada em hash)
+- Ou ícone temático
+- Hover state mais expressivo
+
+---
+
+#### P1.3: MovieCard - Edit Button Sempre Visível (Mobile)
+**Descrição:** Hover não funciona em touch  
+**Critério de Aceite:**
+- Mobile: botão sempre visível
+- Desktop: aparece no hover
+- Transição suave
+
+---
+
+#### P1.4: Search Autocomplete Melhorado
+**Descrição:** Dropdown de busca funciona mas pode melhorar  
+**Critério de Aceite:**
+- Highlight do termo buscado
+- Navegação por teclado (↑↓ Enter)
+- Limite de 5 resultados com "Ver todos"
+
+---
+
+### P2 - Refino (Backlog)
+
+#### P2.1: Micro-animações de Feedback
+**Descrição:** Adicionar feedback visual em ações  
+**Exemplos:**
+- Confetti ao marcar como assistido
+- Pulse ao adicionar à watchlist
+- Shake em erro de validação
+
+---
+
+#### P2.2: Empty States Ilustrados
+**Descrição:** Estados vazios são apenas texto  
+**Critério de Aceite:**
+- Ilustração SVG ou ícone grande
+- CTA claro para primeira ação
+- Tom amigável
+
+---
+
+#### P2.3: Loading States Contextuais
+**Descrição:** Skeleton genérico em todo lugar  
+**Critério de Aceite:**
+- Skeleton que imita layout real
+- Shimmer animation
+- Transição suave para conteúdo real
+
+---
+
+## D) Recomendações Objetivas
+
+### 1. Design System - Criar Arquivo de Tokens
+
+**Problema:** Valores hardcoded em todo lugar  
+**Solução:** Criar `design-tokens.ts`
+
+```typescript
+export const spacing = {
+  xs: '0.25rem',  // 4px
+  sm: '0.5rem',   // 8px
+  md: '1rem',     // 16px
+  lg: '1.5rem',   // 24px
+  xl: '2rem',     // 32px
+} as const;
+
+export const borderRadius = {
+  sm: '0.5rem',   // 8px
+  md: '0.75rem',  // 12px
+  lg: '1rem',     // 16px
+  xl: '1.5rem',   // 24px
+  full: '9999px',
+} as const;
+
+export const shadows = {
+  sm: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
+  md: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+  lg: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
+  glow: '0 0 20px rgb(var(--color-primary-500) / 0.3)',
+} as const;
+```
+
+**Benefício:** Consistência garantida, fácil manutenção
+
+---
+
+### 2. Acessibilidade - Checklist Mínimo
+
+- [ ] Todos os botões têm `aria-label` ou texto visível
+- [ ] Inputs têm `label` associado (não só placeholder)
+- [ ] Modals têm `role="dialog"` e `aria-modal="true"`
+- [ ] Focus trap em modals abertos
+- [ ] Navegação por teclado funciona (Tab, Enter, Esc)
+- [ ] Contraste mínimo 4.5:1 (texto) e 3:1 (UI)
+
+---
+
+### 3. Performance - Quick Wins
+
+```tsx
+// 1. Lazy load modals
+const MovieEditorModal = lazy(() => import('./modals/MovieEditorModal'));
+
+// 2. Memoizar componentes pesados
+const MovieCard = memo(MovieCardComponent);
+
+// 3. Virtualizar listas longas (se >100 itens)
+import { FixedSizeList } from 'react-window';
+
+// 4. Otimizar imagens
+<img 
+  loading="lazy" 
+  decoding="async"
+  srcSet="..." // Responsive images
+/>
+```
+
+---
+
+### 4. Padrões de Interação - Documentar
+
+Criar `INTERACTION_PATTERNS.md` com:
+- Como usar botões (primary/secondary/danger)
+- Quando usar modal vs página
+- Padrão de loading states
+- Padrão de error states
+- Padrão de empty states
+
+---
+
+## E) Próximos Passos Sugeridos
+
+1. **Semana 1:** Implementar P0 (contraste, scroll indicators, hierarquia)
+2. **Semana 2:** Implementar P1.1 e P1.2 (toggle e genre cards)
+3. **Semana 3:** Implementar P1.3 e P1.4 (mobile edit button e search)
+4. **Semana 4:** Refinar P2 conforme feedback
+
+---
+
+## F) Conclusão
+
+**Nota Geral: 7.5/10**
+
+O app já tem uma base visual sólida com:
+- Design system coerente
+- Responsividade bem implementada
+- Micro-interações agradáveis
+
+**Principais Gaps:**
+- Falta hierarquia visual clara
+- Contraste insuficiente em vários pontos
+- Modals precisam de scroll indicators
+- Ações primárias vs secundárias mal definidas
+
+**Impacto Esperado das Melhorias:**
+- **P0:** +2 pontos (9.5/10) - Resolve problemas críticos
+- **P1:** +0.5 pontos (10/10) - Eleva para excelência
+
+---
+
+**Última Atualização:** 2026-02-03  
+**Próxima Revisão:** Após implementação de P0

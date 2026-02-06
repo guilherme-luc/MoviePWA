@@ -1,0 +1,118 @@
+# Implementation Plan - Phase 7: Content & Experience Expansion
+
+## Goal Description
+Enhance the application with rich content (backdrops, streaming info, soundtracks) and deepen the user experience with better organization tools (filters, lists, franchises) and gamification (badges).
+
+## Proposed Changes
+
+### 1. Backdrop Images (Thematic Backgrounds)
+#### [NEW] [src/components/ui/MovieBackdrop.tsx]
+- Create a component to render the backdrop image.
+- **Logic**: Fetch `backdrop_path` from TMDB when updating movie data.
+- **UI**: Display subtly behind the movie details or as a header in the modal.
+
+#### [MODIFY] [src/components/modals/MovieEditorModal.tsx]
+- Fetch and save `backdrop_path` alongside `poster_path`.
+- Update [Movie](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/types/index.ts#1-33) type to include `backdropValue`.
+
+### 2. Advanced Filters & Sorting
+#### [MODIFY] [src/pages/MoviesPage.tsx]
+- Add a "Sort By" dropdown:
+    - Title (A-Z, Z-A)
+    - Year (Newest, Oldest)
+    - Rating (Highest, Lowest)
+    - Duration (Shortest, Longest)
+    - Date Added (Newest, Oldest)
+
+### 3. Custom Lists (Tags)
+#### [NEW] [src/components/modals/TagManagerModal.tsx]
+- Manage custom tags (e.g., "Favorites", "To Watch with Mom").
+
+#### [MODIFY] [src/types/index.ts]
+- Add `tags: string[]` to [Movie](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/types/index.ts#1-33) interface.
+
+### 4. Clickable Cast & Crew
+#### [MODIFY] [src/components/modals/MovieEditorModal.tsx]
+- Render cast names as clickable links/badges.
+- **Action**: Clicking a name triggers a search in the main list for that actor/director.
+
+### 5. Streaming Availability
+#### [NEW] [src/components/ui/StreamingProviders.tsx]
+- Component to display icons of providers (Netflix, Prime, etc.).
+- **API**: Use TMDB `/movie/{id}/watch/providers` endpoint.
+
+### 6. Franchises & Universes
+#### [NEW] [src/components/ui/FranchiseCard.tsx]
+- Visual grouping for collections (e.g., "Harry Potter Collection").
+- **API**: Check `belongs_to_collection` in TMDB response.
+
+### 7. Badges & Achievements
+#### [NEW] [src/components/gamification/BadgeSystem.tsx]
+- Logic to award badges (e.g., "Watched 10 Horror Movies").
+- **UI**: Display badges in [StatsModal](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/modals/StatsModal.tsx#14-203).
+
+### 8. Soundtrack Integration
+#### [MODIFY] [src/components/modals/MovieEditorModal.tsx]
+- Add a spotify link field or auto-search button.
+
+### 9. Critics Rating
+#### [MODIFY] [src/components/modals/MovieEditorModal.tsx]
+- Fetch additional rating data if available (or map TMDB logic).
+
+### 10. Auto-Enrichment System (Background Sync)
+#### [NEW] [src/hooks/useAutoEnrichment.ts]
+- **Purpose**: Silently fetch missing data (Backdrops, Posters, Metadata).
+- **Logic**:
+    - Identify movies with missing `backdropValue` or `tmdbId`.
+    - Queue them for processing (1 request per 2 seconds).
+    - Batch update Google Sheets every 5 items or on complete.
+- **UI**: Add a small spinning sync icon in the [AppShell](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/layout/AppShell.tsx#10-43) footer.
+
+## Verification Plan
+- **Backdrops**: Add a new movie, verify unique background image appears.
+- **Filters**: Sort list by Rating, verify order.
+- **Streaming**: Open a popular movie, check if Netflix/Prime icons appear.
+
+## Phase 8: God Mode Implementation
+
+### 1. Visual Polish (View Transitions & Micro-interactions)
+#### [NEW] [src/components/ui/Confetti.tsx]
+- Use `canvas-confetti` library for lightweight particle effects.
+- Trigger when:
+    - User marks movie as "Watched".
+    - User rates a movie 5 stars (or 10/10).
+
+#### [MODIFY] [src/App.tsx] & [src/index.css]
+- Enable View Transitions API (if supported) or use simple CSS layout transitions.
+- Animate modal opening/closing with `framer-motion` or CSS keyframes.
+
+### 2. Theme Customization
+#### [NEW] [src/providers/ThemeProvider.tsx]
+- Context to manage app-wide color theme.
+- Variables: Primary Color (Indigo default), Secondary.
+- Pre-sets: 
+    - "Original" (Indigo)
+    - "Streamer Red" (Netflix-ish)
+    - "Prime Blue" (Amazon-ish)
+    - "Hulu Green"
+    - "Classic Gold"
+
+### 3. Social Sharing (Share Card)
+#### [NEW] [src/components/modals/ShareModal.tsx]
+- Display a preview of the card.
+- **Tech**: Use `html2canvas` to capture a DOM element rendering the movie poster + rating + app logo.
+- **Output**: Download Image or Web Share API.
+
+### 4. Showcase Mode (Public View)
+#### [MODIFY] [src/providers/AppProviders.tsx] & [src/pages/*]
+- Add `isShowcaseMode` to global state.
+- When active:
+    - Hide all Edit/Delete/Add buttons.
+    - Hide Settings (require PIN or long-press to exit?).
+    - Perfect for handing phone to a friend.
+
+### 5. Data Export
+#### [MODIFY] [src/components/modals/SettingsModal.tsx]
+- Add "Export Data" section.
+- Function to dump `allMovies` to a JSON file.
+- Function to convert to CSV.

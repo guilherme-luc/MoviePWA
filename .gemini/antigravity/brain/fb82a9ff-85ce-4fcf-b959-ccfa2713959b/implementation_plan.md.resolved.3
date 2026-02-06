@@ -1,0 +1,39 @@
+# Implementação de Imagens (Capas de Filmes)
+
+O objetivo é permitir que cada filme tenha uma imagem de capa.
+1. **Busca Automática:** Usar título + ano para achar a capa oficial.
+2. **Manual:** Tirar foto ou escolher da galeria.
+
+## Arquitetura Sugerida
+
+### 1. Fonte de Dados (Busca)
+Utilizaremos a **TMDB API** (The Movie Database).
+*   **Por que?** É grátis, tem ótimas capas e é fácil de usar.
+*   **Requisito:** O usuário precisa criar uma conta rápida no [themoviedb.org](https://www.themoviedb.org/) e pegar uma "API Key".
+
+### 2. Armazenamento das Imagens
+Para manter tudo simples e sem custos de servidor, salvaremos as imagens **diretamente na Planilha do Google**.
+*   **Como?** Converteremos as imagens para texto (Base64).
+*   **Otimização:** Para não pesar a planilha, as imagens serão redimensionadas (ex: miniaturas de 300px).
+*   **Coluna:** Adicionaremos uma 5ª coluna "Image" na planilha.
+
+## Plano de Mudanças
+
+### [Backend] GoogleSheetsService.ts
+*   [ ] Atualizar `EXPECTED_HEADERS` para incluir "Image".
+*   [ ] Atualizar [validateSheetStructure](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#333-370) para aceitar a nova coluna (e criá-la se não existir).
+*   [ ] Atualizar [Movie](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/types/index.ts#1-10) type para incluir campo `image` formatado em Base64 string.
+*   [ ] Atualizar métodos [addMovie](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#181-191) / [updateMovie](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#192-207) para ler/gravar a coluna de imagem.
+
+### [Frontend] MovieEditorModal.tsx
+*   [ ] **Aba de Imagem:** Adicionar área visual de destaque para a capa.
+*   [ ] **Botão "Buscar Capa":** Abre um popup/campo para digitar a TMDB API Key (salva no navegador) e buscar o filme.
+*   [ ] **Input Arquivo/Câmera:** Permite upload manual.
+*   [ ] **Compressor:** Lógica para reduzir a imagem antes de salvar.
+
+### [Frontend] MoviesPage.tsx
+*   [ ] Exibir a miniatura do filme na lista (lado esquerdo do título).
+
+## Perguntas para o Usuário
+1. [ ] Você topa criar a conta no TMDB para pegar a chave gratuita? (Eu posso deixar um campo nas configurações para você colocar).
+2. [ ] Tudo bem salvar as imagens na própria planilha (redimensionadas)?

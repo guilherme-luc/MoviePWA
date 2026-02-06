@@ -1,0 +1,55 @@
+# Walkthrough - Dual Spreadsheet & Genre Management
+> **Date**: 2026-02-05
+> **Feature**: Dual Spreadsheet Support (DVD/VHS) & Genre Management Tools
+
+## Overview
+This update introduces a major architectural change to support separate Google Sheets for DVD and VHS collections. It also adds robust tools for managing genres (create, rename, delete) and includes an automated migration system for legacy data.
+
+## Key Features
+
+### 1. Dual Spreadsheet Architecture
+- **Separation of Concerns**: DVD and VHS collections are now stored in separate Google Sheet files ("MoviePWA DVD Collection" and "MoviePWA VHS Collection").
+- **Context-Aware**: The entire application (Hooks, Services, UI) is now aware of the selected `format` context.
+- **Legacy Support**: The system automatically detects legacy setups and provisions the new VHS sheet if needed.
+
+### 2. Genre Management Tools
+- **Create**: Users can create new genres directly from the Home Page or via the Startup Modal.
+- **Rename**: Users can rename existing genres. This operation automatically updates the genre name for all associated movies.
+- **Delete**: Users can delete genres (with a double-confirmation prompt). **Warning**: This deletes all movies in that genre.
+- **UI Integration**: Added an "Edit" button (vertical dots) to genre cards on the Home Page.
+
+### 3. Automated Migration System
+- **Detection**: On startup, the [StartupGuard](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/auth/StartupGuard.tsx#7-202) checks the legacy DVD sheet for any movies marked as 'VHS'.
+- **Migration Modal**: If legacy items are found, a distinct migration modal blocks the UI until the user chooses to migrate.
+- **Process**: Movies are safely copied to the new VHS sheet and then removed from the old DVD sheet.
+
+### 4. User Experience Improvements
+- **Startup Genre Bootstrapping**: New users (or empty collections) are guided to create their first genre immediately, preventing "empty state" confusion.
+- **Format Switching**: The Landing Page and Side Menu allow seamless switching between DVD and VHS collections.
+
+## Technical Details
+
+### Service Layer ([GoogleSheetsService.ts](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts))
+- Updated [getSpreadsheetId(format)](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#21-26) and [ensureSheetExists(filename)](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#151-182) to handle multiple files.
+- [getAllMovies](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#213-255), [addMovie](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#185-212), [updateMovie](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#362-382), [deleteMovie](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#383-411) now all accept a `format` parameter.
+- Implemented [renameGenre](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#306-329) and [deleteGenre](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#295-305) with [batchUpdate](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#429-457) calls.
+- Implemented [migrateMoviesToVHSFile](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#561-577) for the migration logic.
+
+### Components
+- [MigrationModal.tsx](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/modals/MigrationModal.tsx): Visual feedback and control for the migration process.
+- [StartupGenreModal.tsx](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/modals/StartupGenreModal.tsx): Onboarding for new collections.
+- [GenreManagerModal.tsx](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/modals/GenreManagerModal.tsx): Updated to support Edit/Delete modes.
+- [HomePage.tsx](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/pages/HomePage.tsx): Added Edit triggers and conditional rendering for new modals.
+- [StartupGuard.tsx](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/auth/StartupGuard.tsx): Added migration check logic.
+
+## Usage Guide
+1. **Switching Formats**: Use the Landing Page or Side Menu (mobile) to switch between DVD and VHS.
+2. **Managing Genres**:
+    - **Create**: Click "+ Novo Gênero" on the Home Page.
+    - **Edit/Delete**: Click the vertical dots icon on any genre card.
+3. **Migration**: If you had VHS movies in your old DVD sheet, simply refresh the app. The Migration Modal will appear automatically. Click "Migrar Agora" to move them.
+
+## Verification
+- **Build**: `npm run build` passed successfully.
+- **Migration**: Tested logic for detecting and moving legacy items.
+- **Genre Ops**: Verified rename updates all movies in that genre. Verified delete removes the sheet and updates metadata.

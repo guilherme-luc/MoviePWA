@@ -1,0 +1,111 @@
+# Automação de Imagens 🪄
+
+Agora o sistema trabalha por você! Implementamos funcionalidades para preencher as capas dos filmes automaticamente.
+
+## Novidades
+
+### 1. Botão Mágico (Magic Wand) 🪄
+Na tela de listagem de filmes, adicionamos um novo botão com ícone de varinha mágica.
+*   **O que faz:** Varre todos os filmes da lista atual que estão sem capa.
+*   **Como funciona:**
+    1.  Identifica filmes sem imagem.
+    2.  Busca automaticamente no TMDB.
+    3.  Pega o primeiro resultado (baseado em popularidade).
+    4.  Salva em lotes (batch) para não sobrecarregar sua planilha.
+*   **Feedback:** Mostra uma barra de progresso visual enquanto trabalha, e um relatório final de sucesso/erro.
+
+### 2. Busca Automática no Cadastro ⚡
+Ao cadastrar um novo filme:
+*   Digite o nome do filme.
+*   Assim que você sair do campo de texto (clicar fora ou ir para o próximo campo), o sistema busca e seleciona a capa automaticamente.
+*   Ainda é possível clicar em "Buscar Capa" para escolher outra opção manualmente se preferir.
+
+## Como Usar
+
+### Para filmes já cadastrados (sem capa):
+1.  Entre em uma categoria (Ex: Ação).
+2.  Clique no ícone da **Varinha Mágica** 🪄 (ao lado do título da categoria).
+3.  Confirme a ação.
+4.  Aguarde a barra de progresso.
+5.  Veja o relatório final (✅ Atualizados, ❌ Não encontrados).
+
+### Para novos filmes:
+1.  Clique no **+** para adicionar.
+2.  Digite o nome (Ex: "Matrix").
+3.  Pule para o campo de Ano.
+4.  Veja a mágica acontecer: a capa aparecerá sozinha.
+
+### Phase 6: Advanced Media Integration
+- **Trailer Integration**:
+  - Implemented [TrailerModal](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/modals/TrailerModal.tsx#10-33) component for playing YouTube trailers.
+  - Added "Ver Trailer" button to the Movie Editor.
+  - Integrated TMDB API to fetch trailer keys dynamically.
+  - Added visual feedback (loading spinners) for trailer fetching.
+
+- **Watchlist vs Collection**:
+  - Added a toggle in the Movie List to filter by:
+    - **Todos**: All movies.
+    - **Vistos**: Only movies marked as watched.
+    - **Watchlist**: Only movies NOT marked as watched.
+  - The filter works instantly on the client-side.
+
+### Phase 7: Content & Experience Expansion
+- **Thematic Backdrops 🖼️**:
+    - Movies now display high-quality backdrop images from TMDB in the Editor Modal.
+    - Updated "Magic Wand" manual trigger.
+    - Added beautiful gradient masks for a premium visual feel.
+
+- **Auto-Enrichment System 🔄**:
+    - **Background Sync**: A new system silently scans your collection on startup.
+    - **Proactive Updates**: Automatically fetches missing Backdrops, Posters, and Metadata (Synopsis, Ratings) without blocking the UI.
+    - **Smart Queue**: Processes movies efficiently (batch updates) to respect API limits.
+    - **Visual Indicator**: A subtle spinner appears in the footer when synchronization is active.
+
+- **Advanced Sorting 🌪️**:
+    - Added a powerful Sort Dropdown next to search.
+    - Options: **A-Z**, **Z-A**, **Newest/Oldest Year**, **Rating (Best/Worst)**, **Duration (Longest/Shortest)**, and **Date Added**.
+    - Sorts instantly on the client side without reloading.
+
+## Verification
+- **Build Status**: Successful (Production Build).
+- **Functionality**: Verified manual testing of filers and modal integration.
+
+### 3. Pesquisa Global 🔍
+Agora há uma barra de pesquisa no topo da tela inicial.
+*   **Busca Tudo:** Pesquisa filmes em **todas** as categorias ao mesmo tempo.
+*   **Resultados Rápidos:** Exibe o pôster, título e gênero.
+*   **Acesso Direto:** Clique para editar ou ver detalhes imediatamente.
+
+### 4. Leitor de Código de Barras 📱
+No formulário de adicionar/editar filme:
+*   Clique no ícone de código de barras (Scan).
+*   Aponte a câmera do celular.
+*   O código é preenchido automaticamente!
+*   (Dica: Funciona melhor em celular e ambientes iluminados).
+
+---
+
+> **Dica:** O sistema respeita os limites do TMDB, então o processo "mágico" pode levar alguns segundos se você tiver muitos filmes sem capa. Relaxe e deixe ele trabalhar! ☕
+
+### 5. Customize sua Coleção! ⭐
+Agora você pode adicionar suas próprias anotações sem perder os dados oficiais do filme.
+*   **Minha Nota:** Avalie o filme de 0 a 10 (aparece um 🌟 no card).
+*   **Já Assisti?**: Marque se já viu o filme (aparece um 👁️ no card).
+*   **Proteção de Dados:** Os dados vindos do TMDB (Sinopse, Diretor, Elenco, Duração) agora ficam **bloqueados** para edição por padrão, evitando que você apague algo sem querer. Clique no cadeado (🔒) se precisar corrigir algo manualmente.
+
+### 6. Melhorias Solicitadas (V4.1) 🛠️
+Ouvimos seu feedback e ajustamos detalhes importantes:
+*   **Seleção Manual:** Ao digitar o nome do filme, se houver dúvida, agora mostramos uma **lista de opções** (com capa e ano) para você clicar no correto. Chega de adivinhação errada!
+*   **Zoom no Celular:** Resolvemos o problema da tela dar "zoom" sozinha ao digitar no iPhone.
+*   **Botão Excluir:** O ícone de lixeira 🗑️ voltou para o rodapé da edição.
+*   **Imagens Leves:** O sistema agora comprime automaticamente fotos tiradas na hora, evitando erros ao salvar no Google Sheets.
+*   **Remover Capa:** Adicionamos um botãozinho de lixeira 🗑️ sobre a imagem para você removê-la facilmente se mudar de ideia.
+
+### 7. Experiência do Usuário (V5.0) 🚀
+Trabalhando para deixar o app mais fluido:
+*   **Carregamento Inteligente (Skeletons):** Demos adeus àquela tela branca piscando. Agora, enquanto os filmes carregam, você vê "esqueletos" cinzas pulsando, igual ao YouTube ou Netflix. Dá uma sensação muito maior de velocidade! 💀⚡
+*   **Novo Dashboard (Estatísticas):** O painel de estatísticas foi totalmente reformulado! Agora ele mostra:
+    *   **Progresso de Filme:** Quantos filmes você já assistiu vs. quantos faltam (com barra de progresso visual).
+    *   **Nota Média:** Qual a média das notas que você deu para seus filmes.
+    *   **Top Gêneros:** Gráfico de barras modernizado.
+    *   **Tudo Colorido:** Novo visual com gradientes e transparências (Glassmorphism). 📊✨

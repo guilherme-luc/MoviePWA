@@ -1,0 +1,62 @@
+# Movie PWA Walkthrough
+
+## Summary
+A comprehensive Personal Web App (PWA) for managing movie collections, supporting both DVD and VHS formats. The app features a premium dark UI with glassmorphism, Google Sheets integration for data storage, TMDB connectivity for automated metadata, and robust offline capabilities.
+
+## Recent Updates (Phase 17 - Persistence & Polish)
+Critical fixes were implemented to ensure data integrity for multi-format collections (DVD/VHS).
+
+### 🐛 Bug Fixes
+- **VHS Data Persistence**: Identified and resolved a complex issue where VHS movies were reverting to DVD or disappearing from lists.
+    - **Root Cause 1**: [getMoviesByGenre](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#232-283) was reading only up to Column Q, causing the [Format](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/providers/CollectionProvider.tsx#21-29) data (Column V) to be undefined (defaulting to DVD).
+    - **Root Cause 2**: The automatic sorting function ([sortSheet](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#694-715)) was truncating the sheet at Column U, deleting the Format column entirely after every save.
+    - **Fixes**: Updated all read/write ranges to explicitly include Column V (`A2:V`) and fixed the sorting logic to preserve all data columns.
+- **Column Shifting**: Rewrote [addMovie](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#373-399) to use explicit row indexing (`A{row}:V{row}`) instead of generic appending, preventing empty fields from shifting data into wrong columns (like Column U).
+- **Navigation Redirections**: Fixed React Router paths to use relative links, preventing hard refreshes or redirects to the landing page when switching genres.
+
+### ✨ Visual Enhancements
+- **Landing Page**: Integrated high-quality DVD and VHS logos with enhanced glow effects.
+- **Genre Visibility**: Adjusted logic to show all genres in the list, even if they have 0 movies in the current format, preventing confusion.
+
+## Key Features
+
+### 1. Dual Format Management (DVD / VHS)
+- **Landing Page**: Choose your experience.
+- **DVD Mode**: Modern, sleek blue/glass aesthetic.
+- **VHS Mode**: Retro, amber/scanline aesthetic.
+- **Persistence**: Your choice is remembered across sessions.
+
+### 2. Google Sheets Backend
+- **Zero Database Cost**: Uses your own Google Sheet.
+- **Data Ownership**: You own your data completely.
+- **Real-time Sync**: Changes are validated and executed directly on the sheet.
+
+### 3. Smart Movie Management
+- **Auto-Enrichment**: Type a title, get full metadata (Poster, Synopsis, Cast, Ratings) from TMDB.
+- **Manual Override**: Edit any field manually if needed.
+- **Barcode Support**: Manual entry for physical collection management.
+
+### 4. Collection Intelligence
+- **"What to Watch?"**: Random picker with dice animation.
+- **Smart Suggestions**: AI-powered recommendations based on your mood (Happy, Melancholic, Adrenaline, etc.) using Gemini API.
+- **Stats Dashboard**: Visualize your collection growth and genre distribution.
+
+### 5. UI/UX Excellence
+- **Mobile First**: Pull-to-refresh, bottom navigation, touch-optimized targets.
+- **micro-interactions**: Confetti on high ratings, smooth page transitions, skeleton loading states.
+- **Themes**: Dynamic gradients based on genre names.
+
+## Technical Stack
+- **Frontend**: React + TypeScript + Vite
+- **State Management**: React Query (Data) + Context API (UI State)
+- **Styling**: TailwindCSS
+- **Backend / DB**: Google Sheets API (via `gapi`)
+- **AI**: Google Gemini API
+- **PWA**: `vite-plugin-pwa` for offline support and installation
+
+## Deployment
+The app is configured for seamless deployment on Vercel, with all environment variables protected.
+
+## Known Issues / Future Work
+- **Advanced Filters**: Sorting by Year/Date is planned for Phase 18.
+- **Social Features**: Shareable cards are currently in beta/placeholder status.

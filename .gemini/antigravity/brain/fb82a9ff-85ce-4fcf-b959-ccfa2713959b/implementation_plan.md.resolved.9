@@ -1,0 +1,58 @@
+## Implementação de Imagens (Capas)
+
+### Estratégia de Armazenamento
+1.  **Imagens do TMDB (Padrão):**
+    *   Salvar apenas o **`poster_path`** (ex: `/uXDfjJbdP4ijW5hWSBrPrlKpxab.jpg`).
+    *   **Frontend:** Gera a URL completa: `https://image.tmdb.org/t/p/{size}{poster_path}`.
+# Implementation Plan: User Data & Read-Only Metadata (Phase 4)
+
+## Goal Description
+Allow users to track their own data ("Minha Nota", "Assistido") separately from the fetched TMDB metadata.
+TMDB fields (Synopsis, Global Rating, Duration) should be read-only in the editor to preserve data integrity, while User fields are editable.
+
+## Proposed Changes
+
+### Data Layer
+#### [MODIFY] [types/index.ts](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/types/index.ts)
+- Add `userRating?: string;` (Stores "0-10" or similar)
+- Add `watched?: boolean;` (Stores "TRUE"/"FALSE")
+
+#### [MODIFY] [services/GoogleSheetsService.ts](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts)
+- Update `EXPECTED_HEADERS` to include "UserRating" and "Watched".
+- Update `readMovies` to parse Cols L and M.
+- Update [addMovie](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#202-222) and [updateMovie](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#255-277) to write these fields.
+
+### UI Layer
+#### [MODIFY] [components/modals/MovieEditorModal.tsx](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/modals/MovieEditorModal.tsx)
+- **Read-Only Fields**: Set `readOnly={true}` for Synopsis, Rating, Duration. Add visual style (dimmed/grayed).
+- **New Inputs**:
+    - **Minha Nota**: Star rating or Number input.
+    - **Assistido**: Toggle Switch or Checkbox.
+- Update [handleSubmit](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/modals/MovieEditorModal.tsx#186-234) to include these fields.
+
+#### [MODIFY] [pages/MoviesPage.tsx](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/pages/MoviesPage.tsx)
+- Optional: Display "Watched" checkmark on the card.
+- Optional: Display "User Rating" (e.g. "★ 8.5") on the card.
+
+## Verification Plan
+1. **Manual Test**: Add a movie. Verify TMDB data fills invalid fields.
+2. **Manual Test**: Edit the movie. Verify TMDB fields are locked.
+3. **Manual Test**: Set "Minha Nota" and "Assistido". Save.
+4. **Manual Test**: Reload page. Verify values persist (read from Sheet).
+siva:** Não renderizar `<img>` inválidos.
+*   [x] **Magic Wand:** Botão "Auto-Completar Capas".
+    *   Itera filmes sem foto.
+    *   Busca no TMDB (Throttle 300ms).
+    *   Salva em lote.
+
+#### 4. Frontend (`Lists/MoviesPage`)
+*   [ ] **Renderização Defensiva:**
+    *   Não renderizar `<img>` se URL/Base64 for inválido ou vazio.
+    *   Exibir miniatura otimizada (`w92` ou `w154` para TMDB).
+
+### Fluxo de Migração
+1.  Atualizar Tipos ([Movie](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/types/index.ts#1-21) interface).
+2.  Service: Atualizar Headers e Métodos CRUD.
+3.  UI: Criar SettingsModal.
+4.  UI: Atualizar MovieEditorModal com busca e upload.
+5.  UI: Exibir nas listas.

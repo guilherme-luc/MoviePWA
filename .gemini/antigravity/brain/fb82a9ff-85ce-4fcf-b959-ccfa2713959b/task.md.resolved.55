@@ -1,0 +1,78 @@
+# Task List - Movie Collection PWA
+
+## Project Setup
+- [/] Initialize Vite + React + TypeScript project <!-- id: 0 -->
+- [/] Install dependencies: `@tanstack/react-query`, `react-router-dom`, `gapi-script`, `clsx`, `tailwind-merge`, `lucide-react` <!-- id: 1 -->
+- [x] Configure TailwindCSS (index.css, tailwind.config.js) <!-- id: 2 -->
+- [x] Configure `vite-plugin-pwa` (manifest, icons, service worker strategy) <!-- id: 3 -->
+
+## Infrastructure & Architecture
+- [x] Create [GoogleSheetsService](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#4-532) Singleton Structure <!-- id: 4 -->
+- [x] Implement [validateSheetStructure](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#403-440) (Check columns: BarCode, Title, Year, Genre) <!-- id: 5 -->
+- [x] Implement Auth Logic (Login, Silent Refresh, Error Handling) <!-- id: 6 -->
+- [x] Setup React Query Client & Provider <!-- id: 7 -->
+
+## Core API Implementation
+- [x] Implement [getGenres](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#485-492) (Fetch Sheets properties) <!-- id: 8 -->
+- [x] Implement [getMoviesByGenre](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#160-206) (Fetch Rows) <!-- id: 9 -->
+- [x] Implement [addMovie](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#202-222) (Append Row) <!-- id: 10 -->
+- [x] Implement [updateMovie](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#339-353) (Update Row) <!-- id: 11 -->
+- [x] Implement [deleteMovie](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#278-305) (Delete Row) <!-- id: 12 -->
+- [x] Implement [moveMovie](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#306-326) Transaction (Atomic Copy + Delete) <!-- id: 13 -->
+- [x] Implement [createGenre](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#327-351) (Add Sheet) <!-- id: 14 -->
+
+## UI Components
+- [x] Create [AppShell](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/layout/AppShell.tsx#10-43) with Layout & OfflineIndicator <!-- id: 15 -->
+- [x] Create `StartupGuard` (Validates Sheet before showing app) <!-- id: 16 -->
+- [x] Create `GenreList` Page (Home - with counts) <!-- id: 17 -->
+- [x] Create `GenreManager` Modal (Add new genre) <!-- id: 18 -->
+- [x] Create `MovieList` Page (Filterable, Searchable) <!-- id: 19 -->
+- [x] Create [MovieEditor](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/modals/MovieEditorModal.tsx#60-927) Page/Modal (Add/Edit Form) <!-- id: 20 -->
+
+## Verification & Polish
+- [x] Verify Offline Read-Only Mode (Block UI actions) <!-- id: 21 -->
+- [x] Verify Sheet Validation (Test with invalid columns) <!-- id: 22 -->
+- [x] Build & PWA Audit (Lighthouse/Browser Check) <!-- id: 23 -->
+
+## User Requested Improvements (Phase 3) - "Pro" Features
+- [x] Implement "What to Watch?" Randomizer Button (Dice Roll) <!-- id: 29 -->
+- [x] Implement Dashboard Stats (Total movies, genre breakdown) <!-- id: 30 -->
+- [x] Enhance TMDB Data (Synopsis, Rating, Duration) <!-- id: 31 -->
+- [x] Implement Bulk Actions (Select multiple to move/delete) <!-- id: 32 -->
+- [ ] Implement Advanced Filters (Sort by Year, Title, Added Date) <!-- id: 33 -->
+
+## User Customization (Phase 4)
+- [x] Add "User Rating" (Minha Nota) field & "Watched" toggle <!-- id: 34 -->
+- [x] Make TMDB Fields Read-Only in Editor <!-- id: 35 -->
+
+## User Feedback Fixes (Phase 4.1)
+- [x] Fix Input Zoom (Force 16px) <!-- id: 36 -->
+- [x] Fix Alphabetical Sorting (Ignore accents/spaces) <!-- id: 37 -->
+- [x] Improve TMDB Selection (Manual Picker) <!-- id: 38 -->
+- [x] Fix Image Save Error (Resize logic) <!-- id: 39 -->
+- [x] Restore Delete Button <!-- id: 40 -->
+
+## Refinements (Phase 4.2)
+- [x] Fix Strict Sorting (Ignore spaces completely) <!-- id: 41 -->
+- [x] Add "Remove Photo" Button <!-- id: 42 -->
+- [x] Fix Footer Layout (Prevent button wrap) <!-- id: 43 -->
+
+## User Experience Improvements (Phase 5)
+- [x] Implement Skeleton Loading (Movies, Categories) <!-- id: 44 -->
+- [x] Implement Dashboard Statistics <!-- id: 45 -->
+
+## Advanced Media Integration (Phase 6)
+- [x] Implement Youtube Trailer Integration (Fetch & Play) <!-- id: 46 -->
+- [x] Implement "Watchlist" vs "Collection" Toggle <!-- id: 47 -->
+
+## Phase 7: Content & Experience Expansion
+- [x] Implement Backdrop Images (Thematic Backgrounds) <!-- id: 48 -->
+- [x] Implement Auto-Enrichment System (Background Sync) <!-- id: 57 -->
+- [x] Implement Advanced Filters (Sort by Duration/Rating/Date) <!-- id: 49 -->
+- [x] Implement Custom Lists/Tags <!-- id: 50 -->
+- [x] Implement Clickable Cast & Crew (Cross-search) <!-- id: 51 -->
+- [x] Implement Streaming Availability (Where to Watch) <!-- id: 52 -->
+- [x] Implement Franchise/Universe Grouping <!-- id: 53 -->
+- [x] Implement User Badges & Achievements <!-- id: 54 -->
+- [x] Implement Soundtrack Integration (Spotify) <!-- id: 55 -->
+- [ ] Implement Critics Rating (Rotten Tomatoes/Metacritic) <!-- id: 56 -->
