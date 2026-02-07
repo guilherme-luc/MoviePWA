@@ -124,6 +124,7 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
     useEffect(() => {
         if (isOpen) {
             userTouchedTitle.current = false; // Reset on open
+            setTmdbResults([]); // Clear previous results
             loadGenres();
             if (movieToEdit) {
                 setBarcode(movieToEdit.barcode);
@@ -174,6 +175,7 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
     };
 
     const resetForm = () => {
+        setTmdbResults([]);
         setBarcode('');
         setTitle('');
         setYear('');
