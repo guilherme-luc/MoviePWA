@@ -558,7 +558,7 @@ export const MovieEditorModal: React.FC<MovieEditorModalProps> = ({ isOpen, onCl
             if (movieToEdit) {
                 // If genre changed, use moveMovie logic
                 if (movieToEdit.genre !== genre) {
-                    await GoogleSheetsService.getInstance().moveMovie(movieData, movieToEdit.genre, format);
+                    await GoogleSheetsService.getInstance().moveMovie(movieData, genre, format);
                 } else {
                     await GoogleSheetsService.getInstance().updateMovie(movieData, format);
                 }

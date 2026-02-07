@@ -101,8 +101,13 @@ export const MoviesPage: React.FC = () => {
 
         // Apply Sorting
         return result.sort((a, b) => {
-            if (sortBy === 'title_asc') return a.title.localeCompare(b.title);
-            if (sortBy === 'title_desc') return b.title.localeCompare(a.title);
+            // Helper for strict alphanumeric sorting (ignore spaces/accents)
+            const normalize = (s: string) => s.toLowerCase()
+                .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove accents
+                .replace(/[^a-z0-9]/g, ""); // Remove non-alphanumeric (including spaces)
+
+            if (sortBy === 'title_asc') return normalize(a.title).localeCompare(normalize(b.title));
+            if (sortBy === 'title_desc') return normalize(b.title).localeCompare(normalize(a.title));
             if (sortBy === 'year_desc') return String(b.year).localeCompare(String(a.year));
             if (sortBy === 'year_asc') return String(a.year).localeCompare(String(b.year));
             if (sortBy === 'rating_desc') return (Number(b.rating) || 0) - (Number(a.rating) || 0);
