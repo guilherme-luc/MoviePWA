@@ -11,34 +11,34 @@
 - [x] Configure `vite-plugin-pwa` (manifest, icons, service worker strategy) <!-- id: 3 -->
 
 ## Infrastructure & Architecture
-- [x] Create `GoogleSheetsService` Singleton Structure <!-- id: 4 -->
-- [x] Implement `validateSheetStructure` (Check columns: BarCode, Title, Year, Genre) <!-- id: 5 -->
+- [x] Create [GoogleSheetsService](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#10-802) Singleton Structure <!-- id: 4 -->
+- [x] Implement [validateSheetStructure](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#611-667) (Check columns: BarCode, Title, Year, Genre) <!-- id: 5 -->
 - [x] Implement Auth Logic (Login, Silent Refresh, Error Handling) <!-- id: 6 -->
 - [x] Setup React Query Client & Provider <!-- id: 7 -->
 
 ## Core API Implementation
-- [x] Implement `getGenres` (Fetch Sheets properties) <!-- id: 8 -->
+- [x] Implement [getGenres](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#376-387) (Fetch Sheets properties) <!-- id: 8 -->
 - [x] Implement `getMoviesByGenre` (Fetch Rows) <!-- id: 9 -->
-- [x] Implement `addMovie` (Append Row) <!-- id: 10 -->
-- [x] Implement `updateMovie` (Update Row) <!-- id: 11 -->
-- [x] Implement `deleteMovie` (Delete Row) <!-- id: 12 -->
-- [x] Implement `moveMovie` Transaction (Atomic Copy + Delete) <!-- id: 13 -->
-- [x] Implement `createGenre` (Add Sheet) <!-- id: 14 -->
+- [x] Implement [addMovie](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#202-229) (Append Row) <!-- id: 10 -->
+- [x] Implement [updateMovie](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#390-410) (Update Row) <!-- id: 11 -->
+- [x] Implement [deleteMovie](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#411-439) (Delete Row) <!-- id: 12 -->
+- [x] Implement [moveMovie](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#440-450) Transaction (Atomic Copy + Delete) <!-- id: 13 -->
+- [x] Implement [createGenre](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#275-316) (Add Sheet) <!-- id: 14 -->
 
 ## UI Components
 - [x] Create `AppShell` with Layout & OfflineIndicator <!-- id: 15 -->
-- [x] Create `StartupGuard` (Validates Sheet before showing app) <!-- id: 16 -->
+- [x] Create [StartupGuard](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/auth/StartupGuard.tsx#5-162) (Validates Sheet before showing app) <!-- id: 16 -->
 - [x] Create `GenreList` Page (Home - with counts) <!-- id: 17 -->
-- [x] Create `GenreManager` Modal (Add new genre) <!-- id: 18 -->
+- [x] Create [GenreManager](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/modals/GenreManagerModal.tsx#13-186) Modal (Add new genre) <!-- id: 18 -->
 - [x] Create `MovieList` Page (Filterable, Searchable) <!-- id: 19 -->
-- [x] Create `MovieEditor` Page/Modal (Add/Edit Form) <!-- id: 20 -->
+- [x] Create [MovieEditor](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/modals/MovieEditorModal.tsx#64-1259) Page/Modal (Add/Edit Form) <!-- id: 20 -->
     - [x] **8.3: First Genre Bootstrapping** <!-- id: 8.3 -->
-        - [x] Create `StartupGenreModal.tsx`.
-        - [x] Trigger on `LandingPage` or `HomePage` if selected format has 0 genres.
+        - [x] Create [StartupGenreModal.tsx](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/modals/StartupGenreModal.tsx).
+        - [x] Trigger on [LandingPage](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/pages/LandingPage.tsx#14-267) or [HomePage](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/pages/HomePage.tsx#19-289) if selected format has 0 genres.
     - [x] **8.4: Genre Management Tools** <!-- id: 8.4 -->
-        - [x] Create `GenreManagerModal` (Rename/Delete).
-        - [x] Implement `renameGenre` in Service.
-        - [x] Implement `deleteGenre` in Service (with protection).
+        - [x] Create [GenreManagerModal](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/modals/GenreManagerModal.tsx#13-186) (Rename/Delete).
+        - [x] Implement [renameGenre](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#317-342) in Service.
+        - [x] Implement [deleteGenre](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#343-364) in Service (with protection).
 
 ## Verification & Polish
 - [x] Verify Offline Read-Only Mode (Block UI actions) <!-- id: 21 -->
@@ -75,7 +75,7 @@
 ## Phase 13: Cleanup & Refinement
 - [x] Remove Barcode Scanner Feature <!-- id: 11 -->
     - [x] Remove `BarcodeScanner.tsx` component <!-- id: 12 -->
-    - [x] Remove scanner logic/UI from `MovieEditorModal.tsx` <!-- id: 13 -->
+    - [x] Remove scanner logic/UI from [MovieEditorModal.tsx](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/modals/MovieEditorModal.tsx) <!-- id: 13 -->
 
 ## User Experience Improvements (Phase 5)
 - [x] Implement Skeleton Loading (Movies, Categories) <!-- id: 44 -->
@@ -180,11 +180,11 @@
 - [x] **Build Fixes**: Resolved Vercel build errors (imports, unused vars, JSX types) <!-- id: 88 -->
 - [x] **Navigation**: Fixed genre link redirect issue (relative vs absolute paths) <!-- id: 89 -->
 - [x] **Data Persistence**:
-    - [x] Added `Format` column migration (Auto-fix missing Column V) <!-- id: 90 -->
+    - [x] Added [Format](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/providers/CollectionProvider.tsx#21-29) column migration (Auto-fix missing Column V) <!-- id: 90 -->
     - [x] Fixed Write Range logic to include Column V (saving VHS format correctly) <!-- id: 91 -->
-    - [x] Hardened `movieToRow` to prevent data shifting on empty fields <!-- id: 92 -->
+    - [x] Hardened [movieToRow](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#742-768) to prevent data shifting on empty fields <!-- id: 92 -->
     - [x] **CRITICAL FIX**: Fixed `getMoviesByGenre` reading only up to Column Q (causing missing Format bug) <!-- id: 93 -->
-    - [x] **CRITICAL FIX**: Fixed `sortSheet` truncation bug (was deleting Column V data) <!-- id: 94 -->
+    - [x] **CRITICAL FIX**: Fixed [sortSheet](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/services/GoogleSheetsService.ts#527-549) truncation bug (was deleting Column V data) <!-- id: 94 -->
 - [x] **UI Polish**:
     - [x] Integrated VHS/DVD Logos on Landing Page <!-- id: 95 -->
     - [x] Fixed `noise.svg` 402 error (Replaced with local base64 asset) <!-- id: 96 -->
@@ -201,10 +201,10 @@
     - [x] **Feature**: Added "Sign Out" button (Landing & Settings) <!-- id: 107 -->
 
 ## Phase 18: Visual Grouping (Duplicatas)
-- [x] Create `useMovieGrouping` hook (Logic for clustering) <!-- id: 108 -->
-- [x] Create `DuplicateSelectionModal` (Handle clicks on groups) <!-- id: 109 -->
-- [x] Update `MovieCard` to accept `groupCount` and render Badge <!-- id: 110 -->
-- [x] Implement Grouping Integration in `HomePage` <!-- id: 111 -->
+- [x] Create [useMovieGrouping](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/hooks/useMovieGrouping.ts#9-57) hook (Logic for clustering) <!-- id: 108 -->
+- [x] Create [DuplicateSelectionModal](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/modals/DuplicateSelectionModal.tsx#15-110) (Handle clicks on groups) <!-- id: 109 -->
+- [x] Update [MovieCard](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/components/movies/MovieCard.tsx#14-109) to accept `groupCount` and render Badge <!-- id: 110 -->
+- [x] Implement Grouping Integration in [HomePage](file:///c:/Users/gabri/.gemini/antigravity/scratch/movie-pwa/src/pages/HomePage.tsx#19-289) <!-- id: 111 -->
 
 ## Phase 19: User Feedback & Polish (Feb 6)
 - [x] Fix Badge Size & Position (Feedback #1) <!-- id: 112 -->
@@ -229,4 +229,4 @@
 - [x] Fix Global Alphabetical Sorting (Ignore Special Chars) <!-- id: 125 -->
 
 ## Phase 23: Logic Refinements (Round 5)
-- [x] Fix Persistent Search Results (Clear on Open/Close) <!-- id: 126 -->
+- [ ] Fix Persistent Search Results (Clear on Open/Close) <!-- id: 126 -->
