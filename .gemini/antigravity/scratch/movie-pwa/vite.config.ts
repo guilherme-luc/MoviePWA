@@ -1,11 +1,23 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
+import { createNodeHandler } from './server/nodeHandler'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '');
+  return {
   plugins: [
     react(),
+    {
+      name: 'recommendation-api',
+      configureServer(server) {
+        server.middlewares.use('/api/recommend', createNodeHandler({ GEMINI_API_KEY: env.GEMINI_API_KEY, GOOGLE_CLIENT_ID: env.GOOGLE_CLIENT_ID || env.VITE_GOOGLE_CLIENT_ID }));
+      },
+      configurePreviewServer(server) {
+        server.middlewares.use('/api/recommend', createNodeHandler({ GEMINI_API_KEY: env.GEMINI_API_KEY, GOOGLE_CLIENT_ID: env.GOOGLE_CLIENT_ID || env.VITE_GOOGLE_CLIENT_ID }));
+      },
+    },
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
@@ -44,10 +56,12 @@ export default defineConfig({
         // which implies we might want to serve stale data if we cached it, or handle it in app.
         // For Google Sheets, we'll rely on React Query persistence.
         navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/api\//],
       },
       devOptions: {
         enabled: false, // Disable service worker in dev to avoid ES6 module errors
       }
     })
   ],
+  }
 })

@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, Sparkles, Clock, Smile, Film, BrainCircuit, RefreshCw, Play } from 'lucide-react';
-import { geminiService, isGeminiAvailable } from '../../services/GeminiService';
+import { geminiService } from '../../services/GeminiService';
 import type { Movie } from '../../types';
+import { rankMovies, buildCandidates, movieKey, readHistory, saveHistory, defaultPreferences, type Preferences, type RecommendationEvent } from '../../utils/recommendations';
+import { useCollection } from '../../providers/CollectionProvider';
 
 interface SmartSuggestionModalProps {
     isOpen: boolean;
@@ -9,11 +11,8 @@ interface SmartSuggestionModalProps {
     movies: Movie[]; // All movies to filter from
 }
 
-type Step = 'intro' | 'mood' | 'submood' | 'time' | 'status' | 'analysis' | 'result';
+type Step = 'intro' | 'mood' | 'submood' | 'time' | 'status' | 'analysis' | 'result' | 'empty' | 'error';
 type Mood = 'laugh' | 'tension' | 'adrenaline' | 'emotion' | 'any';
-type SubMood = string;
-type Duration = 'short' | 'medium' | 'long' | 'any';
-type Status = 'new' | 'rewatch' | 'any';
 
 const SUB_MOODS: Record<Mood, { label: string, desc: string, value: string }[]> = {
     'laugh': [
@@ -35,7 +34,7 @@ const SUB_MOODS: Record<Mood, { label: string, desc: string, value: string }[]> 
         { label: 'Espionagem / Thriller', desc: 'Tensão e agentes secretos', value: 'spy' }
     ],
     'emotion': [
-        { label: 'Romance Clichê', desc: 'Final feliz garantido', value: 'romance_cliche' },
+        { label: 'Romance Clichê', desc: 'Romance leve e familiar', value: 'romance_cliche' },
         { label: 'Drama Pesado', desc: 'Para chorar no banho', value: 'heavy_drama' },
         { label: 'Inspirador', desc: 'Histórias de superação', value: 'inspiring' },
         { label: 'Íntimo / Indie', desc: 'Diálogos profundos', value: 'indie' }
@@ -43,154 +42,97 @@ const SUB_MOODS: Record<Mood, { label: string, desc: string, value: string }[]> 
     'any': []
 };
 
-export const SmartSuggestionModal: React.FC<SmartSuggestionModalProps> = ({ isOpen, onClose, movies }) => {
+const SmartSuggestionSession: React.FC<SmartSuggestionModalProps> = ({ isOpen, onClose, movies }) => {
     const [step, setStep] = useState<Step>('intro');
-    const [preferences, setPreferences] = useState({
-        mood: 'any' as Mood,
-        subMood: 'any' as SubMood,
-        duration: 'any' as Duration,
-        status: 'any' as Status
-    });
+    const [preferences, setPreferences] = useState<Preferences>(defaultPreferences);
     const [result, setResult] = useState<Movie | null>(null);
-    const [analysisText, setAnalysisText] = useState('Analisando sua coleção...');
+    const [analysisText, setAnalysisText] = useState('');
     const [reasoning, setReasoning] = useState<string | null>(null);
-    const [isAiActive, setIsAiActive] = useState(false);
+    const [source, setSource] = useState<'ai' | 'local'>('local');
+    const [availability, setAvailability] = useState<'checking' | 'available' | 'unavailable'>('checking');
+    const [error, setError] = useState('');
+    const [feedback, setFeedback] = useState<'like' | 'dislike' | null>(null);
+    const [historyNotice, setHistoryNotice] = useState('');
+    const requestRef = useRef<AbortController | null>(null);
+    const eventRef = useRef<string | null>(null);
+    const historyRef = useRef<RecommendationEvent[]>([]);
+    const { format } = useCollection();
+    const isAiActive = availability === 'available';
+    // A different Google account provisions different spreadsheet IDs.
+    const scope = `${format || 'DVD'}:${localStorage.getItem(format === 'VHS' ? 'user_vhs_spreadsheet_id' : 'user_dvd_spreadsheet_id') || 'guest'}`;
 
-    // Reset on open
     useEffect(() => {
-        if (isOpen) {
-            setStep('intro');
-            setResult(null);
-            setReasoning(null);
-            setPreferences({ mood: 'any', subMood: 'any', duration: 'any', status: 'any' });
-            setIsAiActive(isGeminiAvailable());
-        }
-    }, [isOpen]);
+        if (!isOpen) return;
+        const controller = new AbortController();
+        historyRef.current = readHistory(localStorage, scope);
+        void geminiService.isAvailable(AbortSignal.any([controller.signal, AbortSignal.timeout(8000)]))
+            .then(available => { if (!controller.signal.aborted) setAvailability(available ? 'available' : 'unavailable'); })
+            .catch(() => { if (!controller.signal.aborted) setAvailability('unavailable'); });
+        return () => {
+            controller.abort();
+            requestRef.current?.abort();
+        };
+    }, [isOpen, scope]);
 
-    const handleNext = (nextStep: Step) => {
-        setStep(nextStep);
+    const handleNext = (nextStep: Step) => setStep(nextStep);
+    const showResult = (movie: Movie, explanation: string, resultSource: 'ai' | 'local') => {
+        setResult(movie);
+        setReasoning(explanation);
+        setSource(resultSource);
+        setFeedback(null);
+        const event: RecommendationEvent = { id: crypto.randomUUID(), movieKey: movieKey(movie), at: Date.now(), source: resultSource };
+        eventRef.current = event.id;
+        historyRef.current = [...historyRef.current, event].slice(-100);
+        setHistoryNotice(saveHistory(localStorage, scope, historyRef.current) ? '' : 'O navegador não permitiu salvar o histórico.');
+        setStep('result');
     };
 
-    const runAnalysis = async () => {
+    const runAnalysis = async (selected: Preferences = preferences, localOnly = false) => {
+        requestRef.current?.abort();
+        const controller = new AbortController();
+        requestRef.current = controller;
+        setPreferences(selected);
         setStep('analysis');
-        setAnalysisText(isAiActive ? 'Conectando ao cérebro do Gemini...' : 'Analisando sua coleção...');
-
-        // Simulated Analysis Steps
-        const messages = isAiActive
-            ? ["Lendo sinopses...", "Entendendo seus pedidos...", "Gerando justificativa..."]
-            : ["Escaneando seus gostos...", "Filtrando por duração...", "Encontrando a combinação perfeita..."];
-
-        for (const msg of messages) {
-            setAnalysisText(msg);
-            await new Promise(r => setTimeout(r, isAiActive ? 800 : 600));
+        setError('');
+        setAnalysisText('Filtrando e classificando os filmes da coleção...');
+        const ranked = rankMovies(movies, selected, historyRef.current);
+        if (ranked.length === 0) {
+            setStep('empty');
+            return;
         }
-
-        // --- FILTER POOL (Common Logic) ---
-        let pool = [...movies];
-
-        // 1. Filter by Status
-        if (preferences.status === 'new') {
-            pool = pool.filter(m => !m.watched);
-        } else if (preferences.status === 'rewatch') {
-            pool = pool.filter(m => m.watched);
+        if (localOnly || !isAiActive) {
+            showResult(ranked[0], 'Sugestão local baseada nos filtros, estilo, notas e histórico deste navegador. Nenhuma IA foi consultada.', 'local');
+            return;
         }
-
-        // 2. Filter by Duration
-        const parseDuration = (d?: string) => {
-            if (!d) return null;
-            const match = d.match(/(\d+)h\s*(\d*)m?/);
-            if (!match) return null;
-            return (parseInt(match[1] || '0') * 60) + parseInt(match[2] || '0');
-        };
-
-        if (preferences.duration !== 'any') {
-            pool = pool.filter(m => {
-                const mins = parseDuration(m.duration);
-                if (mins === null) return true;
-                if (preferences.duration === 'short') return mins < 100;
-                if (preferences.duration === 'medium') return mins >= 100 && mins <= 140;
-                if (preferences.duration === 'long') return mins > 140;
-                return true;
-            });
+        const candidates = buildCandidates(ranked);
+        setAnalysisText(`Consultando o Gemini com ${candidates.length} candidatos selecionados por afinidade...`);
+        try {
+            const recommendation = await geminiService.getRecommendation(candidates, selected, controller.signal);
+            if (controller.signal.aborted) return;
+            const index = candidates.findIndex(candidate => candidate.id === recommendation.movieId);
+            if (index < 0 || !ranked[index]) throw new Error('A IA não retornou um candidato válido.');
+            showResult(ranked[index], recommendation.reasoning, 'ai');
+        } catch (cause) {
+            if (controller.signal.aborted) return;
+            setError(cause instanceof Error && cause.name === 'TimeoutError'
+                ? 'A consulta demorou demais. Tente novamente ou use a sugestão local.'
+                : cause instanceof Error ? cause.message : 'Não foi possível consultar a IA.');
+            setStep('error');
         }
+    };
 
-        // 3. Filter by Mood (Strict filter for Local, "Hint" for AI)
-        if (preferences.mood !== 'any') {
-            pool = pool.filter(m => {
-                const g = m.genre.toLowerCase();
-                const t = m.tags?.join(' ').toLowerCase() || '';
-                const combined = g + ' ' + t;
+    const recordFeedback = (value: 'like' | 'dislike') => {
+        if (!eventRef.current) return;
+        setFeedback(value);
+        historyRef.current = historyRef.current.map(event => event.id === eventRef.current ? { ...event, feedback: value } : event);
+        setHistoryNotice(saveHistory(localStorage, scope, historyRef.current) ? 'Preferência salva neste navegador.' : 'Não foi possível salvar a preferência neste navegador.');
+    };
 
-                if (preferences.mood === 'laugh') return combined.includes('comédia') || combined.includes('animação') || combined.includes('família');
-                if (preferences.mood === 'tension') return combined.includes('suspense') || combined.includes('terror') || combined.includes('mistério') || combined.includes('crime');
-                if (preferences.mood === 'adrenaline') return combined.includes('ação') || combined.includes('aventura') || combined.includes('ficção') || combined.includes('guerra');
-                if (preferences.mood === 'emotion') return combined.includes('drama') || combined.includes('romance') || combined.includes('música');
-                return true;
-            });
-        }
-
-        // Fallback if pool is empty
-        if (pool.length === 0) {
-            pool = [...movies]; // Reset to full list
-            if (isAiActive) setAnalysisText("Nenhum match exato, buscando alternativa...");
-        }
-
-        // --- SELECTION ---
-        let winner: Movie;
-        let aiReasoning = null;
-
-        if (isAiActive) {
-            // GEMINI MODE
-            try {
-                // Limit candidates to random 20 to avoid token limits/latency if list is huge
-                const candidates = pool.sort(() => 0.5 - Math.random()).slice(0, 20);
-                const recommendation = await geminiService.getRecommendation(candidates, preferences);
-
-                if (recommendation) {
-                    // Find the movie object that matches the ID (Reliable)
-                    // The API returns 'movieId' which corresponds to our 'barcode'
-                    const found = movies.find(m => m.barcode === String(recommendation.movieId));
-
-                    if (found) {
-                        winner = found;
-                        aiReasoning = recommendation.reasoning;
-                    } else {
-                        // If ID fails try title (Legacy fallback)
-                        const foundByTitle = movies.find(m => m.title === recommendation.movieTitle);
-                        if (foundByTitle) {
-                            winner = foundByTitle;
-                            aiReasoning = recommendation.reasoning;
-                        } else {
-                            // Fallback only if absolutely necessary
-                            winner = candidates[0];
-                            aiReasoning = `O Gemini sugeriu "${recommendation.movieTitle}" (ID: ${recommendation.movieId}), mas houve um erro interno de sincronia.`;
-                        }
-                    }
-                } else {
-                    // Should not happen as service throws now, but safe fallback
-                    winner = pool[Math.floor(Math.random() * pool.length)];
-                    aiReasoning = "O Gemini ficou em silêncio (sem resposta).";
-                }
-            } catch (e: any) {
-                winner = pool[Math.floor(Math.random() * pool.length)];
-                // Show the specific error to help debug (e.g. "API Key not valid")
-                const msg = e.message || 'Erro desconhecido';
-                if (msg.includes('400') || msg.includes('API key')) {
-                    aiReasoning = "Erro de Chave API: Verifique se sua chave está correta e reinicie o app.";
-                } else if (msg.includes('429')) {
-                    aiReasoning = "O Gemini está sobrecarregado (Muitos pedidos). Tente de novo em instantes.";
-                } else {
-                    aiReasoning = `O Gemini falhou: ${msg.slice(0, 50)}... mas escolhi este!`;
-                }
-            }
-        } else {
-            // LOCAL MODE
-            winner = pool[Math.floor(Math.random() * pool.length)];
-        }
-
-        setResult(winner);
-        setReasoning(aiReasoning);
-        setStep('result');
+    const clearHistory = () => {
+        historyRef.current = [];
+        eventRef.current = null;
+        setFeedback(null);
+        setHistoryNotice(saveHistory(localStorage, scope, []) ? 'Histórico e feedback apagados desta coleção.' : 'Não foi possível apagar o histórico salvo.');
     };
 
     const getImageUrl = (movie: Movie) => {
@@ -208,7 +150,7 @@ export const SmartSuggestionModal: React.FC<SmartSuggestionModalProps> = ({ isOp
             <div className="absolute inset-0 bg-black/90 backdrop-blur-md" onClick={onClose} />
 
             {/* Modal Container */}
-            <div className="relative z-10 w-full max-w-md bg-neutral-900 border border-purple-500/30 rounded-3xl shadow-[0_0_50px_rgba(168,85,247,0.15)] overflow-hidden flex flex-col min-h-[400px] animate-in zoom-in-95 duration-300">
+            <div className="relative z-10 w-full max-w-md max-h-[90dvh] overflow-y-auto bg-neutral-900 border border-purple-500/30 rounded-3xl shadow-[0_0_50px_rgba(168,85,247,0.15)] flex flex-col min-h-[400px] animate-in zoom-in-95 duration-300">
 
                 {/* Header Gradient */}
                 <div className={`absolute top-0 w-full h-32 pointer-events-none bg-gradient-to-b ${isAiActive ? 'from-blue-600/30' : 'from-purple-600/20'} to-transparent`} />
@@ -216,6 +158,7 @@ export const SmartSuggestionModal: React.FC<SmartSuggestionModalProps> = ({ isOp
                 {/* Close Button */}
                 <button
                     onClick={onClose}
+                    aria-label="Fechar sugestões"
                     className="absolute top-4 right-4 p-2 text-neutral-400 hover:text-white hover:bg-white/10 rounded-full transition-colors z-20"
                 >
                     <X size={20} />
@@ -229,18 +172,19 @@ export const SmartSuggestionModal: React.FC<SmartSuggestionModalProps> = ({ isOp
                             {isAiActive ? <BrainCircuit className="text-blue-400" size={40} /> : <Sparkles className="text-purple-400" size={40} />}
                         </div>
                         <h2 className="text-2xl font-bold text-white mb-3">
-                            {isAiActive ? 'Consultor Gemini AI' : 'Sugestão Inteligente'}
+                            {availability === 'checking' ? 'Verificando disponibilidade...' : isAiActive ? 'Consultor Gemini AI' : 'Sugestão local'}
                         </h2>
                         <p className="text-neutral-400 mb-8 max-w-xs">
-                            {isAiActive
-                                ? 'O Gemini analisará cada filme da sua coleção para encontrar a escolha perfeita para seu momento.'
-                                : 'Não sabe o que assistir? Responda 3 perguntas rápidas e eu encontro o filme perfeito na sua coleção.'}
+                            {availability === 'checking' ? 'Verificando se a integração está configurada...' : isAiActive
+                                ? 'O Gemini compara até 20 candidatos selecionados por afinidade, usando sinopses, tags, diretor e suas notas. Esses dados são enviados ao Google ao pedir uma recomendação.'
+                                : 'A IA está indisponível. Você pode receber uma sugestão local com base nos filtros, estilo, notas e histórico deste navegador.'}
                         </p>
                         <button
                             onClick={() => handleNext('mood')}
+                            disabled={availability === 'checking' || movies.length === 0}
                             className={`w-full ${isAiActive ? 'bg-blue-600 hover:bg-blue-500 shadow-blue-500/25' : 'bg-purple-600 hover:bg-purple-500 shadow-purple-500/25'} text-white py-4 rounded-xl font-bold transition-all hover:scale-105 active:scale-95 shadow-lg`}
                         >
-                            Começar
+                            {movies.length === 0 ? 'Adicione filmes à coleção' : availability === 'checking' ? 'Verificando...' : 'Começar'}
                         </button>
                     </div>
                 )}
@@ -248,7 +192,7 @@ export const SmartSuggestionModal: React.FC<SmartSuggestionModalProps> = ({ isOp
                 {step === 'mood' && (
                     <div className="flex-1 flex flex-col p-8 animate-in fade-in slide-in-from-right-8">
                         <div className="flex-1">
-                            <StepHeader step={1} title="Qual a vibe de hoje?" color={isAiActive ? 'blue' : 'purple'} />
+                            <StepHeader total={preferences.mood === 'any' ? 3 : 4} step={1} title="Qual a vibe de hoje?" color={isAiActive ? 'blue' : 'purple'} />
 
                             <div className="grid grid-cols-2 gap-3 mt-6">
                                 <OptionCard
@@ -293,7 +237,7 @@ export const SmartSuggestionModal: React.FC<SmartSuggestionModalProps> = ({ isOp
                 {step === 'submood' && preferences.mood !== 'any' && (
                     <div className="flex-1 flex flex-col p-8 animate-in fade-in slide-in-from-right-8">
                         <div className="flex-1">
-                            <StepHeader step={2} title="Especifique o estilo..." color={isAiActive ? 'blue' : 'purple'} />
+                            <StepHeader total={4} step={2} title="Especifique o estilo..." color={isAiActive ? 'blue' : 'purple'} />
 
                             <div className="grid grid-cols-1 gap-3 mt-6">
                                 {SUB_MOODS[preferences.mood].map((sub) => (
@@ -313,7 +257,7 @@ export const SmartSuggestionModal: React.FC<SmartSuggestionModalProps> = ({ isOp
 
                 {step === 'time' && (
                     <div className="flex-1 flex flex-col p-8 animate-in fade-in slide-in-from-right-8">
-                        <StepHeader step={3} title="Quanto tempo você tem?" color={isAiActive ? 'blue' : 'purple'} />
+                        <StepHeader total={preferences.mood === 'any' ? 3 : 4} step={preferences.mood === 'any' ? 2 : 3} title="Quanto tempo você tem?" color={isAiActive ? 'blue' : 'purple'} />
                         <div className="grid grid-cols-1 gap-3 mt-6">
                             <OptionCard
                                 icon={<Clock size={20} />}
@@ -325,7 +269,7 @@ export const SmartSuggestionModal: React.FC<SmartSuggestionModalProps> = ({ isOp
                             <OptionCard
                                 icon={<Clock size={20} />}
                                 label="Sessão Pipoca (~ 2h)"
-                                desc="Duração padrão de filme"
+                                desc="Entre 1h 40min e 2h 20min"
                                 onClick={() => { setPreferences({ ...preferences, duration: 'medium' }); handleNext('status'); }}
                                 color={isAiActive ? 'blue' : 'purple'}
                             />
@@ -348,29 +292,50 @@ export const SmartSuggestionModal: React.FC<SmartSuggestionModalProps> = ({ isOp
 
                 {step === 'status' && (
                     <div className="flex-1 flex flex-col p-8 animate-in fade-in slide-in-from-right-8">
-                        <StepHeader step={4} title="O que vamos ver?" color={isAiActive ? 'blue' : 'purple'} />
+                        <StepHeader total={preferences.mood === 'any' ? 3 : 4} step={preferences.mood === 'any' ? 3 : 4} title="O que vamos ver?" color={isAiActive ? 'blue' : 'purple'} />
                         <div className="grid grid-cols-1 gap-3 mt-6">
                             <OptionCard
                                 icon={<Sparkles size={20} />}
                                 label="Algo NOVO"
                                 desc="Que eu nunca assisti"
-                                onClick={() => { setPreferences({ ...preferences, status: 'new' }); runAnalysis(); }}
+                                onClick={() => { void runAnalysis({ ...preferences, status: 'new' }); }}
                                 color={isAiActive ? 'blue' : 'purple'}
                             />
                             <OptionCard
                                 icon={<RefreshCw size={20} />}
                                 label="Rever um Favorito"
                                 desc="Algo que já vi"
-                                onClick={() => { setPreferences({ ...preferences, status: 'rewatch' }); runAnalysis(); }}
+                                onClick={() => { void runAnalysis({ ...preferences, status: 'rewatch' }); }}
                                 color={isAiActive ? 'blue' : 'purple'}
                             />
                             <button
-                                onClick={() => { setPreferences({ ...preferences, status: 'any' }); runAnalysis(); }}
+                                onClick={() => { void runAnalysis({ ...preferences, status: 'any' }); }}
                                 className="w-full mt-2 py-3 text-neutral-400 hover:text-white hover:bg-white/5 rounded-xl text-sm transition-colors border border-white/5"
                             >
                                 Tanto faz
                             </button>
                         </div>
+                    </div>
+                )}
+
+                {step === 'empty' && (
+                    <div className="p-8 text-center flex flex-col gap-4">
+                        <h2 className="text-xl font-bold">Nenhum filme atende aos filtros</h2>
+                        <p className="text-neutral-400">{movies.length === 0 ? 'Adicione filmes à coleção para receber sugestões.' : 'Seus critérios foram preservados. Filmes sem duração cadastrada não entram quando há um limite de tempo.'}</p>
+                        <button className="bg-blue-600 rounded-xl p-3" onClick={() => setStep('mood')}>Revisar minhas escolhas</button>
+                        {movies.length > 0 && preferences.duration !== 'any' && <button className="text-neutral-300 p-2" onClick={() => void runAnalysis({ ...preferences, duration: 'any' })}>Aceitar qualquer duração</button>}
+                        {movies.length > 0 && preferences.mood !== 'any' && <button className="text-neutral-300 p-2" onClick={() => void runAnalysis({ ...preferences, mood: 'any', subMood: 'any' })}>Aceitar qualquer gênero</button>}
+                        {movies.length > 0 && preferences.status !== 'any' && <button className="text-neutral-300 p-2" onClick={() => void runAnalysis({ ...preferences, status: 'any' })}>Aceitar assistidos e não assistidos</button>}
+                    </div>
+                )}
+
+                {step === 'error' && (
+                    <div className="p-8 text-center flex flex-col gap-4" role="alert">
+                        <h2 className="text-xl font-bold">A IA não conseguiu recomendar</h2>
+                        <p className="text-neutral-400">{error}</p>
+                        <button className="bg-blue-600 rounded-xl p-3" onClick={() => void runAnalysis()}>Tentar novamente</button>
+                        <button className="text-neutral-300 p-2" onClick={() => void runAnalysis(preferences, true)}>Usar sugestão local sem IA</button>
+                        <button className="text-neutral-300 p-2" onClick={() => setStep('mood')}>Revisar escolhas</button>
                     </div>
                 )}
 
@@ -394,7 +359,7 @@ export const SmartSuggestionModal: React.FC<SmartSuggestionModalProps> = ({ isOp
                 {step === 'result' && result && (
                     <div className="flex-1 flex flex-col p-6 animate-in zoom-in-95 duration-500">
                         <div className="text-center mb-4">
-                            <span className="text-xs uppercase tracking-widest text-purple-400 font-bold">Melhor Combinação Encontrada</span>
+                            <span className="text-xs uppercase tracking-widest text-purple-400 font-bold">{source === 'ai' ? 'Recomendação do Gemini' : 'Sugestão local — sem IA'}</span>
                         </div>
 
                         {/* Result Card */}
@@ -415,7 +380,7 @@ export const SmartSuggestionModal: React.FC<SmartSuggestionModalProps> = ({ isOp
                                     <p className="text-sm text-blue-200 italic">" {reasoning} "</p>
                                     <div className="flex items-center justify-center gap-1 mt-1">
                                         <Sparkles size={10} className="text-blue-400" />
-                                        <span className="text-[10px] text-blue-400 font-bold uppercase tracking-wider">Gemini AI</span>
+                                        <span className="text-[10px] text-blue-400 font-bold uppercase tracking-wider">{source === 'ai' ? 'Gemini AI' : 'Classificação local'}</span>
                                     </div>
                                 </div>
                             )}
@@ -426,12 +391,22 @@ export const SmartSuggestionModal: React.FC<SmartSuggestionModalProps> = ({ isOp
                                 <span>{result.genre}</span>
                             </div>
 
+                            <div className="w-full mb-4 text-center space-y-2">
+                                <p className="text-sm text-neutral-400">Esta sugestão combinou com você?</p>
+                                <div className="flex justify-center gap-3">
+                                    <button aria-pressed={feedback === 'like'} onClick={() => recordFeedback('like')} className={`px-3 py-2 rounded-lg ${feedback === 'like' ? 'bg-blue-600' : 'bg-neutral-800'}`}>Gostei</button>
+                                    <button aria-pressed={feedback === 'dislike'} onClick={() => recordFeedback('dislike')} className={`px-3 py-2 rounded-lg ${feedback === 'dislike' ? 'bg-blue-600' : 'bg-neutral-800'}`}>Não combinou</button>
+                                </div>
+                                <p className="text-xs text-neutral-400" role="status">{historyNotice || 'O feedback fica neste navegador e ajusta a ordem das próximas sugestões.'}</p>
+                                <button onClick={clearHistory} className="text-xs underline text-neutral-400">Apagar histórico e feedback desta coleção</button>
+                            </div>
+
                             <button
                                 onClick={onClose}
                                 className="w-full bg-white text-black hover:bg-neutral-200 py-3 rounded-xl font-bold shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2 mb-3"
                             >
                                 <Play size={20} fill="currentColor" />
-                                Assistir Agora
+                                Concluir
                             </button>
 
                             <button
@@ -450,12 +425,12 @@ export const SmartSuggestionModal: React.FC<SmartSuggestionModalProps> = ({ isOp
 };
 
 // UI Helpers
-const StepHeader = ({ step, title, color = 'purple' }: { step: number, title: string, color?: string }) => {
+const StepHeader = ({ step, total, title, color = 'purple' }: { step: number, total: number, title: string, color?: string }) => {
     const colorClass = color === 'blue' ? 'text-blue-400 bg-blue-500/10 border-blue-500/20' : 'text-purple-400 bg-purple-500/10 border-purple-500/20';
     return (
         <div className="text-center">
             <span className={`inline-block px-3 py-1 text-xs font-bold rounded-full mb-3 border ${colorClass}`}>
-                Passo {step} de 3
+                Passo {step} de {total}
             </span>
             <h2 className="text-2xl font-bold text-white">{title}</h2>
         </div>
@@ -474,4 +449,9 @@ const OptionCard = ({ icon, label, desc, onClick, color = 'purple' }: { icon: Re
             <span className="text-neutral-400 text-xs">{desc}</span>
         </button>
     );
+};
+
+export const SmartSuggestionModal: React.FC<SmartSuggestionModalProps> = (props) => {
+    const { format } = useCollection();
+    return props.isOpen ? <SmartSuggestionSession key={format || 'none'} {...props} /> : null;
 };
